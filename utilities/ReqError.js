@@ -1,9 +1,4 @@
-module.exports = class extends Error {
-  constructor(statusCode, message) {
-    super(message);
-    this.statusCode = statusCode;
-    this.status = this.statusCode >= 500 ? "fail" : "error";
+const ApiError = require("./errors");
 
-    Error.captureStackTrace(this, this.constructor);
-  }
-};
+// Deprecated alias kept for existing controllers; use ApiError in new code
+module.exports = ApiError;
