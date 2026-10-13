@@ -5,6 +5,12 @@ const dotenv = require("dotenv");
 
 const app = require("./app");
 
+// Serve the prebuilt client (single-port mode); API routes take precedence
+app.use(express.static(path.join(__dirname, "client", "build")));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "client", "build", "index.html"));
+});
+
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 const start = async () => {
