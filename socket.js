@@ -1,5 +1,23 @@
 const socketIO = require("socket.io");
+const jwt = require("jsonwebtoken");
 const { setIo } = require("./utilities/sockets");
+
+// Parses the handshake Cookie header into an object
+const parseCookies = (header) => {
+  const result = {};
+  for (const part of (header ?? "").split(";")) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const separatorIndex = trimmed.indexOf("=");
+    if (separatorIndex === -1) continue;
+    result[trimmed.slice(0, separatorIndex)] = decodeURIComponent(
+      trimmed.slice(separatorIndex + 1)
+    );
+  }
+  return result;
+};
+
+const { AUTH_COOKIE } = require("./utilities/auth");
 
 const {
   callRequestController,
@@ -34,6 +52,25 @@ const callService = require("./services/callService");
 const initSocket = (httpServer) => {
   const io = socketIO(httpServer);
   setIo(io);
+
+  // Handshake auth: the JWT cookie is verified server-side and the verified
+  // userId is bound to the socket; client-provided ids are never trusted
+  // (concept 1.13: entrance only through ACTIVE memberships)
+  io.use((socket, next) => {
+    const cookies = parseCookies(socket.handshake.headers.cookie);
+    const token = cookies[AUTH_COOKIE];
+    if (!token) {
+      socket.userId = null;
+      return next();
+    }
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET_KEY);
+      socket.userId = String(payload.userId);
+    } catch (error) {
+      socket.userId = null;
+    }
+    next();
+  });
 
   io.on("connection", async (socket) => {
     // -------------Connection controls -------------- //

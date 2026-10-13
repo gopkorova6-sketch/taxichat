@@ -62,15 +62,16 @@ const waitFor = (client, event, timeoutMs = 3000) =>
     });
   });
 
-const connectClient = async (userId) => {
+const connectClient = async (cookie) => {
   const client = ioClient(`http://localhost:${port}`, {
     transports: ["websocket"],
+    extraHeaders: { cookie: Array.isArray(cookie) ? cookie.join("; ") : cookie },
   });
   await new Promise((resolve, reject) => {
     client.on("connect", resolve);
     client.on("connect_error", reject);
   });
-  client.emit("user:online", String(userId));
+  client.emit("user:online");
   await new Promise((resolve) => setTimeout(resolve, 300));
   return client;
 };
@@ -164,8 +165,8 @@ describe("Direct call to a free driver", () => {
   });
 
   it("creates a direct chat, marks the driver inCall and clears it on decline", async () => {
-    const passengerClient = await connectClient(world.passenger.user._id);
-    const driverClient = await connectClient(world.drivers[0].user._id);
+    const passengerClient = await connectClient(world.passenger.cookie);
+    const driverClient = await connectClient(world.drivers[0].cookie);
 
     // Register listeners before emitting so nothing is missed
     const invitePromise = waitFor(driverClient, "call:invite");
@@ -214,8 +215,8 @@ describe("Direct call to a free driver", () => {
   });
 
   it("returns busy for a driver already in a call", async () => {
-    const passengerClient = await connectClient(world.passenger.user._id);
-    const driverClient = await connectClient(world.drivers[0].user._id);
+    const passengerClient = await connectClient(world.passenger.cookie);
+    const driverClient = await connectClient(world.drivers[0].cookie);
 
     const invitePromise = waitFor(driverClient, "call:invite");
     const firstAck = await passengerClient
@@ -235,7 +236,7 @@ describe("Direct call to a free driver", () => {
       .set("Cookie", otherPassenger.cookie)
       .send({ cityId: world.city._id, role: "passenger" });
 
-    const otherClient = await connectClient(otherPassenger.user._id);
+    const otherClient = await connectClient(otherPassenger.cookie);
     // call:busy goes to the caller whose invite failed
     const busyPromise = waitFor(otherClient, "call:busy");
     const secondAck = await otherClient
@@ -258,8 +259,8 @@ describe("Direct call to a free driver", () => {
   });
 
   it("places a direct order through the call chat; only the target driver can accept", async () => {
-    const passengerClient = await connectClient(world.passenger.user._id);
-    const driverClient = await connectClient(world.drivers[0].user._id);
+    const passengerClient = await connectClient(world.passenger.cookie);
+    const driverClient = await connectClient(world.drivers[0].cookie);
 
     const ack = await passengerClient
       .timeout(3000)
@@ -336,7 +337,7 @@ describe("Direct call to a free driver", () => {
   });
 
   it("driver decline and passenger republish create a broadcast order", async () => {
-    const passengerClient = await connectClient(world.passenger.user._id);
+    const passengerClient = await connectClient(world.passenger.cookie);
 
     const orderRes = await request(app)
       .post("/api/orders")
@@ -425,8 +426,8 @@ describe("Direct call to a free driver", () => {
   });
 
   it("dialog appears in my chats with text and media support", async () => {
-    const passengerClient = await connectClient(world.passenger.user._id);
-    const driverClient = await connectClient(world.drivers[0].user._id);
+    const passengerClient = await connectClient(world.passenger.cookie);
+    const driverClient = await connectClient(world.drivers[0].cookie);
 
     const invitePromise = waitFor(driverClient, "call:invite");
     const endedPromise = waitFor(passengerClient, "call:end");
@@ -515,8 +516,8 @@ describe("Direct call to a free driver", () => {
       "settings.directCallLimits.maxUnansweredPerDriver": 1,
     });
 
-    const passengerClient = await connectClient(world.passenger.user._id);
-    const driverClient = await connectClient(world.drivers[0].user._id);
+    const passengerClient = await connectClient(world.passenger.cookie);
+    const driverClient = await connectClient(world.drivers[0].cookie);
 
     const invitePromise = waitFor(driverClient, "call:invite");
     const ack = await passengerClient

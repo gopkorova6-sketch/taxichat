@@ -33,8 +33,10 @@ exports.joinMembershipRooms = async (socket, userId) => {
 };
 
 exports.onlineController = (io, socket) => {
-  socket.on("user:online", async (userId) => {
-    socket.userId = userId;
+  socket.on("user:online", async () => {
+    // The verified userId from the handshake; client-provided ids are ignored
+    const userId = socket.userId;
+    if (!userId) return;
     // Join membership rooms first so no events are missed
     await this.joinMembershipRooms(socket, userId);
 

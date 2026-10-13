@@ -6,9 +6,34 @@ const {
   markMessageAsReadByUser,
 } = require("../controllers/chatRoomController");
 
+// Sliding-window flood guard: max 30 message packets per minute per socket
+const MESSAGE_RATE_LIMIT = 30;
+const messageBuckets = new Map();
+
+const allowMessage = (socket) => {
+  const now = Date.now();
+  const bucket = (messageBuckets.get(socket.id) ?? []).filter(
+    (time) => now - time < 60 * 1000
+  );
+  if (bucket.length >= MESSAGE_RATE_LIMIT) {
+    messageBuckets.set(socket.id, bucket);
+    return false;
+  }
+  bucket.push(now);
+  messageBuckets.set(socket.id, bucket);
+  return true;
+};
+
 exports.messagingController = (io, socket) => {
   socket.on("user:message", async ({ chatRoomId, message }) => {
     if (!socket.userId) return;
+
+    if (!allowMessage(socket)) {
+      socket.emit("chat:error", {
+        error: "Слишком много сообщений, подождите минуту",
+      });
+      return;
+    }
 
     // Save message to database
     const { messageObj, day } = await addMessageToChatRoom(chatRoomId, message);

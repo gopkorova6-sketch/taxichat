@@ -122,7 +122,9 @@ actor)` (services/orderService.js): проверка таблицы перехо
 ## Сокет-события
 
 Комнаты: `user:{id}`, `city:{id}`, `zone:{id}`, `order:{id}` — вход только по
-ACTIVE-членствам.
+ACTIVE-членствам. На этапе рукопожатия сервер проверяет JWT-куку: `userId`
+берётся из verified-токена, клиентские идентификаторы не доверяются. На
+`user:message` действует анти-флуд (30 пакетов/минуту).
 
 - Сервер → клиент: `order:new`, `order:taken`, `order:offer`, `order:status`,
   `chat:message`, `driver:presence`, `sos:raised`, `call:invite`,

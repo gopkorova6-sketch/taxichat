@@ -43,15 +43,16 @@ const waitFor = (client, event, timeoutMs = 3000) =>
     });
   });
 
-const connectClient = async (userId) => {
+const connectClient = async (cookie) => {
   const client = ioClient(`http://localhost:${port}`, {
     transports: ["websocket"],
+    extraHeaders: { cookie: Array.isArray(cookie) ? cookie.join("; ") : cookie },
   });
   await new Promise((resolve, reject) => {
     client.on("connect", resolve);
     client.on("connect_error", reject);
   });
-  client.emit("user:online", String(userId));
+  client.emit("user:online");
   await new Promise((resolve) => setTimeout(resolve, 300));
   return client;
 };
@@ -88,9 +89,35 @@ describe("Voice calls between order participants", () => {
     expect(denied.status).toBe(403);
   });
 
+  it("anonymous sockets cannot impersonate users or send calls", async () => {
+    const anon = ioClient(`http://localhost:${port}`, {
+      transports: ["websocket"],
+    });
+    await new Promise((resolve, reject) => {
+      anon.on("connect", resolve);
+      anon.on("connect_error", reject);
+    });
+
+    // Spoofed identity is ignored: the server only trusts the JWT cookie
+    anon.emit("user:online", String(world.passenger.user._id));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const ack = await anon
+      .timeout(3000)
+      .emitWithAck("call:invite", {
+        orderId: order._id,
+        target: String(world.drivers[0].user._id),
+        signalData: { type: "offer" },
+      });
+    expect(ack.error).toBeTruthy();
+
+    anon.close();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  });
+
   it("full call signaling between passenger and driver with logs", async () => {
-    const passengerClient = await connectClient(world.passenger.user._id);
-    const driverClient = await connectClient(world.drivers[0].user._id);
+    const passengerClient = await connectClient(world.passenger.cookie);
+    const driverClient = await connectClient(world.drivers[0].cookie);
 
     // Register listeners before emitting so nothing is missed
     const invitePromise = waitFor(driverClient, "call:invite");
@@ -146,7 +173,7 @@ describe("Voice calls between order participants", () => {
 
   it("outsider cannot signal into someone else's order", async () => {
     const outsider = await require("./helpers").registerUser(app);
-    const outsiderClient = await connectClient(outsider.user._id);
+    const outsiderClient = await connectClient(outsider.cookie);
 
     const ack = await outsiderClient
       .timeout(3000)
@@ -171,7 +198,7 @@ describe("Voice calls between order participants", () => {
     );
 
     // A call attempt for the published order fails for a non-participant too
-    const passengerClient = await connectClient(world.passenger.user._id);
+    const passengerClient = await connectClient(world.passenger.cookie);
     const ack = await passengerClient
       .timeout(3000)
       .emitWithAck("call:invite", {
@@ -186,8 +213,8 @@ describe("Voice calls between order participants", () => {
   });
 
   it("declined call is logged and posted to the chat", async () => {
-    const passengerClient = await connectClient(world.passenger.user._id);
-    const driverClient = await connectClient(world.drivers[0].user._id);
+    const passengerClient = await connectClient(world.passenger.cookie);
+    const driverClient = await connectClient(world.drivers[0].cookie);
 
     const invitePromise = waitFor(driverClient, "call:invite");
     const endedPromise = waitFor(passengerClient, "call:end");
@@ -253,7 +280,7 @@ describe("Voice calls between order participants", () => {
       });
     }
 
-    const passengerClient = await connectClient(world.passenger.user._id);
+    const passengerClient = await connectClient(world.passenger.cookie);
     const ack = await passengerClient
       .timeout(3000)
       .emitWithAck("call:invite", {
@@ -281,8 +308,8 @@ describe("Voice calls between order participants", () => {
       });
     }
 
-    const passengerClient = await connectClient(world.passenger.user._id);
-    const driverClient = await connectClient(world.drivers[0].user._id);
+    const passengerClient = await connectClient(world.passenger.cookie);
+    const driverClient = await connectClient(world.drivers[0].cookie);
 
     const ack = await passengerClient
       .timeout(3000)

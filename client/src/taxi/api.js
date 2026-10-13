@@ -7,6 +7,15 @@ const request = async (url, options = {}) => {
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
+  // Expired or invalid session: drop the local flag and reload to the login
+  if (res.status === 401 && !url.includes("/api/user/login")) {
+    localStorage.removeItem("loggedIn");
+    if (!window.location.pathname.startsWith("/share/")) {
+      window.location.reload();
+    }
+    throw new Error("Сессия истекла, войдите заново");
+  }
+
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(data.message ?? "Ошибка запроса");
