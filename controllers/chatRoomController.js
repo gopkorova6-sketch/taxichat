@@ -18,7 +18,7 @@ exports.getChatRoom = catchAsyncError(async (req, res, next) => {
 
 exports.getChatRoomSummaryForUser = catchAsyncError(async (req, res, next) => {
   // Get user
-  const user = await User.findById(req.cookies.userId);
+  const user = await User.findById(req.user._id);
 
   let chatRoomSummary = await Promise.all(
     user.chatRooms.map(async (chatRoomId) => {
@@ -116,7 +116,7 @@ exports.getChatRoomSummaryForUser = catchAsyncError(async (req, res, next) => {
 });
 
 exports.pinChatRoom = catchAsyncError(async (req, res, next) => {
-  const user = await User.findById(req.cookies.userId);
+  const user = await User.findById(req.user._id);
   user.pinnedChatRooms.push(req.params.chatRoomId);
   await user.save();
 
@@ -129,7 +129,7 @@ exports.pinChatRoom = catchAsyncError(async (req, res, next) => {
 });
 
 exports.unpinChatRoom = catchAsyncError(async (req, res, next) => {
-  const user = await User.findById(req.cookies.userId);
+  const user = await User.findById(req.user._id);
   user.pinnedChatRooms = user.pinnedChatRooms.filter(
     (chatRoomId) => chatRoomId.toString() !== req.params.chatRoomId
   );
@@ -188,14 +188,11 @@ exports.getAllChatRoomUserIn = async (userId) => {
   return user.chatRooms;
 };
 
-// Add message to chatroom
+// Add message to chatroom; retries on mongoose version conflicts caused by
+// concurrent messages to the same room
+const ADD_MESSAGE_MAX_RETRIES = 5;
+
 exports.addMessageToChatRoom = async (chatRoomId, message) => {
-  const chatRoom = await ChatRoom.findById(chatRoomId);
-
-  // Get last chatRoom day message
-  const lastDayMessage =
-    chatRoom.messageHistory[chatRoom.messageHistory.length - 1];
-
   // Get day message was sent
   const dayString = new Date(message.timeSent).toLocaleString("en-US", {
     month: "long",
@@ -206,35 +203,54 @@ exports.addMessageToChatRoom = async (chatRoomId, message) => {
   // Convert day string to milliseconds
   const day = new Date(dayString).getTime();
 
-  // Add list of all members to message undelivered and unread members
-  message.undeliveredMembers = chatRoom.members;
-  message.unreadMembers = chatRoom.members.filter(
-    (memberId) => memberId.toString() !== message.sender.toString()
-  );
+  let lastError;
+  for (let attempt = 0; attempt < ADD_MESSAGE_MAX_RETRIES; attempt += 1) {
+    // Fresh document on every attempt to pick up concurrent changes
+    const chatRoom = await ChatRoom.findById(chatRoomId);
+    if (!chatRoom) throw new Error("Chat room not found");
 
-  // Check if day is today
-  if (lastDayMessage?.day === day) {
-    // Add to object if day is today
-    lastDayMessage.messages.push(message);
-  } else {
-    // Else create new object for day
-    const newDayObject = {
-      day,
-      messages: [message],
-    };
-    chatRoom.messageHistory.push(newDayObject);
+    // Get last chatRoom day message
+    const lastDayMessage =
+      chatRoom.messageHistory[chatRoom.messageHistory.length - 1];
+
+    // Add list of all members to message undelivered and unread members
+    message.undeliveredMembers = chatRoom.members;
+    message.unreadMembers = chatRoom.members.filter(
+      (memberId) => memberId.toString() !== message.sender.toString()
+    );
+
+    // Check if day is today
+    if (lastDayMessage?.day === day) {
+      // Add to object if day is today
+      lastDayMessage.messages.push(message);
+    } else {
+      // Else create new object for day
+      const newDayObject = {
+        day,
+        messages: [message],
+      };
+      chatRoom.messageHistory.push(newDayObject);
+    }
+
+    try {
+      await chatRoom.save();
+
+      // Return message object included with message id
+      const messageObj =
+        chatRoom.messageHistory[chatRoom.messageHistory.length - 1].messages[
+          chatRoom.messageHistory[chatRoom.messageHistory.length - 1].messages
+            .length - 1
+        ];
+
+      return { messageObj, chatRoom, day };
+    } catch (error) {
+      lastError = error;
+      if (error.name !== "VersionError") throw error;
+      await new Promise((resolve) => setTimeout(resolve, 50 * (attempt + 1)));
+    }
   }
 
-  await chatRoom.save();
-
-  // Return message object included with message id
-  const messageObj =
-    chatRoom.messageHistory[chatRoom.messageHistory.length - 1].messages[
-      chatRoom.messageHistory[chatRoom.messageHistory.length - 1].messages
-        .length - 1
-    ];
-
-  return { messageObj, chatRoom, day };
+  throw lastError;
 };
 
 exports.getMessageFromChatRoom = async ({ chatRoomId, messageId, day }) => {

@@ -2,6 +2,11 @@ exports.callRequestController = (io, socket) => {
   socket.on(
     "user:callRequest",
     async ({ chatRoomId, signalData, userId, callType }, acknowledgementFn) => {
+      if (!socket.userId) return;
+
+      // The caller is always the verified socket identity
+      const callerId = socket.userId;
+
       // If call receiver is not in room
       const socketsInChatRoom = io.in(chatRoomId).allSockets();
       if (socketsInChatRoom.size === 1) {
@@ -16,7 +21,7 @@ exports.callRequestController = (io, socket) => {
         .timeout(5000)
         .emit(
           "user:callRequest",
-          { chatRoomId, signalData, userId, callType },
+          { chatRoomId, signalData, userId: callerId, callType },
           (err) => {
             if (err) {
               console.log("How?");

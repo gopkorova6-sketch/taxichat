@@ -2,12 +2,12 @@ const { clearChatRoom } = require("../controllers/chatRoomController");
 
 // When user is typing a message
 exports.typingController = (io, socket) => {
-  socket.on("user:typing", (chatRoomId, userId) => {
+  socket.on("user:typing", (chatRoomId) => {
     if (!socket.userId) return;
 
     socket
       .to(chatRoomId)
-      .emit("user:typing", { userId: userId || socket.userId, chatRoomId });
+      .emit("user:typing", { userId: socket.userId, chatRoomId });
   });
 };
 
@@ -33,6 +33,7 @@ exports.recordingcontroller = (io, socket) => {
 // When user clears a chatRoom
 exports.clearChatRoomController = (io, socket) => {
   socket.on("user:chatRoomClear", async ({ chatRoomId }) => {
+    if (!socket.userId) return;
     await clearChatRoom({ chatRoomId });
     io.to(chatRoomId).emit("user:chatRoomClear", { chatRoomId });
   });

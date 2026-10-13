@@ -9,16 +9,7 @@
     "test": "jest --runInBand",
     "seed": "node scripts/seed.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AdekolaThanni/Telegram-Clone.git"
-  },
-  "author": "Adekola Thanni",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/AdekolaThanni/Telegram-Clone/issues"
-  },
-  "homepage": "https://github.com/AdekolaThanni/Telegram-Clone#readme",
   "dependencies": {
     "agenda": "^4.4.0",
     "bcrypt": "^5.1.0",

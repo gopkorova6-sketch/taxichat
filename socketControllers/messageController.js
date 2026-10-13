@@ -35,6 +35,9 @@ exports.messagingController = (io, socket) => {
       return;
     }
 
+    // The sender is always the verified socket identity
+    message.sender = socket.userId;
+
     // Save message to database
     const { messageObj, day } = await addMessageToChatRoom(chatRoomId, message);
 
@@ -97,20 +100,28 @@ exports.messagingController = (io, socket) => {
 exports.markMessageReadController = (io, socket) => {
   socket.on(
     "user:messageRead",
-    async ({ messageId, chatRoomId, day, userId }) => {
-      await markMessageAsReadByUser({ messageId, chatRoomId, day, userId, io });
+    async ({ messageId, chatRoomId, day }) => {
+      if (!socket.userId) return;
+      await markMessageAsReadByUser({
+        messageId,
+        chatRoomId,
+        day,
+        userId: socket.userId,
+        io,
+      });
     }
   );
 
   socket.on(
     "user:markMessagesAsRead",
-    async ({ messages, chatRoomId, userId }) => {
+    async ({ messages, chatRoomId }) => {
+      if (!socket.userId) return;
       for (let { messageId, day } of messages) {
         await markMessageAsReadByUser({
           messageId,
           chatRoomId,
           day,
-          userId,
+          userId: socket.userId,
           io,
         });
       }
