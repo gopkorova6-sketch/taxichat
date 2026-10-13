@@ -65,6 +65,37 @@ const SYSTEM_MESSAGES = {
 
 const TERMINAL_STATUSES = ["COMPLETED", "CANCELLED", "NO_SHOW", "EXPIRED"];
 
+const PENALTY_BAN_THRESHOLD = 10;
+const PENALTY_STATUSES = ["ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE"];
+
+// Late cancels by participants add penalty points; the threshold auto-bans
+// the account (concept 1.9)
+const applyPenalty = async (order, event, actor, previousStatus) => {
+  if (event !== "cancel") return;
+  if (!PENALTY_STATUSES.includes(previousStatus)) return;
+  if (!["passenger", "driver"].includes(actor.role) || !actor.userId) return;
+
+  const User = require("../models/User");
+  const { logAudit } = require("../utilities/audit");
+
+  const user = await User.findById(actor.userId);
+  if (!user || user.isSuperadmin) return;
+
+  user.penaltyPoints = (user.penaltyPoints ?? 0) + 1;
+  if (user.penaltyPoints >= PENALTY_BAN_THRESHOLD && !user.banned) {
+    user.banned = true;
+  }
+  await user.save();
+
+  await logAudit({
+    actorId: actor.userId,
+    action: user.banned ? "penalty.autoBan" : "penalty.added",
+    targetType: "User",
+    targetId: user._id,
+    payload: { orderId: order._id, points: user.penaltyPoints },
+  });
+};
+
 // Validates the event against the table and the actor's rights
 const assertTransition = (order, event, actor) => {
   const transition = TRANSITIONS[event];
@@ -202,6 +233,9 @@ const transition = async (order, event, actor, { reason } = {}) => {
     const city = await City.findById(order.cityId).select("settings.waitingMinutes");
     await scheduleWaitingTimer(order, city?.settings?.waitingMinutes ?? 10);
   }
+
+  // Penalty points for late cancels (concept 1.9)
+  await applyPenalty(order, event, actor, previousStatus);
 
   const events = [
     {

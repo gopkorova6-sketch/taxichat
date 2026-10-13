@@ -51,6 +51,9 @@ const Schema = new mongoose.Schema({
   isSuperadmin: { type: Boolean, default: false, index: true },
   // Banned users cannot log in or use the platform
   banned: { type: Boolean, default: false },
+  // Penalty points for late cancels; the threshold triggers an auto-ban
+  // (concept 1.9)
+  penaltyPoints: { type: Number, default: 0 },
   // Home city; changes are limited to once per 30 days
   homeCityId: { type: mongoose.Schema.Types.ObjectId, ref: "City" },
   homeCityChangedAt: Date,

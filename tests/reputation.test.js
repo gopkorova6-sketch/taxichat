@@ -174,6 +174,38 @@ describe("Bans and share links", () => {
     world = await setupPilotCity(app);
   });
 
+  it("late cancel adds a penalty point and the threshold auto-bans", async () => {
+    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+      matchMode: "first_take",
+    });
+    const orderId = created.body.data.order._id;
+    await request(app)
+      .post(`/api/orders/${orderId}/accept`)
+      .set("Cookie", world.drivers[0].cookie)
+      .send({});
+
+    const cancelled = await request(app)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set("Cookie", world.passenger.cookie)
+      .send({ reason: "Передумал" });
+    expect(cancelled.status).toBe(200);
+
+    const meRes = await request(app).get("/api/user/me").set("Cookie", world.passenger.cookie);
+    expect(meRes.body.data.user.penaltyPoints).toBe(1);
+    expect(meRes.body.data.user.banned).toBe(false);
+
+    // Cancel before assignment does not add points
+    const early = await createOrder(app, world.passenger, world.city, world.zones);
+    await request(app)
+      .post(`/api/orders/${early.body.data.order._id}/cancel`)
+      .set("Cookie", world.passenger.cookie)
+      .send({ reason: "Ошибка" });
+    const meAfterEarly = await request(app)
+      .get("/api/user/me")
+      .set("Cookie", world.passenger.cookie);
+    expect(meAfterEarly.body.data.user.penaltyPoints).toBe(1);
+  });
+
   it("superadmin can ban a user; banned users cannot log in or use the API", async () => {
     const victim = await registerUser(app);
 
