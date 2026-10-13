@@ -8,6 +8,7 @@ const contactsRouter = require("./routers/contactsRouter");
 const chatRoomRouter = require("./routers/chatRoomRouter");
 const profileRouter = require("./routers/profileRouter");
 const uploadRouter = require("./routers/uploadRouter");
+const geoRouter = require("./routers/geoRouter");
 const { protect } = require("./utilities/auth");
 const errorController = require("./controllers/errorController");
 
@@ -40,6 +41,7 @@ app.use("/api/contacts", contactsRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/chatRoom", chatRoomRouter);
 app.use("/api/upload", uploadRouter);
+app.use("/api/geo", geoRouter);
 
 // Error handle middleware
 app.use(errorController);
