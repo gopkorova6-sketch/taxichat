@@ -1,2 +1,4 @@
-const server = require("./server");
-const socket = require("./socket");
+const { expressServer } = require("./server");
+const initSocket = require("./socket");
+
+initSocket(expressServer);

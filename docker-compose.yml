@@ -1,0 +1,27 @@
+services:
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  # TURN server for voice calls: traffic is relayed so participant IP
+  # addresses are not exposed to each other (concept 1.7.1)
+  coturn:
+    image: coturn/coturn:latest
+    network_mode: host
+    environment:
+      TURN_SECRET: ${TURN_SECRET:-dev-turn-secret}
+    command: >
+      -n
+      --realm=taxichat
+      --fingerprint
+      --use-auth-secret
+      --static-auth-secret=${TURN_SECRET:-dev-turn-secret}
+      --no-multicast-peers
+      --no-cli
+      --listening-port=3478
+
+volumes:
+  mongo-data:

@@ -16,6 +16,7 @@ const adminRouter = require("./routers/adminRouter");
 const driverRouter = require("./routers/driverRouter");
 const userRouter = require("./routers/userRouter");
 const orderRouter = require("./routers/orderRouter");
+const callRouter = require("./routers/callRouter");
 const { protect } = require("./utilities/auth");
 const errorController = require("./controllers/errorController");
 
@@ -56,6 +57,7 @@ app.use("/api/admin", adminRouter);
 app.use("/api/drivers", driverRouter);
 app.use("/api/users", userRouter);
 app.use("/api/orders", orderRouter);
+app.use("/api/calls", callRouter);
 
 // Error handle middleware
 app.use(errorController);

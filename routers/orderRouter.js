@@ -1,5 +1,6 @@
 const express = require("express");
 const orderController = require("../controllers/orderController");
+const callController = require("../controllers/callController");
 const { protect } = require("../utilities/auth");
 const { loadMemberships } = require("../utilities/rbac");
 
@@ -19,5 +20,6 @@ router.route("/:id/accept").post(orderController.acceptOrder);
 router.route("/:id/assign").post(orderController.assignByDispatcher);
 router.route("/:id/messages").get(orderController.listMessages);
 router.route("/:id/messages").post(orderController.sendOrderMessage);
+router.route("/:id/calls").get(callController.listOrderCalls);
 
 module.exports = router;

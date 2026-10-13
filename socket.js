@@ -1,5 +1,4 @@
 const socketIO = require("socket.io");
-const { expressServer } = require("./server");
 const { setIo } = require("./utilities/sockets");
 
 const {
@@ -26,55 +25,76 @@ const {
   clearChatRoomController,
 } = require("./socketControllers/userActionController");
 
-const io = socketIO(expressServer);
-setIo(io);
+const { registerOrderCallHandlers } = require("./socketControllers/orderCallController");
+const callService = require("./services/callService");
 
-io.on("connection", async (socket) => {
-  // -------------Connection controls -------------- //
-  // socket come online
-  onlineController(io, socket);
+// Attaches Socket.io to an http server; exported as a factory so tests can
+// run it on an ephemeral port
+const initSocket = (httpServer) => {
+  const io = socketIO(httpServer);
+  setIo(io);
 
-  // socket goes offline
-  offlineController(io, socket);
+  io.on("connection", async (socket) => {
+    // -------------Connection controls -------------- //
+    // socket come online
+    onlineController(io, socket);
 
-  // socket disconnecting
-  disconnectingController(io, socket);
+    // socket goes offline
+    offlineController(io, socket);
 
-  // socket joins new room
-  joinRoomController(io, socket);
-  //--------------------------------------------------//
+    // socket disconnecting
+    disconnectingController(io, socket);
 
-  // -------------User Action controls -------------- //
-  // User typing
-  typingController(io, socket);
+    // socket joins new room
+    joinRoomController(io, socket);
+    //--------------------------------------------------//
 
-  // User recording
-  recordingcontroller(io, socket);
+    // -------------User Action controls -------------- //
+    // User typing
+    typingController(io, socket);
 
-  // User clears chat room
-  clearChatRoomController(io, socket);
-  //--------------------------------------------------//
+    // User recording
+    recordingcontroller(io, socket);
 
-  // -------------Message controls -------------- //
-  // User sends message
-  messagingController(io, socket);
+    // User clears chat room
+    clearChatRoomController(io, socket);
+    //--------------------------------------------------//
 
-  // User reads message
-  markMessageReadController(io, socket);
+    // -------------Message controls -------------- //
+    // User sends message
+    messagingController(io, socket);
 
-  //--------------------------------------------------//
+    // User reads message
+    markMessageReadController(io, socket);
 
-  // ----------------- Call controls --------------- //
-  // User makes call request
-  callRequestController(io, socket);
+    //--------------------------------------------------//
 
-  // User accepts call
-  callAcceptedController(io, socket);
+    // ----------------- Legacy call controls --------------- //
+    // User makes call request
+    callRequestController(io, socket);
 
-  // User ends call
-  endCallController(io, socket);
+    // User accepts call
+    callAcceptedController(io, socket);
 
-  // User denies call
-  callDeniedController(io, socket);
-  //--------------------------------------------------//
-});
+    // User ends call
+    endCallController(io, socket);
+
+    // User denies call
+    callDeniedController(io, socket);
+    //--------------------------------------------------//
+
+    // ----------- Order voice call signaling ------------ //
+    registerOrderCallHandlers(io, socket);
+    //--------------------------------------------------//
+
+    socket.on("disconnect", async () => {
+      if (socket.userId) {
+        await callService.handleDisconnect(io, socket.userId);
+      }
+    });
+  });
+
+  return io;
+};
+
+module.exports = initSocket;
