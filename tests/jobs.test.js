@@ -84,6 +84,31 @@ describe("Background job handlers", () => {
     expect(order.status).toBe("ASSIGNED");
   });
 
+  it("preorder activation publishes the draft and idempotently skips later", async () => {
+    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+      whenType: "scheduled",
+      whenAt: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+    });
+    const order = created.body.data.order;
+    expect(order.status).toBe("DRAFT");
+
+    await handlers.runPreorderActivate({ orderId: order._id });
+
+    const activated = await Order.findById(order._id);
+    expect(activated.status).toBe("PUBLISHED");
+
+    const systemMessage = await Message.findOne({
+      chatId: order.chatId,
+      body: "Заказ опубликован",
+    });
+    expect(systemMessage).toBeTruthy();
+
+    // Already published orders pass through without changes
+    await handlers.runPreorderActivate({ orderId: order._id });
+    const stillPublished = await Order.findById(order._id);
+    expect(stillPublished.status).toBe("PUBLISHED");
+  });
+
   it("heartbeat sweep sends stale online drivers offline", async () => {
     const membership = await Membership.findOne({ userId: world.drivers[0].user._id });
     await DriverProfile.findOneAndUpdate(

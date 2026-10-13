@@ -16,21 +16,31 @@ const SYSTEM_ACTOR = { userId: undefined, role: "system" };
 
 // Cascade step of the order fan-out (concept 1.6): favorites, zone, neighbor
 // zones, city. Each step fires only while the order is still PUBLISHED.
+// Returns the events for the caller (tests) and emits them via sockets.
 const runCascadeStep = async ({ orderId, step }) => {
   const order = await Order.findById(orderId);
-  if (!order || order.status !== "PUBLISHED" || order.mode === "direct") return;
+  if (!order || order.status !== "PUBLISHED" || order.mode === "direct") return [];
 
   const events = [];
   const card = { orderId: order._id };
 
   if (step === "favorites") {
-    // Favorite drivers of the passenger receive the card exclusively first
+    // Favorite drivers of the passenger receive the card exclusively first,
+    // but only those who work in the order's city
     const favorites = await Favorite.find({ passengerId: order.passengerId }).select(
       "driverId"
     );
-    for (const favorite of favorites) {
+    const favoriteIds = favorites.map((favorite) => favorite.driverId);
+    const cityDrivers = await Membership.find({
+      userId: { $in: favoriteIds },
+      cityId: order.cityId,
+      role: "driver",
+      status: "ACTIVE",
+    }).select("userId");
+
+    for (const driver of cityDrivers) {
       events.push({
-        room: `user:${favorite.driverId}`,
+        room: `user:${driver.userId}`,
         event: "order:new",
         payload: { ...card, exclusive: true },
       });
@@ -59,6 +69,7 @@ const runCascadeStep = async ({ orderId, step }) => {
   }
 
   emitOrderEvents(events);
+  return events;
 };
 
 // Expiry of a published order (concept 1.6): broadcast orders get EXPIRED,
@@ -97,11 +108,17 @@ const runWaitingTimeout = async ({ orderId }) => {
   );
 };
 
-// Scheduled order activation: starts the cascade before the ride
+// Scheduled order activation: publishes the draft and starts the cascade
+// before the ride (concept 1.6)
 const runPreorderActivate = async ({ orderId }) => {
   const order = await Order.findById(orderId).populate("cityId", "settings");
-  if (!order || order.status !== "PUBLISHED") return;
-  if (order.when?.type !== "scheduled") return;
+  if (!order || order.when?.type !== "scheduled") return;
+
+  if (order.status === "DRAFT") {
+    await transition(order, "publish", SYSTEM_ACTOR);
+  } else if (order.status !== "PUBLISHED") {
+    return;
+  }
 
   const timeouts = order.cityId?.settings?.cascadeTimeouts ?? {};
   const steps = [
@@ -111,7 +128,8 @@ const runPreorderActivate = async ({ orderId }) => {
     ["city", timeouts.neighbors ?? 120],
   ];
   const agenda = require("./index").getAgenda();
-  if (!agenda) return;  for (const [step, delaySec] of steps) {
+  if (!agenda) return;
+  for (const [step, delaySec] of steps) {
     await agenda.schedule(
       new Date(Date.now() + delaySec * 1000),
       "order:cascade",

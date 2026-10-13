@@ -241,13 +241,21 @@ exports.createOrder = [
     order.chatId = chat._id;
 
     const actor = { userId: req.user._id, role: "passenger" };
-    const { events } = await transition(order, "publish", actor);
+    const isDeferredBroadcast = data.whenType === "scheduled" && !data.targetDriverId;
 
-    const timeoutSeconds =
-      directContext
-        ? (city.settings?.directOrderTimeoutMin ?? 10) * 60
-        : (city.settings?.cascadeTimeouts?.expire ?? 300);
-    order.expiresAt = new Date(Date.now() + timeoutSeconds * 1000);
+    // Broadcast scheduled orders stay DRAFT until the preorder activation
+    // job publishes them before the ride (concept 1.6); direct scheduled
+    // orders publish immediately so the target driver can accept in advance
+    let events = [];
+    if (!isDeferredBroadcast) {
+      ({ events } = await transition(order, "publish", actor));
+
+      const timeoutSeconds =
+        directContext
+          ? (city.settings?.directOrderTimeoutMin ?? 10) * 60
+          : (city.settings?.cascadeTimeouts?.expire ?? 300);
+      order.expiresAt = new Date(Date.now() + timeoutSeconds * 1000);
+    }
     await order.save();
     await botDispatcher.upsertOrderCard(order);
 
@@ -256,8 +264,9 @@ exports.createOrder = [
     await scheduleOrderJobs(order);
 
     // Direct orders go to the target driver only; broadcast orders fan out
-    // to the zone of departure and the city (concept 1.6)
-    if (order.mode !== "direct") {
+    // to the zone of departure and the city (concept 1.6). Scheduled orders
+    // are activated by the preorder job before the ride instead.
+    if (order.mode !== "direct" && data.whenType !== "scheduled") {
       events.push(
         { room: `zone:${fromZone._id}`, event: "order:new", payload: { orderId: order._id } },
         { room: `city:${data.cityId}`, event: "order:new", payload: { orderId: order._id } }
@@ -296,13 +305,14 @@ exports.listOrders = catchAsyncError(async (req, res) => {
   let orders;
 
   if (driverMembership) {
-    // Orders of the driver's zones, plus his own assigned orders
+    // Orders of the driver's zones (scheduled ones appear on activation),
+    // plus his own assigned and targeted orders
     const zoneIds = driverMembership.zones ?? [];
     orders = await Order.find({
       cityId,
       ...statusFilter,
       $or: [
-        { fromZone: { $in: zoneIds } },
+        { fromZone: { $in: zoneIds }, "when.type": { $ne: "scheduled" } },
         { driverId: req.user._id },
         { targetDriverId: req.user._id },
       ],
@@ -746,10 +756,13 @@ exports.republishOrder = catchAsyncError(async (req, res) => {
   await order.save();
   await botDispatcher.upsertOrderCard(order);
 
-  events.push(
-    { room: `zone:${order.fromZone}`, event: "order:new", payload: { orderId: order._id } },
-    { room: `city:${order.cityId}`, event: "order:new", payload: { orderId: order._id } }
-  );
+  // Republished scheduled orders are activated by the preorder job instead
+  if (order.when?.type !== "scheduled") {
+    events.push(
+      { room: `zone:${order.fromZone}`, event: "order:new", payload: { orderId: order._id } },
+      { room: `city:${order.cityId}`, event: "order:new", payload: { orderId: order._id } }
+    );
+  }
   emitOrderEvents(events);
 
   const { scheduleOrderJobs } = require("../jobs/index");

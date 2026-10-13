@@ -64,6 +64,48 @@ describe("Orders and the state machine", () => {
     expect(getRes.body.data.order.passengerId).toBeUndefined();
   });
 
+  it("scheduled broadcast orders do not fan out until preorder activation", async () => {
+    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+      whenType: "scheduled",
+      whenAt: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+    });
+    const scheduledOrder = created.body.data.order;
+    expect(scheduledOrder.status).toBe("DRAFT");
+
+    // The card is not in the drivers' feeds yet
+    const feed = await request(app)
+      .get(`/api/orders?cityId=${world.city._id}&status=PUBLISHED`)
+      .set("Cookie", world.drivers[0].cookie);
+    expect(
+      feed.body.data.orders.some((order) => order._id === scheduledOrder._id)
+    ).toBe(false);
+
+    // The passenger sees his draft and can cancel it without penalty
+    const mine = await request(app)
+      .get(`/api/orders?cityId=${world.city._id}`)
+      .set("Cookie", world.passenger.cookie);
+    const own = mine.body.data.orders.find(
+      (order) => order._id === scheduledOrder._id
+    );
+    expect(own).toBeDefined();
+    expect(own.status).toBe("DRAFT");
+
+    const cancelled = await request(app)
+      .post(`/api/orders/${scheduledOrder._id}/cancel`)
+      .set("Cookie", world.passenger.cookie)
+      .send({ reason: "Планы изменились" });
+    expect(cancelled.status).toBe(200);
+
+    // "Now" orders still fan out immediately
+    const nowOrder = await createBroadcastOrder();
+    const feedAfter = await request(app)
+      .get(`/api/orders?cityId=${world.city._id}&status=PUBLISHED`)
+      .set("Cookie", world.drivers[0].cookie);
+    expect(
+      feedAfter.body.data.orders.some((order) => order._id === nowOrder.body.data.order._id)
+    ).toBe(true);
+  });
+
   it("outsider has no access to the order", async () => {
     const created = await createBroadcastOrder();
     const outsider = await registerUser(app);

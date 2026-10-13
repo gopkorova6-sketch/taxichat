@@ -23,7 +23,12 @@ const ORDER_STATUSES = [
 // Allowed transitions with actor roles (concept 1.6). "driver"/"passenger"
 // further narrow to the assigned driver / order owner in assertActor.
 const TRANSITIONS = {
-  publish: { from: ["DRAFT"], to: "PUBLISHED", roles: ["passenger"] },
+  publish: {
+    from: ["DRAFT"],
+    to: "PUBLISHED",
+    // "system" publishes scheduled orders at preorder activation
+    roles: ["passenger", "system"],
+  },
   assign: {
     from: ["PUBLISHED"],
     to: "ASSIGNED",
