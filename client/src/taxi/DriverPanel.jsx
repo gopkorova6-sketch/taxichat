@@ -103,6 +103,12 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
       if (!priceText) return;
       const etaMin = parseInt(window.prompt("Время подачи, минут:") ?? "10", 10);
       await apiPost(`/api/orders/${order._id}/offers`, { priceText, etaMin });
+      dispatch(
+        notificationActions.addNotification({
+          message: "Отклик отправлен пассажиру",
+          type: "info",
+        })
+      );
     } catch (err) {
       setError(err.message);
     }
