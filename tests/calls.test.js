@@ -24,6 +24,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (ioInstance) ioInstance.close();
+  httpServer.closeAllConnections?.();
   await new Promise((resolve) => httpServer.close(resolve));
   // Allow socket disconnect handlers to settle before dropping the database
   await new Promise((resolve) => setTimeout(resolve, 300));

@@ -125,6 +125,7 @@ exports.createMembership = [
       cityId,
       role,
       status,
+      ...(role === "driver" && { zones: zoneIds }),
     });
 
     try {

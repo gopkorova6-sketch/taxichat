@@ -197,6 +197,34 @@ exports.assignRole = [
   }),
 ];
 
+// PATCH /api/admin/users/:id/ban — block or unblock an account
+exports.setUserBan = catchAsyncError(async (req, res) => {
+  const { id } = req.params;
+  if (!mongoose.isValidObjectId(id))
+    throw new ApiError(400, "Некорректный пользователь");
+
+  const user = await User.findById(id);
+  if (!user) throw new ApiError(404, "Пользователь не найден");
+  if (String(user._id) === String(req.user._id))
+    throw new ApiError(400, "Нельзя заблокировать себя");
+  if (user.isSuperadmin && !req.user.isSuperadmin)
+    throw new ApiError(403, "Недостаточно прав");
+
+  const banned = req.body?.banned !== false;
+  user.banned = banned;
+  await user.save();
+
+  await logAudit({
+    actorId: req.user._id,
+    action: banned ? "admin.userBanned" : "admin.userUnbanned",
+    targetType: "User",
+    targetId: user._id,
+    payload: { reason: req.body?.reason },
+  });
+
+  res.json({ status: "success", data: { user: { _id: user._id, banned: user.banned } } });
+});
+
 // GET /api/admin/audit — role journal for the region or the whole platform
 exports.getAudit = [
   loadMemberships,

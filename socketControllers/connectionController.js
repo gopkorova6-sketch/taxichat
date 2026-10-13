@@ -6,10 +6,11 @@ const Membership = require("../models/Membership");
 
 exports.getSocketDetails = async (userId) => {
   // Get user model
-  userModel = await User.findById(userId);
+  const userModel = await User.findById(userId);
+  if (!userModel) return { userModel: null, allRoomsUserIn: [] };
 
   // Get all rooms
-  allRoomsUserIn = userModel.chatRooms.map((room) => room.toString());
+  const allRoomsUserIn = userModel.chatRooms.map((room) => room.toString());
 
   return { userModel, allRoomsUserIn };
 };
@@ -39,6 +40,7 @@ exports.onlineController = (io, socket) => {
 
     // Get user detaiils
     const { userModel, allRoomsUserIn } = await this.getSocketDetails(userId);
+    if (!userModel) return;
 
     //   Make user join rooms
     socket.join(allRoomsUserIn);
@@ -70,8 +72,10 @@ exports.onlineController = (io, socket) => {
 exports.offlineController = (io, socket) => {
   socket.on("user:offline", async () => {
     const { userId } = socket;
+    if (!userId) return;
     // Get user detaiils
     const { userModel, allRoomsUserIn } = await this.getSocketDetails(userId);
+    if (!userModel) return;
 
     const time = new Date(Date.now()).toISOString();
 
@@ -96,6 +100,7 @@ exports.disconnectingController = (io, socket) => {
     const { userModel, allRoomsUserIn } = await this.getSocketDetails(
       socket.userId
     );
+    if (!userModel) return;
 
     const time = new Date(Date.now()).toISOString();
 
