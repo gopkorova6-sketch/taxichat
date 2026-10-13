@@ -18,6 +18,7 @@ const {
   toDispatcherView,
 } = require("../utilities/orderViews");
 const { emitOrderEvents } = require("../utilities/sockets");
+const botDispatcher = require("../services/botDispatcher");
 
 const createOrderSchema = z
   .object({
@@ -158,6 +159,37 @@ exports.createOrder = [
 
     const matchMode = data.matchMode ?? city.settings?.matchMode ?? "offers";
 
+    // Direct order placed after a call to a free driver (concept 1.6)
+    let directContext = null;
+    if (data.targetDriverId) {
+      if (city.settings?.directCallsEnabled === false)
+        throw new ApiError(403, "Прямые вызовы водителей отключены в этом городе");
+
+      const targetMembership = await Membership.findOne({
+        userId: data.targetDriverId,
+        cityId: data.cityId,
+        role: "driver",
+        status: "ACTIVE",
+      });
+      if (!targetMembership)
+        throw new ApiError(400, "Целевой водитель не найден в этом городе");
+
+      const targetProfile = await DriverProfile.findOne({
+        membershipId: targetMembership._id,
+      });
+      if (data.whenType === "now" && (!targetProfile || targetProfile.shift !== "online"))
+        throw new ApiError(409, "Водитель сейчас не на линии");
+      if (data.whenType === "now") {
+        const busy = await Order.exists({
+          driverId: data.targetDriverId,
+          status: { $in: ["ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE"] },
+        });
+        if (busy) throw new ApiError(409, "У водителя уже есть активный заказ");
+      }
+
+      directContext = { targetMembership, targetProfile };
+    }
+
     const order = await Order.create({
       passengerId: req.user._id,
       cityId: data.cityId,
@@ -176,27 +208,48 @@ exports.createOrder = [
       when: { type: data.whenType, ...(data.whenAt && { at: new Date(data.whenAt) }) },
       pax: data.pax,
       ...(data.notes && { notes: data.notes }),
-      matchMode,
-      ...(data.targetDriverId && { mode: "direct", targetDriverId: data.targetDriverId }),
+      matchMode: data.targetDriverId ? "offers" : matchMode,
+      ...(data.targetDriverId && {
+        mode: "direct",
+        targetDriverId: data.targetDriverId,
+      }),
     });
 
-    // Order chat with the dispatcher bot (concept 1.7)
-    const chat = await Chat.create({
-      type: "order",
-      cityId: data.cityId,
-      orderId: order._id,
-      members: [req.user._id],
-    });
+    // Direct orders reuse the existing direct chat as the order chat; the
+    // previous conversation and call log stay in place (concept 1.6)
+    let chat;
+    if (directContext && data.chatId) {
+      chat = await Chat.findById(data.chatId);
+      if (
+        !chat ||
+        !chat.members.some((member) => String(member) === String(req.user._id)) ||
+        !chat.members.some((member) => String(member) === String(data.targetDriverId))
+      ) {
+        throw new ApiError(400, "Чат не найден между пассажиром и водителем");
+      }
+      chat.type = "order";
+      chat.orderId = order._id;
+      await chat.save();
+    } else {
+      chat = await Chat.create({
+        type: "order",
+        cityId: data.cityId,
+        orderId: order._id,
+        members: [req.user._id],
+      });
+    }
     order.chatId = chat._id;
 
     const actor = { userId: req.user._id, role: "passenger" };
     const { events } = await transition(order, "publish", actor);
 
-    const expiresAt = new Date(
-      Date.now() + (city.settings?.cascadeTimeouts?.expire ?? 300) * 1000
-    );
-    order.expiresAt = expiresAt;
+    const timeoutSeconds =
+      directContext
+        ? (city.settings?.directOrderTimeoutMin ?? 10) * 60
+        : (city.settings?.cascadeTimeouts?.expire ?? 300);
+    order.expiresAt = new Date(Date.now() + timeoutSeconds * 1000);
     await order.save();
+    await botDispatcher.upsertOrderCard(order);
 
     // Direct orders go to the target driver only; broadcast orders fan out
     // to the zone of departure and the city (concept 1.6)
@@ -538,6 +591,19 @@ exports.acceptOrder = [
     if (order.mode === "direct") {
       if (String(order.targetDriverId) !== String(req.user._id))
         throw new ApiError(403, "Этот прямой заказ оформлен другому водителю");
+
+      // For "now" orders the driver must still be online and free
+      if (order.when?.type !== "scheduled") {
+        const targetProfile = await driverProfileForOrder({ driverId: req.user._id });
+        if (!targetProfile || targetProfile.shift === "offline")
+          throw new ApiError(409, "Вы не на линии: сначала выйдите на смену");
+
+        const busy = await Order.exists({
+          driverId: req.user._id,
+          status: { $in: ["ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE"] },
+        });
+        if (busy) throw new ApiError(409, "У вас уже есть активный заказ");
+      }
     } else if (order.matchMode !== "first_take") {
       throw new ApiError(409, "В этом режиме нужно прислать отклик");
     }
@@ -599,6 +665,94 @@ exports.assignByDispatcher = [
     });
   }),
 ];
+
+// POST /api/orders/:id/decline — the target driver declines a direct order;
+// the passenger is then offered to publish it for everyone (concept 1.6)
+exports.declineDirectOrder = catchAsyncError(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new ApiError(404, "Заказ не найден");
+  if (order.mode !== "direct")
+    throw new ApiError(400, "Отклонить можно только прямой заказ");
+
+  const actor = { userId: req.user._id, role: "driver" };
+  const { events } = await transition(order, "cancel", actor, {
+    reason: req.body?.reason ?? "Водитель отклонил заказ",
+  });
+
+  await botDispatcher.postSystemMessage(
+    order.chatId,
+    "Вы можете опубликовать заказ для всех водителей города"
+  );
+
+  emitOrderEvents(events);
+
+  res.json({
+    status: "success",
+    data: { order: await serializeOrderFor(order, req) },
+  });
+});
+
+// POST /api/orders/:id/republish — the passenger publishes a declined or
+// timed-out direct order as a regular city order (concept 1.6)
+exports.republishOrder = catchAsyncError(async (req, res) => {
+  const original = await Order.findById(req.params.id);
+  if (!original) throw new ApiError(404, "Заказ не найден");
+  if (String(original.passengerId) !== String(req.user._id))
+    throw new ApiError(403, "Это не ваш заказ");
+  if (original.mode !== "direct")
+    throw new ApiError(400, "Опубликовать заново можно только прямой заказ");
+  if (original.status !== "CANCELLED")
+    throw new ApiError(409, "Заказ ещё не отклонён и не истёк");
+
+  const city = await City.findById(original.cityId);
+  if (!city) throw new ApiError(404, "Город не найден");
+  if (!["PILOT", "ACTIVE"].includes(city.status))
+    throw new ApiError(403, "В вашем городе заказы ещё не открыты");
+
+  const order = await Order.create({
+    passengerId: original.passengerId,
+    cityId: original.cityId,
+    fromZone: original.fromZone,
+    toZone: original.toZone,
+    from: original.from,
+    to: original.to,
+    exactFrom: original.exactFrom,
+    exactTo: original.exactTo,
+    when: original.when,
+    pax: original.pax,
+    notes: original.notes,
+    matchMode: city.settings?.matchMode ?? "offers",
+    mode: "broadcast",
+  });
+
+  const chat = await Chat.create({
+    type: "order",
+    cityId: order.cityId,
+    orderId: order._id,
+    members: [req.user._id],
+  });
+  order.chatId = chat._id;
+
+  const actor = { userId: req.user._id, role: "passenger" };
+  const { events } = await transition(order, "publish", actor);
+
+  order.expiresAt = new Date(
+    Date.now() + (city.settings?.cascadeTimeouts?.expire ?? 300) * 1000
+  );
+  await order.save();
+  await botDispatcher.upsertOrderCard(order);
+
+  events.push(
+    { room: `zone:${order.fromZone}`, event: "order:new", payload: { orderId: order._id } },
+    { room: `city:${order.cityId}`, event: "order:new", payload: { orderId: order._id } }
+  );
+  emitOrderEvents(events);
+
+  res.status(201).json({
+    status: "success",
+    data: { order: await serializeOrderFor(order, req) },
+  });
+});
 
 // GET /api/orders/:id/messages — order chat history (bot + participants)
 exports.listMessages = catchAsyncError(async (req, res) => {

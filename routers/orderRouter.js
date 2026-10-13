@@ -21,5 +21,7 @@ router.route("/:id/assign").post(orderController.assignByDispatcher);
 router.route("/:id/messages").get(orderController.listMessages);
 router.route("/:id/messages").post(orderController.sendOrderMessage);
 router.route("/:id/calls").get(callController.listOrderCalls);
+router.route("/:id/decline").post(orderController.declineDirectOrder);
+router.route("/:id/republish").post(orderController.republishOrder);
 
 module.exports = router;

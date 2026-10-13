@@ -17,6 +17,9 @@ const driverRouter = require("./routers/driverRouter");
 const userRouter = require("./routers/userRouter");
 const orderRouter = require("./routers/orderRouter");
 const callRouter = require("./routers/callRouter");
+const socialRouter = require("./routers/socialRouter");
+const citiesRouter = require("./routers/citiesRouter");
+const chatRouter = require("./routers/chatRouter");
 const { protect } = require("./utilities/auth");
 const errorController = require("./controllers/errorController");
 
@@ -58,6 +61,9 @@ app.use("/api/drivers", driverRouter);
 app.use("/api/users", userRouter);
 app.use("/api/orders", orderRouter);
 app.use("/api/calls", callRouter);
+app.use("/api/cities", citiesRouter);
+app.use("/api/chats", chatRouter);
+app.use("/api", socialRouter);
 
 // Error handle middleware
 app.use(errorController);

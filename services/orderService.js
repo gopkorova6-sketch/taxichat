@@ -83,7 +83,14 @@ const assertTransition = (order, event, actor) => {
       throw new ApiError(403, "Это не ваш заказ");
   }
   if (actor.role === "driver") {
-    if (!order.driverId || String(order.driverId) !== String(actor.userId))
+    const isAssigned =
+      order.driverId && String(order.driverId) === String(actor.userId);
+    // The target driver of a direct order may decline it before assignment
+    const isDirectTarget =
+      order.mode === "direct" &&
+      order.status === "PUBLISHED" &&
+      String(order.targetDriverId) === String(actor.userId);
+    if (!isAssigned && !isDirectTarget)
       throw new ApiError(403, "Заказ назначен не вам");
   }
   // dispatcher membership in the order city is checked by the caller
