@@ -1,11 +1,10 @@
 import DeleteChat from "./components/globals/DeleteChat";
 import DeleteContact from "./components/globals/DeleteContact";
 import NewContactForm from "./components/globals/NewContactForm";
-import Sidebar from "./components/globals/Sidebar";
 import VoiceCallModal from "./components/globals/VoiceCallModal";
 import Authentication from "./pages/Authentication";
-import Chat from "./pages/Chat";
 import UserProfile from "./pages/UserProfile";
+import TaxiApp from "./taxi/TaxiApp";
 import useInit from "./hooks/useInit";
 import Notification from "./components/globals/Notification";
 import { useSelector } from "react-redux";
@@ -21,10 +20,8 @@ function App() {
     <div className="w-full h-full flex overflow-hidden bg-primary relative">
       {loggedIn && (
         <>
-          {/* Sidebar to show ChatList, Contacts, Settings Page */}
-          <Sidebar />
-          {/* Chat to show messages */}
-          <Chat />
+          {/* TaxiChat workspace (legacy contact chats inside the "Чаты" tab) */}
+          <TaxiApp />
           <UserProfile />
         </>
       )}
