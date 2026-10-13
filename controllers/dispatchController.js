@@ -116,6 +116,16 @@ exports.reviewDriver = [
       await membership.save();
     }
 
+    // Notify the applicant so the client can refresh the roles
+    const { emitOrderEvents } = require("../utilities/sockets");
+    emitOrderEvents([
+      {
+        room: `user:${membership.userId}`,
+        event: "membership:updated",
+        payload: { cityId: String(membership.cityId), role: "driver", status: membership.status },
+      },
+    ]);
+
     await logAudit({
       actorId: req.user._id,
       action: "dispatch.driverReviewed",

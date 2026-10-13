@@ -286,6 +286,38 @@ describe("Memberships and RBAC", () => {
     expect(res.body.data.membership.status).toBe("ACTIVE");
   });
 
+  it("waitlist passengers activate automatically when the city reaches PILOT", async () => {
+    // Passenger joins while the city is DORMANT -> WAITLIST
+    const earlyPassenger = await registerUser(app);
+    const joined = await passengerJoin(earlyPassenger.cookie, kazan._id);
+    expect(joined.body.data.membership.status).toBe("WAITLIST");
+
+    const dispatcherUser = await registerUser(app);
+    await becomeDispatcher(superadmin.cookie, dispatcherUser.user._id, kazan._id);
+    for (let i = 0; i < 3; i += 1) {
+      const driver = await registerUser(app);
+      const applied = await applyAsDriver(driver.cookie, {
+        cityId: kazan._id,
+        zones: [kazanZones[i]._id],
+        plate: `${300 + i}`,
+        phone: `+7900000040${i}`,
+      });
+      await request(app)
+        .patch(`/api/dispatch/drivers/${applied.body.data.membership._id}`)
+        .set("Cookie", dispatcherUser.cookie)
+        .send({ decision: "approve" });
+    }
+
+    // The city is PILOT now; the waitlist passenger must be ACTIVE
+    const mine = await request(app)
+      .get("/api/memberships/mine")
+      .set("Cookie", earlyPassenger.cookie);
+    const membership = mine.body.data.memberships.find(
+      (item) => item.role === "passenger"
+    );
+    expect(membership.status).toBe("ACTIVE");
+  });
+
   it("/me returns memberships", async () => {
     const user = await registerUser(app);
     await passengerJoin(user.cookie, kazan._id);

@@ -20,7 +20,8 @@ const computeCityStatus = (city, counts = {}) => {
 };
 
 // Recounts memberships of the city and persists the recalculated status.
-// Runs on every membership change (concept 1.4: transitions are automatic).
+// When the city grows to PILOT or ACTIVE, passengers from the waitlist are
+// activated automatically (concept 1.4). Idempotent.
 const recalcCityStatus = async (cityId) => {
   const Membership = require("../models/Membership");
   const City = require("../models/City");
@@ -37,12 +38,45 @@ const recalcCityStatus = async (cityId) => {
   const from = city.status;
   const to = computeCityStatus(city, { members, drivers, dispatchers });
 
+  let activatedPassengers = [];
+  if (to !== from && ["PILOT", "ACTIVE"].includes(to)) {
+    const waitlist = await Membership.find({
+      cityId,
+      role: "passenger",
+      status: "WAITLIST",
+    }).select("userId");
+    if (waitlist.length > 0) {
+      await Membership.updateMany(
+        { cityId, role: "passenger", status: "WAITLIST" },
+        { $set: { status: "ACTIVE" } }
+      );
+      activatedPassengers = waitlist.map((item) => item.userId);
+    }
+  }
+
   if (to !== from) {
     city.status = to;
     await city.save();
   }
 
-  return { from, to, counts: { members, drivers, dispatchers }, changed: to !== from };
+  if (activatedPassengers.length > 0) {
+    const { emitOrderEvents } = require("./sockets");
+    emitOrderEvents(
+      activatedPassengers.map((userId) => ({
+        room: `user:${userId}`,
+        event: "membership:updated",
+        payload: { cityId: String(cityId), role: "passenger", status: "ACTIVE" },
+      }))
+    );
+  }
+
+  return {
+    from,
+    to,
+    counts: { members, drivers, dispatchers },
+    changed: to !== from,
+    activatedPassengers,
+  };
 };
 
 module.exports = { computeCityStatus, recalcCityStatus, CITY_STATUSES };

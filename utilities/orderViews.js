@@ -60,7 +60,7 @@ const toPassengerView = (order, { driverProfile } = {}) => {
 
 // Driver view: exact addresses and passenger identity are revealed only to
 // the assigned driver after ASSIGNED; other drivers keep seeing the card
-const toDriverView = (order, { viewerId } = {}) => {
+const toDriverView = (order, { viewerId, passenger } = {}) => {
   const viewerIsAssigned =
     Boolean(order.driverId) &&
     Boolean(viewerId) &&
@@ -82,6 +82,9 @@ const toDriverView = (order, { viewerId } = {}) => {
     // The passenger name is revealed to the assigned driver only; the
     // passenger's phone is never shown to drivers (concept 1.5)
     view.passengerId = order.passengerId;
+    if (passenger) {
+      view.passenger = { name: passenger.name };
+    }
   }
 
   return view;

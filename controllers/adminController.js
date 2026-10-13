@@ -137,6 +137,20 @@ exports.reviewApplication = [
       });
     }
 
+    // Notify the applicant so the client can refresh the roles
+    const { emitOrderEvents } = require("../utilities/sockets");
+    emitOrderEvents([
+      {
+        room: `user:${application.userId}`,
+        event: "membership:updated",
+        payload: {
+          cityId: String(application.cityId),
+          role: application.type,
+          status: decision === "approve" ? "ACTIVE" : application.status,
+        },
+      },
+    ]);
+
     await logAudit({
       actorId: req.user._id,
       action: "admin.applicationReviewed",

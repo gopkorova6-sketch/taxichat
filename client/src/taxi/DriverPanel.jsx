@@ -6,6 +6,7 @@ import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
 import DirectChat from "./DirectChat";
 import ChatList from "./ChatList";
+import { statusLabel } from "./statusLabels";
 
 // Driver panel: shift toggle, live feed of published orders, assigned orders
 const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
@@ -185,7 +186,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
           {mine.map((order) => (
             <div key={order._id} className="bg-secondary rounded p-3 text-sm">
               <div className="font-semibold">{order.from?.text} → {order.to?.text}</div>
-              <div className="text-secondary-text">{order.status}</div>
+              <div className="text-secondary-text">{statusLabel(order.status)}</div>
               <div className="flex gap-2 mt-2 flex-wrap">
                 {order.status === "ASSIGNED" && (
                   <button className="bg-accent text-white px-3 py-1 rounded" onClick={() => myAction(order, "arrive")}>Выехал</button>

@@ -8,6 +8,7 @@ const City = require("../models/City");
 const Membership = require("../models/Membership");
 const DriverProfile = require("../models/DriverProfile");
 const Message = require("../models/Message");
+const User = require("../models/User");
 const ApiError = require("../utilities/errors");
 const catchAsyncError = require("../utilities/catchAsyncError");
 const { validateBody } = require("../utilities/catchAsyncError");
@@ -125,7 +126,8 @@ const serializeOrderFor = async (order, req) => {
       driverProfile: await driverProfileForOrder(order),
     });
   }
-  return toDriverView(order, { viewerId });
+  const passengerUser = await User.findById(order.passengerId).select("name");
+  return toDriverView(order, { viewerId, passenger: passengerUser });
 };
 
 // POST /api/orders

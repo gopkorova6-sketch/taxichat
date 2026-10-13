@@ -191,12 +191,13 @@ describe("Orders and the state machine", () => {
     expect(accepted.body.data.order.priceAgreed).toBe("350 руб");
     expect(accepted.body.data.order.driver.phone).toBe("+79000000010");
 
-    // The assigned driver now sees exact addresses and the passenger identity
+    // The assigned driver sees exact addresses, passenger identity and name
     const driverView = await request(app)
       .get(`/api/orders/${orderId}`)
       .set("Cookie", world.drivers[0].cookie);
     expect(driverView.body.data.order.exactFrom).toBe("ул. Привокзальная, 1");
     expect(driverView.body.data.order.passengerId).toBeDefined();
+    expect(driverView.body.data.order.passenger.name).toBe("Тестовый Пользователь");
 
     // The other drivers still do not
     const otherDriverView = await request(app)

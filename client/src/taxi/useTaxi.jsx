@@ -33,6 +33,13 @@ const useTaxi = () => {
         setCityId((prev) => prev ?? res.data.cities[0]?._id ?? null);
       })
       .catch((err) => setError(err.message));
+
+    // Roles change live: driver application review, waitlist activation
+    const onMembershipUpdated = () => refreshMe();
+    socketListen("membership:updated", onMembershipUpdated);
+    return () => {
+      socket.off("membership:updated", onMembershipUpdated);
+    };
   }, []);
 
   // Auto-select the role for the chosen city

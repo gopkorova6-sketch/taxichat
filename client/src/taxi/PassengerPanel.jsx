@@ -4,6 +4,7 @@ import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
 import DirectChat from "./DirectChat";
 import ChatList from "./ChatList";
+import { statusLabel } from "./statusLabels";
 
 // Passenger panel: order form, my orders, free drivers with direct calls
 const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
@@ -322,7 +323,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
               onClick={() => setView({ type: "order", id: order._id })}
             >
               <div className="font-semibold">{order.from?.text} → {order.to?.text}</div>
-              <div className="text-secondary-text">{order.status} · {order.pax} пасс.</div>
+              <div className="text-secondary-text">{statusLabel(order.status)} · {order.pax} пасс.</div>
             </button>
           ))}
         </div>

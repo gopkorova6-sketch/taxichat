@@ -2,20 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useReactMediaRecorder } from "react-media-recorder";
 import { apiGet, apiPost, apiUpload } from "./api";
 import useSocket from "../hooks/useSocket";
-
-const STATUS_LABELS = {
-  DRAFT: "Запланирован (ждёт активации)",
-  PUBLISHED: "Ожидает водителя",
-  ASSIGNED: "Водитель назначен",
-  ARRIVING: "Водитель выехал",
-  WAITING: "Водитель на месте",
-  IN_RIDE: "Идёт поездка",
-  COMPLETED: "Завершён",
-  EXPIRED: "Истёк",
-  CANCELLED: "Отменён",
-  NO_SHOW: "Неявка",
-  DISPUTE: "Спор",
-};
+import { statusLabel } from "./statusLabels";
 
 // Chat of a single order: bot card, system messages, quick action buttons,
 // offers, SOS and the trip rating (concept 1.7)
@@ -229,7 +216,8 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           Заказ {order.from?.text} → {order.to?.text}
         </div>
         <div className="text-sm text-secondary-text">
-          {STATUS_LABELS[order.status] ?? order.status}
+          {order.passenger?.name ? `${order.passenger.name} · ` : ""}
+          {statusLabel(order.status)}
         </div>
         <div className="ml-auto flex gap-2">
           {isParticipant && CALLABLE.includes(order.status) && otherId && (
