@@ -14,7 +14,7 @@
       "onAutoForward": "openBrowser"
     }
   },
-  "postCreateCommand": "npm ci --no-audit --no-fund && npm ci --prefix client --no-audit --no-fund && npm run build --prefix client",
+  "postCreateCommand": "npm ci --no-audit --no-fund && npm ci --prefix client --no-audit --no-fund && npm run build --prefix client && (nohup npm start > server.log 2>&1 &)",
   "customizations": {
     "vscode": {
       "extensions": [
