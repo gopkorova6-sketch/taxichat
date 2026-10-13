@@ -103,7 +103,7 @@ function NewContactForm() {
               <div className="flex-grow">
                 <FormField
                   name="name"
-                  labelName="Name"
+                            labelName="Имя"
                   required={true}
                   error={errors.name}
                   touched={touched.name}
@@ -114,7 +114,7 @@ function NewContactForm() {
             {/* Bottom */}
             <FormField
               name="username"
-              labelName="Username"
+                            labelName="Логин"
               required={true}
               error={errors.username}
               touched={touched.username}

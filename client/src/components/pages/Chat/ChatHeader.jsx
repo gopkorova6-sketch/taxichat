@@ -72,15 +72,19 @@ function ChatHeader({ chatProfile, className }) {
             </h2>
             {chatProfile.mode && (
               <span className="text-cta-icon italic text-[1.4rem] font-normal -translate-y-[.4rem]">
-                {chatProfile.mode} {chatProfile.mode === "recording" && "audio"}
+                {chatProfile.mode === "typing"
+                  ? "печатает..."
+                  : chatProfile.mode === "recording"
+                    ? "записывает аудио..."
+                    : chatProfile.mode}
                 ...
               </span>
             )}
             {!chatProfile.mode && (
               <span className="text-secondary text-[1.4rem] font-normal -translate-y-[.4rem]">
                 {chatProfile.status?.online
-                  ? "online"
-                  : `last seen at ${lastSeenTime}`}
+                  ? "в сети"
+                  : `был(а) в ${lastSeenTime}`}
               </span>
             )}
           </div>

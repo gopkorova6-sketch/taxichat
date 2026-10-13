@@ -27,7 +27,7 @@ function SearchBar({ className, handleSearchValue, searchValue }) {
         type="text"
         name="search"
         className="flex-grow focus-within:outline-none bg-transparent"
-        placeholder="Search"
+        placeholder="Поиск"
         value={searchValue}
         onChange={handleSearchValue}
       />

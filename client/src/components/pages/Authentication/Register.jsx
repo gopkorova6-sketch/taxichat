@@ -11,15 +11,15 @@ const schema = Yup.object().shape({
   name: Yup.string()
     .min(1, "Too short")
     .max(50, "Too long")
-    .required("Field is required"),
+    .required("Обязательное поле"),
   username: Yup.string()
     .min(1, "Too short")
     .max(50, "Too long")
-    .required("Field is required"),
-  password: Yup.string().required("Field is required"),
+    .required("Обязательное поле"),
+  password: Yup.string().required("Обязательное поле"),
   confirmPassword: Yup.string()
-    .required("Field is required")
-    .oneOf([Yup.ref("password"), null], "Passwords must match"),
+    .required("Обязательное поле")
+    .oneOf([Yup.ref("password"), null], "Пароли не совпадают"),
 });
 
 function Register({ setUserWantsToLogin }) {
@@ -51,7 +51,7 @@ function Register({ setUserWantsToLogin }) {
         {({ errors, values }) => (
           <Form className="flex flex-col gap-[1.5rem]" autoComplete="off">
             <FormField
-              labelName="Name"
+              labelName="Имя"
               labelClassName={`bg-transparent group-focus-within:hidden ${
                 values.name && "hidden"
               }`}
@@ -62,7 +62,7 @@ function Register({ setUserWantsToLogin }) {
             />
 
             <FormField
-              labelName="Username"
+              labelName="Логин"
               labelClassName={`bg-transparent group-focus-within:hidden ${
                 values.username && "hidden"
               }`}
@@ -73,7 +73,7 @@ function Register({ setUserWantsToLogin }) {
             />
 
             <FormField
-              labelName="Password"
+              labelName="Пароль"
               labelClassName={`bg-transparent group-focus-within:hidden ${
                 values.password && "hidden"
               }`}
@@ -85,7 +85,7 @@ function Register({ setUserWantsToLogin }) {
             />
 
             <FormField
-              labelName="Confirm Password"
+              labelName="Повторите пароль"
               labelClassName={`bg-transparent group-focus-within:hidden ${
                 values.confirmPassword && "hidden"
               }`}
@@ -106,7 +106,7 @@ function Register({ setUserWantsToLogin }) {
               }`}
               type="submit"
             >
-              {reqState !== "loading" && "Join"}
+              {reqState !== "loading" && "Создать аккаунт"}
               {reqState === "loading" && (
                 <Spinner className="w-[2.5rem] h-[2.5rem]" />
               )}

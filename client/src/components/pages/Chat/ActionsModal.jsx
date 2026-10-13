@@ -68,7 +68,7 @@ function ActionsModal({ chatProfile }) {
             className="!fill-transparent !stroke-danger"
           />
         </svg>
-        {chatRoom.roomType === "Private" ? "Delete Chat" : "Leave Group"}
+        {chatRoom.roomType === "Private" ? "Удалить чат" : "Покинуть группу"}
       </ModalChild>
     </Modal>
   );

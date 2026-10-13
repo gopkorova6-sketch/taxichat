@@ -24,8 +24,8 @@ function ContactItem({
         <p className="font-semibold cursor-default">{contactName}</p>
         <p className="text-secondary-text text-[1.5rem] cursor-default">
           {contactDetails.status.online
-            ? "online"
-            : `last seen at ${formattedTime}`}
+            ? "в сети"
+            : `был(а) в ${formattedTime}`}
         </p>
       </div>
     </div>

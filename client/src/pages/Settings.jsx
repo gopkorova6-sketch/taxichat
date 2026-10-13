@@ -57,7 +57,7 @@ function Settings() {
             />
           </svg>
         </IconWrapper>
-        <h2 className="text-[2rem] font-semibold ml-[3rem]">Settings</h2>
+        <h2 className="text-[2rem] font-semibold ml-[3rem]">Настройки</h2>
         <IconWrapper
           onClick={() =>
             dispatch(
@@ -151,13 +151,13 @@ function Settings() {
                   error={errors.name}
                   name="name"
                   required={true}
-                  labelName="Name"
+                  labelName="Имя"
                 />
                 <FormField
                   value={values.username}
                   name="username"
                   required={false}
-                  labelName="Username"
+                  labelName="Логин"
                 />
                 <FormField
                   value={values.bio}

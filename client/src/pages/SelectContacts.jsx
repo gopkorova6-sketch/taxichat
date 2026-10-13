@@ -68,7 +68,7 @@ function SelectContacts() {
           <input
             type="text"
             className="focus-within:outline-none placeholder:text-secondary-text bg-transparent w-full ml-[1rem]"
-            placeholder="Who would you like to add?"
+                    placeholder="Кого хотите добавить?"
             onChange={handleSearchValue}
             value={searchValue}
           />

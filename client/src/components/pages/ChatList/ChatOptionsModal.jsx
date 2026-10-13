@@ -132,7 +132,7 @@ function ChatOptionsModal() {
             className="!fill-transparent !stroke-danger"
           />
         </svg>
-        {chatData.roomType ? "Delete Chat" : "Leave Group"}
+        {chatData.roomType ? "Удалить чат" : "Покинуть группу"}
       </ModalChild>
     </Modal>
   );

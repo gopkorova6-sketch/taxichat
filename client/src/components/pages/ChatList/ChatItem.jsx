@@ -151,7 +151,11 @@ function ChatItem({ chatData }) {
                 activeChat && "!text-white sm:!text-cta-icon"
               }`}
             >
-              {chatMode} {chatMode === "recording" && "audio"}...
+              {chatMode === "typing"
+                ? "печатает..."
+                : chatMode === "recording"
+                  ? "записывает аудио..."
+                  : chatMode}...
             </span>
           )}
 

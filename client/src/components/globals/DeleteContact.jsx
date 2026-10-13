@@ -37,7 +37,7 @@ function DeleteContact() {
       className="w-[30rem] !px-[2rem] pb-[2rem]"
       canOverlayClose={true}
     >
-      <h2 className="font-semibold text-[2rem]">Delete Contact</h2>
+      <h2 className="font-semibold text-[2rem]">Удалить контакт</h2>
       <p className="">
         Are you sure you want to delete {contactData?.profile?.name} contact?
       </p>
@@ -49,7 +49,7 @@ function DeleteContact() {
           onClick={deleteContactHandler}
           className="text-danger rounded-md font-semibold uppercase p-[1rem] hover:bg-secondary-light-text"
         >
-          Delete Contact
+          Удалить контакт
         </button>
       </div>
     </Modal>

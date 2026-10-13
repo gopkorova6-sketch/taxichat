@@ -8,8 +8,8 @@ import { authActions } from "../../../store/authSlice";
 import Spinner from "../../globals/Spinner";
 
 const schema = Yup.object().shape({
-  username: Yup.string().required("Field is required"),
-  password: Yup.string().required("Field is required"),
+  username: Yup.string().required("Обязательное поле"),
+  password: Yup.string().required("Обязательное поле"),
 });
 
 function Login({ setUserWantsToLogin }) {
@@ -39,7 +39,7 @@ function Login({ setUserWantsToLogin }) {
         {({ errors, values }) => (
           <Form className="flex flex-col gap-[1.5rem]" autoComplete="off">
             <FormField
-              labelName="Username"
+              labelName="Логин"
               labelClassName={`bg-transparent group-focus-within:hidden ${
                 values.username && "hidden"
               }`}
@@ -50,7 +50,7 @@ function Login({ setUserWantsToLogin }) {
             />
 
             <FormField
-              labelName="Password"
+              labelName="Пароль"
               labelClassName={`bg-transparent group-focus-within:hidden ${
                 values.password && "hidden"
               }`}
@@ -66,7 +66,7 @@ function Login({ setUserWantsToLogin }) {
               }`}
               type="submit"
             >
-              {reqState !== "loading" && "Login"}
+              {reqState !== "loading" && "Войти"}
               {reqState === "loading" && (
                 <Spinner className="w-[2.5rem] h-[2.5rem]" />
               )}

@@ -34,7 +34,7 @@ const useUpload = (fn, formatsAllowed) => {
     if (file.size > limit) {
       dispatch(
         notificationActions.addNotification({
-          message: "File too large",
+          message: "Файл слишком большой",
           type: "error",
         })
       );
@@ -56,7 +56,7 @@ const useUpload = (fn, formatsAllowed) => {
 
       dispatch(
         notificationActions.addNotification({
-          message: `Only ${errorMessage} allowed`,
+          message: `Разрешены только: ${errorMessage}`,
           type: "error",
         })
       );

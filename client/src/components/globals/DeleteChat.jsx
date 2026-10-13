@@ -25,14 +25,14 @@ function DeleteChat() {
       className="w-[30rem] !px-[2rem] pb-[2rem]"
       canOverlayClose={true}
     >
-      <h2 className="font-semibold text-[2rem]">Discard Chat</h2>
+      <h2 className="font-semibold text-[2rem]">Удалить чат</h2>
       <p className="">
-        Are you sure you want to delete the chat with{" "}
+        Вы уверены, что хотите удалить чат с{" "}
         {chatData?.profile?.name || chatData?.chatProfile?.username}
       </p>
       <div className="flex items-center justify-center gap-[2rem] mt-[1rem]">
         <button className="text-cta-icon rounded-md font-semibold uppercase p-[1rem] hover:bg-secondary-light-text">
-          Cancel
+          Отмена
         </button>
         <button
           onClick={() => {
@@ -40,7 +40,7 @@ function DeleteChat() {
           }}
           className="text-danger rounded-md font-semibold uppercase p-[1rem] hover:bg-secondary-light-text"
         >
-          Delete Chat
+          Удалить
         </button>
       </div>
     </Modal>

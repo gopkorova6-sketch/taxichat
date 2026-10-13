@@ -87,7 +87,7 @@ function UserProfile() {
             {profile.name || profile.username}
           </p>
           <p className="text-secondary-text">
-            {profile.status?.online ? "Online" : `last seen at ${lastSeenTime}`}
+            {profile.status?.online ? "в сети" : `был(а) в ${lastSeenTime}`}
           </p>
         </div>
       </div>
