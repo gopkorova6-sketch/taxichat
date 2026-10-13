@@ -57,7 +57,7 @@ const usePeer = ({ mediaOptions, callDetail }) => {
           "user:callRequest",
           {
             signalData,
-            callType: mediaOptions.video ? "video" : "voice",
+            callType: "voice",
             chatRoomId: currentChatRoomId,
             userId,
           },
@@ -166,7 +166,7 @@ const usePeer = ({ mediaOptions, callDetail }) => {
     });
 
     sendMessage({
-      callType: mediaOptions.video ? "video" : "voice",
+      callType: "voice",
       callRejectReason: reason,
       sender: callDetail.caller ? userId : callDetail.callerId,
       chatRoomId: callDetail.caller ? currentChatRoomId : callDetail.chatRoomId,
@@ -184,7 +184,7 @@ const usePeer = ({ mediaOptions, callDetail }) => {
     });
 
     sendMessage({
-      callType: mediaOptions.video ? "video" : "voice",
+      callType: "voice",
       callDuration: duration,
       sender: callDetail.caller ? userId : callDetail.callerId,
       chatRoomId: callDetail.caller ? currentChatRoomId : callDetail.chatRoomId,
