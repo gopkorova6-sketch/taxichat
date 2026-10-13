@@ -18,3 +18,18 @@ export const apiGet = (url) => request(url);
 export const apiPost = (url, body = {}) => request(url, { method: "POST", body });
 export const apiPatch = (url, body = {}) => request(url, { method: "PATCH", body });
 export const apiDelete = (url) => request(url, { method: "DELETE" });
+
+// Uploads a file to Cloudinary via the server; returns uploadData
+export const apiUpload = async (file, fileType) => {
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+  });
+  const res = await apiPost("/api/upload", {
+    data: base64,
+    fileType: fileType === "audio" ? "video" : fileType,
+  });
+  return res.data.uploadData;
+};

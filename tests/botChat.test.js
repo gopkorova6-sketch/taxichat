@@ -93,6 +93,35 @@ describe("Bot dispatcher: order card and action buttons", () => {
     expect(kinds).toContain("action");
     expect(kinds).toContain("order_card");
   });
+
+  it("order chat supports photo and voice messages", async () => {
+    const order = await createFirstTakeOrder();
+    await request(app)
+      .post(`/api/orders/${order._id}/accept`)
+      .set("Cookie", world.drivers[0].cookie)
+      .send({});
+
+    const photo = await request(app)
+      .post(`/api/orders/${order._id}/messages`)
+      .set("Cookie", world.passenger.cookie)
+      .send({ kind: "photo", imageUrl: "https://res.cloudinary.com/test/photo.jpg" });
+    expect(photo.status).toBe(201);
+    expect(photo.body.data.message.kind).toBe("photo");
+
+    const voice = await request(app)
+      .post(`/api/orders/${order._id}/messages`)
+      .set("Cookie", world.drivers[0].cookie)
+      .send({ kind: "voice", voiceNoteUrl: "https://res.cloudinary.com/test/voice.mp3", voiceNoteDuration: 12 });
+    expect(voice.status).toBe(201);
+    expect(voice.body.data.message.kind).toBe("voice");
+
+    const history = await request(app)
+      .get(`/api/orders/${order._id}/messages`)
+      .set("Cookie", world.passenger.cookie);
+    const kinds = history.body.data.messages.map((message) => message.kind);
+    expect(kinds).toContain("photo");
+    expect(kinds).toContain("voice");
+  });
 });
 
 describe("Contact filter", () => {
@@ -156,5 +185,25 @@ describe("Contact filter", () => {
       .send({ body: "Мой номер 89001234567" });
 
     expect(res.status).toBe(201);
+  });
+
+  it("contact filter applies to text but not to photos", async () => {
+    await City.findByIdAndUpdate(world.city._id, {
+      "settings.filterContacts": true,
+    });
+    const created = await createOrder(app, world.passenger, world.city, world.zones);
+    const orderId = created.body.data.order._id;
+
+    const text = await request(app)
+      .post(`/api/orders/${orderId}/messages`)
+      .set("Cookie", world.passenger.cookie)
+      .send({ body: "Позвоните 89001234567" });
+    expect(text.status).toBe(400);
+
+    const photo = await request(app)
+      .post(`/api/orders/${orderId}/messages`)
+      .set("Cookie", world.passenger.cookie)
+      .send({ kind: "photo", imageUrl: "https://res.cloudinary.com/test/p.jpg" });
+    expect(photo.status).toBe(201);
   });
 });

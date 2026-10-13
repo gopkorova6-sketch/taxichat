@@ -809,10 +809,25 @@ exports.listMessages = catchAsyncError(async (req, res) => {
   });
 });
 
-// POST /api/orders/:id/messages — text messages in the order chat
-const sendOrderMessageSchema = z.object({
-  body: z.string().trim().min(1, "Введите сообщение").max(2000, "Сообщение слишком длинное"),
-});
+// POST /api/orders/:id/messages — text, photo and voice messages
+const sendOrderMessageSchema = z.union([
+  z.object({
+    body: z.string().trim().min(1, "Введите сообщение").max(2000, "Сообщение слишком длинное"),
+  }),
+  z.object({
+    kind: z.literal("photo"),
+    imageUrl: z.string().min(1, "Не передано фото"),
+  }),
+  z.object({
+    kind: z.literal("voice"),
+    voiceNoteUrl: z.string().min(1, "Не передана голосовая запись"),
+    voiceNoteDuration: z
+      .number()
+      .int()
+      .min(1, "Длительность от 1 секунды")
+      .max(600, "Голосовое не длиннее 10 минут"),
+  }),
+]);
 exports.sendOrderMessageSchema = sendOrderMessageSchema;
 
 const PHONE_PATTERN = /(\+?7|8)[\s\-()]?\d{3}[\s\-()]?\d{3}[\s\-()]?\d{2}[\s\-()]?\d{2}/;
@@ -839,7 +854,7 @@ exports.sendOrderMessage = [
 
     // Optional city-level filter for phone numbers and links (concept 1.7)
     const city = await City.findById(order.cityId).select("settings.filterContacts");
-    if (city?.settings?.filterContacts) {
+    if (city?.settings?.filterContacts && req.body.body) {
       if (PHONE_PATTERN.test(req.body.body) || URL_PATTERN.test(req.body.body)) {
         throw new ApiError(
           400,
@@ -852,8 +867,18 @@ exports.sendOrderMessage = [
       chatId: order.chatId,
       senderId: req.user._id,
       senderType: "user",
-      kind: "text",
-      body: req.body.body,
+      ...(req.body.body
+        ? { kind: "text", body: req.body.body }
+        : req.body.kind === "photo"
+          ? { kind: "photo", body: "Фото", meta: { imageUrl: req.body.imageUrl } }
+          : {
+              kind: "voice",
+              body: "Голосовое сообщение",
+              meta: {
+                voiceNoteUrl: req.body.voiceNoteUrl,
+                voiceNoteDuration: req.body.voiceNoteDuration,
+              },
+            }),
     });
 
     emitOrderEvents([
@@ -866,7 +891,9 @@ exports.sendOrderMessage = [
           messageId: message._id,
           senderId: req.user._id,
           senderName: req.user.name,
+          kind: message.kind,
           body: message.body,
+          meta: message.meta,
           createdAt: message.createdAt,
         },
       },

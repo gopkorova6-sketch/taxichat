@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { apiGet, apiPost, apiPatch } from "./api";
+import { useEffect, useRef, useState } from "react";
+import { useReactMediaRecorder } from "react-media-recorder";
+import { apiGet, apiPost, apiUpload } from "./api";
 import useSocket from "../hooks/useSocket";
 
 // Chat of a single order: bot card, system messages, quick action buttons,
@@ -65,7 +66,8 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
     }
   };
 
-  const runAction = async (action) => {
+  const runAction = async (button) => {
+    const action = typeof button === "string" ? button : button.action;
     try {
       if (action === "offer") {
         const priceText = window.prompt("Цена поездки:");
@@ -80,12 +82,79 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
         const reason = window.prompt("Опишите проблему:");
         if (!reason) return;
         await apiPost(`/api/orders/${orderId}/dispute`, { reason });
+      } else if (action === "text") {
+        // Quick replies from the bot ("Опаздываю на 5 минут" etc.)
+        await send(button.text ?? button.label);
+        return;
       } else {
         await apiPost(`/api/orders/${orderId}/action`, { action });
       }
       load();
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const fileInputRef = useRef();
+  const [uploading, setUploading] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const recordTimerRef = useRef();
+
+  const { startRecording, stopRecording } = useReactMediaRecorder({
+    audio: true,
+    blobPropertyBag: { type: "audio/mp3" },
+    onStop: async (_, blob) => {
+      try {
+        setUploading(true);
+        const uploadData = await apiUpload(blob, "audio");
+        await apiPost(`/api/orders/${orderId}/messages`, {
+          kind: "voice",
+          voiceNoteUrl: uploadData.secure_url,
+          voiceNoteDuration: Math.max(1, recordSeconds),
+        });
+        load();
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setUploading(false);
+        setRecording(false);
+        setRecordSeconds(0);
+      }
+    },
+  });
+
+  const toggleRecording = () => {
+    if (recording) {
+      clearInterval(recordTimerRef.current);
+      stopRecording();
+    } else {
+      setRecordSeconds(0);
+      recordTimerRef.current = setInterval(
+        () => setRecordSeconds((seconds) => seconds + 1),
+        1000
+      );
+      setRecording(true);
+      startRecording();
+    }
+  };
+
+  const onPickPhoto = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      setUploading(true);
+      const uploadData = await apiUpload(file, "image");
+      await apiPost(`/api/orders/${orderId}/messages`, {
+        kind: "photo",
+        imageUrl: uploadData.secure_url,
+      });
+      load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -221,11 +290,45 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
                     <button
                       key={button.action + button.label}
                       className="bg-accent text-white px-3 py-1 rounded text-sm"
-                      onClick={() => runAction(button.action)}
+                      onClick={() => runAction(button)}
                     >
                       {button.label}
                     </button>
                   ))}
+              </div>
+            );
+          }
+          if (message.kind === "photo") {
+            return (
+              <div
+                key={message._id}
+                className={`max-w-[70%] rounded p-2 text-sm ${message.mine ? "bg-accent/20 ml-auto" : "bg-secondary"}`}
+              >
+                {message.senderName && <div className="text-xs text-secondary-text">{message.senderName}</div>}
+                <img
+                  src={message.meta?.imageUrl}
+                  alt="Фото"
+                  className="rounded max-h-[16rem]"
+                />
+              </div>
+            );
+          }
+          if (message.kind === "voice") {
+            return (
+              <div
+                key={message._id}
+                className={`max-w-[70%] rounded p-2 text-sm ${message.mine ? "bg-accent/20 ml-auto" : "bg-secondary"}`}
+              >
+                {message.senderName && <div className="text-xs text-secondary-text">{message.senderName}</div>}
+                <div className="flex items-center gap-2">
+                  <span>🎤</span>
+                  <audio controls src={message.meta?.voiceNoteUrl} />
+                  {message.meta?.voiceNoteDuration && (
+                    <span className="text-xs text-secondary-text">
+                      {message.meta.voiceNoteDuration} с
+                    </span>
+                  )}
+                </div>
               </div>
             );
           }
@@ -266,10 +369,34 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
         }}
       >
         <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={onPickPhoto}
+        />
+        <button
+          type="button"
+          className="px-2 text-lg"
+          title="Фото"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          📷
+        </button>
+        <button
+          type="button"
+          className={`px-2 text-lg ${recording ? "text-danger animate-pulse" : ""}`}
+          title="Голосовое сообщение"
+          onClick={toggleRecording}
+        >
+          {recording ? `⏺ ${recordSeconds}с` : "🎤"}
+        </button>
+        <input
           className="flex-1 bg-secondary rounded px-3 py-2 text-sm"
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="Сообщение..."
+          placeholder={uploading ? "Загрузка..." : "Сообщение..."}
+          disabled={uploading || recording}
         />
         <button className="bg-accent text-white px-4 rounded" type="submit">➤</button>
       </form>

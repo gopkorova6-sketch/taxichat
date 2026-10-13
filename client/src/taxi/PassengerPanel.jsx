@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiGet, apiPost, apiPatch, apiDelete } from "./api";
 import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
@@ -26,6 +26,41 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
     notes: "",
     whenType: "now",
   });
+
+  // Landmark autocomplete: "от ЖД" resolves via the server text index
+  const [suggestFor, setSuggestFor] = useState(null); // "from" | "to"
+  const [suggestions, setSuggestions] = useState([]);
+  const suggestTimerRef = useRef();
+
+  const queryLandmarks = (value, field) => {
+    setForm((prev) => ({ ...prev, [`${field}Text`]: value, [`${field}LandmarkId`]: undefined }));
+    setSuggestFor(field);
+    clearTimeout(suggestTimerRef.current);
+    if (!value.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    suggestTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await apiGet(
+          `/api/geo/cities/${cityId}/landmarks?query=${encodeURIComponent(value)}`
+        );
+        setSuggestions(res.data.landmarks);
+      } catch {
+        setSuggestions([]);
+      }
+    }, 300);
+  };
+
+  const pickLandmark = (field, landmark) => {
+    setForm((prev) => ({
+      ...prev,
+      [`${field}Text`]: landmark.name,
+      [`${field}LandmarkId`]: landmark._id,
+    }));
+    setSuggestions([]);
+    setSuggestFor(null);
+  };
 
   const load = async () => {
     try {
@@ -72,6 +107,8 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
         whenType: form.whenType,
       };
       if (form.toZoneId) body.toZoneId = form.toZoneId;
+      if (form.fromLandmarkId) body.fromLandmarkId = form.fromLandmarkId;
+      if (form.toLandmarkId) body.toLandmarkId = form.toLandmarkId;
       if (form.exactFrom) body.exactFrom = form.exactFrom;
       if (form.exactTo) body.exactTo = form.exactTo;
       if (form.notes) body.notes = form.notes;
@@ -166,11 +203,25 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           </select>
           <input
             className="w-full bg-primary p-2 rounded text-sm"
-            placeholder="Откуда (текст)"
+            placeholder="Откуда (текст или ориентир)"
             required
             value={form.fromText}
-            onChange={(event) => setForm({ ...form, fromText: event.target.value })}
+            onChange={(event) => queryLandmarks(event.target.value, "from")}
           />
+          {suggestFor === "from" && suggestions.length > 0 && (
+            <div className="border border-secondary-text/30 rounded text-sm divide-y">
+              {suggestions.map((landmark) => (
+                <button
+                  type="button"
+                  key={landmark._id}
+                  className="w-full text-left px-2 py-1 hover:bg-secondary"
+                  onClick={() => pickLandmark("from", landmark)}
+                >
+                  📍 {landmark.name}
+                </button>
+              ))}
+            </div>
+          )}
           <input
             className="w-full bg-primary p-2 rounded text-sm"
             placeholder="Точный адрес (виден водителю после назначения)"
@@ -189,11 +240,25 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           </select>
           <input
             className="w-full bg-primary p-2 rounded text-sm"
-            placeholder="Куда (текст)"
+            placeholder="Куда (текст или ориентир)"
             required
             value={form.toText}
-            onChange={(event) => setForm({ ...form, toText: event.target.value })}
+            onChange={(event) => queryLandmarks(event.target.value, "to")}
           />
+          {suggestFor === "to" && suggestions.length > 0 && (
+            <div className="border border-secondary-text/30 rounded text-sm divide-y">
+              {suggestions.map((landmark) => (
+                <button
+                  type="button"
+                  key={landmark._id}
+                  className="w-full text-left px-2 py-1 hover:bg-secondary"
+                  onClick={() => pickLandmark("to", landmark)}
+                >
+                  📍 {landmark.name}
+                </button>
+              ))}
+            </div>
+          )}
           <input
             className="w-full bg-primary p-2 rounded text-sm"
             placeholder="Точный адрес назначения"
