@@ -155,24 +155,6 @@ ACTIVE-членствам. На этапе рукопожатия сервер �
 - Журнал аудита назначений, бан аккаунта,
   rate limiting (300 req/min глобально, 20/15 мин на логин).
 
-## Соответствие критериям MVP (концепция 1.17)
-
-| Критерий | Где реализовано / проверено |
-|---|---|
-| Пассажир: регистрация, город, статус, роль | auth API + `/api/geo/*`, вкладка «Роли»; тесты `auth`, `geo` |
-| Водитель: анкета, проверка диспетчером | `POST /api/memberships`, `/api/dispatch/*`; тесты `memberships` |
-| Заказ: создание, каскад, таймауты | конечный автомат + Agenda (`order:cascade`, `order:expire`); тесты `orders`, `jobs` |
-| Отклики и «первый принял» без гонок | `assignAtomically`; тест «first-take race gives exactly one winner» |
-| Чат заказа: карточка, системные сообщения, кнопки, медиа | `botDispatcher`, Message kinds; тесты `botChat` |
-| Сокрытие точных адресов до ASSIGNED | `orderViews`; тест «driver sees the card without exact addresses» |
-| Голосовые звонки: статусы, лимиты, TURN | `callService`, `orderCallController`, `/api/calls/ice`; тесты `calls` |
-| Прямой вызов: список, лимиты, заказ, отказ | `/api/cities/:id/free-drivers`, direct signaling; тесты `directCalls` |
-| Предзаказы: активация, напоминания | `preorder:activate/reminder`, DRAFT до активации; тесты `jobs`, `orders` |
-| Авто-offline и пересчёт статусов городов | `driver:heartbeatSweep`, `city:recalcStatus`; тесты `jobs` |
-| Оценки, SOS, блокировки, автобан | Rating/Complaint/SOS/Block/penalty; тесты `reputation` |
-| Аудит назначений ролей | AuditLog + `/api/admin/audit`; тесты `memberships` |
-| Приватность: телефоны скрыты, verified-сокеты | сериализаторы, socket-handshake JWT; тесты по всем спискам |
-
 ## Клиент
 
 После логина открывается рабочее пространство TaxiChat:
@@ -191,3 +173,70 @@ ACTIVE-членствам. На этапе рукопожатия сервер �
   действий, отклики, фото и голосовые, SOS, оценка, «поделиться поездкой».
 - **Роли** — анкета водителя и заявка на диспетчера.
 - Публичная страница `/share/:token` — статус поездки для близких.
+
+## Развёртывание
+
+### GitHub Codespaces (бесплатно, без установки чего-либо)
+
+1. Откройте репозиторий → **Code** → **Codespaces** → **Create codespace**.
+2. Контейнер собирается сам (Node 20 + сборка клиента), занимает пару минут.
+3. В терминале Codespace: `npm start` — сервер поднимет ephemeral MongoDB,
+   сам засеет демо-данные и начнёт слушать :4000 (клиент уже собран).
+4. Вкладка **Ports** → порт 4000 → ПКМ → **Port visibility → Public**.
+5. Откройте проброшенный URL — приложение доступно из сети.
+   Демо-входы: `passenger`, `driver1`…`driver3`, `dispatcher` (пароль
+   `password123`, см. `npm run seed`).
+
+Для горячей перезагрузки клиента вместо шага 3 запустите `npm run dev` и
+`npm start --prefix client` (порт 3000).
+
+### Google Colab (запасной вариант)
+
+Ноутбук `colab/TaxiChat_Colab.ipynb`: ставит Node 20, клонирует репозиторий,
+запускает приложение и публикует его через cloudflared-туннель.
+
+### Docker (VPS или любой хост с Docker)
+
+```bash
+docker compose up -d --build   # app (:4000) + mongo + coturn
+```
+
+Рядом с `docker-compose.yml` создайте `.env` с `JWT_SECRET_KEY`,
+`CLOUDINARY_NAME/API_KEY/API_SECRET`, `TURN_URL`/`TURN_SECRET` (переменные
+подхватываются compose). Клиент собирается внутри образа и раздаётся API-сервером.
+
+### PaaS (Render / Railway / Fly.io)
+
+1. MongoDB — бесплатный кластер MongoDB Atlas; скопируйте `MONGO_URI`.
+2. Сервис из `Dockerfile` этого репозитория; переменные:
+   `MONGO_URI`, `JWT_SECRET_KEY`, `CLIENT_URL` (адрес фронтенда),
+   `CLOUDINARY_NAME/API_KEY/API_SECRET`, опционально `TURN_URL`/`TURN_SECRET`.
+3. WebSocket поддерживается платформой; для звонков за NAT нужен TURN
+   (coturn из compose на VPS с публичным IP).
+4. Seed: одноразовая задача `npm run seed` с тем же `MONGO_URI`.
+
+Serverless-платформы (Convex, Vercel functions) не подходят: нужны
+долгоживущий процесс с WebSocket, MongoDB и Agenda.
+
+### CI
+
+`.github/workflows/tests.yml` — на каждый push/PR: серверные тесты
+(in-memory MongoDB) и сборка клиента.
+
+## Соответствие критериям MVP (концепция 1.17)
+
+| Критерий | Где реализовано / проверено |
+|---|---|
+| Пассажир: регистрация, город, статус, роль | auth API + `/api/geo/*`, вкладка «Роли»; тесты `auth`, `geo` |
+| Водитель: анкета, проверка диспетчером | `POST /api/memberships`, `/api/dispatch/*`; тесты `memberships` |
+| Заказ: создание, каскад, таймауты | конечный автомат + Agenda (`order:cascade`, `order:expire`); тесты `orders`, `jobs` |
+| Отклики и «первый принял» без гонок | `assignAtomically`; тест «first-take race gives exactly one winner» |
+| Чат заказа: карточка, системные сообщения, кнопки, медиа | `botDispatcher`, Message kinds; тесты `botChat` |
+| Сокрытие точных адресов до ASSIGNED | `orderViews`; тест «driver sees the card without exact addresses» |
+| Голосовые звонки: статусы, лимиты, TURN | `callService`, `orderCallController`, `/api/calls/ice`; тесты `calls` |
+| Прямой вызов: список, лимиты, заказ, отказ | `/api/cities/:id/free-drivers`, direct signaling; тесты `directCalls` |
+| Предзаказы: активация, напоминания | `preorder:activate/reminder`, DRAFT до активации; тесты `jobs`, `orders` |
+| Авто-offline и пересчёт статусов городов | `driver:heartbeatSweep`, `city:recalcStatus`; тесты `jobs` |
+| Оценки, SOS, блокировки, автобан | Rating/Complaint/SOS/Block/penalty; тесты `reputation` |
+| Аудит назначений ролей | AuditLog + `/api/admin/audit`; тесты `memberships` |
+| Приватность: телефоны скрыты, verified-сокеты | сериализаторы, socket-handshake JWT; тесты по всем спискам |

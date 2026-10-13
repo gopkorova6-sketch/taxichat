@@ -1,0 +1,26 @@
+{
+  "name": "TaxiChat",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "forwardPorts": [
+    4000,
+    3000
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "CRA dev server (hot reload)"
+    },
+    "4000": {
+      "label": "TaxiChat (API + client)",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "npm ci --no-audit --no-fund && npm ci --prefix client --no-audit --no-fund && npm run build --prefix client",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "mongodb.mongodb-vscode"
+      ]
+    }
+  }
+}
