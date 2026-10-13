@@ -1,5 +1,6 @@
 const socketIO = require("socket.io");
 const { expressServer } = require("./server");
+const { setIo } = require("./utilities/sockets");
 
 const {
   callRequestController,
@@ -26,6 +27,7 @@ const {
 } = require("./socketControllers/userActionController");
 
 const io = socketIO(expressServer);
+setIo(io);
 
 io.on("connection", async (socket) => {
   // -------------Connection controls -------------- //

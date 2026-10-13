@@ -2,6 +2,7 @@ const {
   checkMembersOffUndeliveredListInMessage,
 } = require("../controllers/chatRoomController");
 const User = require("../models/User");
+const Membership = require("../models/Membership");
 
 exports.getSocketDetails = async (userId) => {
   // Get user model
@@ -13,9 +14,29 @@ exports.getSocketDetails = async (userId) => {
   return { userModel, allRoomsUserIn };
 };
 
+// Joins the membership-scoped rooms: user, city, driver zones (concept 1.13)
+exports.joinMembershipRooms = async (socket, userId) => {
+  socket.join(`user:${userId}`);
+
+  const memberships = await Membership.find({ userId, status: "ACTIVE" }).select(
+    "cityId zones role"
+  );
+  for (const membership of memberships) {
+    socket.join(`city:${membership.cityId}`);
+    if (membership.role === "driver") {
+      for (const zoneId of membership.zones ?? []) {
+        socket.join(`zone:${zoneId}`);
+      }
+    }
+  }
+};
+
 exports.onlineController = (io, socket) => {
   socket.on("user:online", async (userId) => {
     socket.userId = userId;
+    // Join membership rooms first so no events are missed
+    await this.joinMembershipRooms(socket, userId);
+
     // Get user detaiils
     const { userModel, allRoomsUserIn } = await this.getSocketDetails(userId);
 
