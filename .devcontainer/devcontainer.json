@@ -27,5 +27,6 @@
     "ghcr.io/devcontainers/features/sshd:1": {
       "version": "latest"
     }
-  }
+  },
+  "postStartCommand": "bash .devcontainer/start-services.sh"
 }
