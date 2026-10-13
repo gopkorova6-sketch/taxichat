@@ -9,7 +9,11 @@ if [ ! -f ./cloudflared ]; then
   chmod +x ./cloudflared
 fi
 
-# App (ephemeral MongoDB + demo data auto-seed on empty database)
+# App (ephemeral MongoDB + demo data auto-seed on empty database).
+# Rebuild the client if the build output is missing or incomplete.
+if [ ! -f client/build/index.html ]; then
+  npm run build --prefix client
+fi
 (setsid nohup npm start > server.log 2>&1 < /dev/null &)
 
 # Public anonymous tunnel; the trycloudflare URL rotates on every restart

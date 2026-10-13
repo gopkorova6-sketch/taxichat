@@ -8,7 +8,15 @@ const app = require("./app");
 // Serve the prebuilt client (single-port mode); API routes take precedence
 app.use(express.static(path.join(__dirname, "client", "build")));
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "client", "build", "index.html"));
+  const indexFile = path.join(__dirname, "client", "build", "index.html");
+  if (require("fs").existsSync(indexFile)) {
+    res.sendFile(indexFile);
+  } else {
+    // Client build is missing (incomplete install): explain instead of crashing
+    res
+      .status(503)
+      .send("Сборка клиента отсутствует. Выполните: npm run build --prefix client");
+  }
 });
 
 dotenv.config({ path: path.join(__dirname, ".env") });
