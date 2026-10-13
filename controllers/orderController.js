@@ -336,7 +336,57 @@ exports.listOrders = catchAsyncError(async (req, res) => {
     serialized.push(await serializeOrderFor(order, req));
   }
 
+  // Unread human messages per order chat for the current viewer
+  const chatIdList = orders
+    .filter((order) => order.chatId)
+    .map((order) => order.chatId);
+  if (chatIdList.length > 0) {
+    const unreadAgg = await Message.aggregate([
+      {
+        $match: {
+          chatId: { $in: chatIdList },
+          senderType: "user",
+          senderId: { $ne: req.user._id },
+          readBy: { $ne: req.user._id },
+        },
+      },
+      { $group: { _id: "$chatId", count: { $sum: 1 } } },
+    ]);
+    const unreadByChat = new Map(
+      unreadAgg.map((entry) => [String(entry._id), entry.count])
+    );
+    for (const view of serialized) {
+      view.unreadCount = unreadByChat.get(String(view.chatId)) ?? 0;
+    }
+  }
+
   res.json({ status: "success", data: { orders: serialized } });
+});
+
+// POST /api/orders/:id/read — mark all messages of the order chat as read
+exports.markOrderRead = catchAsyncError(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new ApiError(404, "Заказ не найден");
+
+  const isParticipant =
+    String(order.passengerId) === String(req.user._id) ||
+    (order.driverId && String(order.driverId) === String(req.user._id));
+  if (!isParticipant) throw new ApiError(403, "Вы не участник заказа");
+
+  const result = await Message.updateMany(
+    {
+      chatId: order.chatId,
+      senderType: "user",
+      senderId: { $ne: req.user._id },
+      readBy: { $ne: req.user._id },
+    },
+    { $addToSet: { readBy: req.user._id } }
+  );
+
+  res.json({
+    status: "success",
+    data: { marked: result.modifiedCount ?? 0 },
+  });
 });
 
 // GET /api/orders/:id — participant views only, serialized per role
@@ -367,9 +417,26 @@ exports.getOrder = catchAsyncError(async (req, res) => {
   if (!isParticipant && !isDispatcher && !isPotentialDriver)
     throw new ApiError(403, "Нет доступа к этому заказу");
 
+  const orderView = await serializeOrderFor(order, req);
+
+  if (isParticipant && order.chatId) {
+    const unreadAgg = await Message.aggregate([
+      {
+        $match: {
+          chatId: order.chatId,
+          senderType: "user",
+          senderId: { $ne: req.user._id },
+          readBy: { $ne: req.user._id },
+        },
+      },
+      { $group: { _id: "$chatId", count: { $sum: 1 } } },
+    ]);
+    orderView.unreadCount = unreadAgg[0]?.count ?? 0;
+  }
+
   res.json({
     status: "success",
-    data: { order: await serializeOrderFor(order, req) },
+    data: { order: orderView },
   });
 });
 

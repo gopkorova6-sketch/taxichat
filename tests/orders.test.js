@@ -106,6 +106,54 @@ describe("Orders and the state machine", () => {
     ).toBe(true);
   });
 
+  it("unread message counts appear in lists and clear after marking read", async () => {
+    const created = await createBroadcastOrder({ matchMode: "first_take" });
+    const orderId = created.body.data.order._id;
+    await request(app)
+      .post(`/api/orders/${orderId}/accept`)
+      .set("Cookie", world.drivers[0].cookie)
+      .send({});
+
+    // Driver sends two messages to the passenger
+    for (const body of ["Подъезжаю", "У входа"]) {
+      await request(app)
+        .post(`/api/orders/${orderId}/messages`)
+        .set("Cookie", world.drivers[0].cookie)
+        .send({ body });
+    }
+
+    const listBefore = await request(app)
+      .get(`/api/orders?cityId=${world.city._id}`)
+      .set("Cookie", world.passenger.cookie);
+    const card = listBefore.body.data.orders.find((order) => order._id === orderId);
+    expect(card.unreadCount).toBe(2);
+
+    const single = await request(app)
+      .get(`/api/orders/${orderId}`)
+      .set("Cookie", world.passenger.cookie);
+    expect(single.body.data.order.unreadCount).toBe(2);
+
+    // Passenger opens the chat: messages get marked read
+    await request(app)
+      .post(`/api/orders/${orderId}/read`)
+      .set("Cookie", world.passenger.cookie)
+      .send({});
+
+    const listAfter = await request(app)
+      .get(`/api/orders?cityId=${world.city._id}`)
+      .set("Cookie", world.passenger.cookie);
+    const cardAfter = listAfter.body.data.orders.find((order) => order._id === orderId);
+    expect(cardAfter.unreadCount).toBe(0);
+
+    // The outsider never gets counts
+    const outsider = await registerUser(app);
+    const denied = await request(app)
+      .post(`/api/orders/${orderId}/read`)
+      .set("Cookie", outsider.cookie)
+      .send({});
+    expect(denied.status).toBe(403);
+  });
+
   it("outsider has no access to the order", async () => {
     const created = await createBroadcastOrder();
     const outsider = await registerUser(app);

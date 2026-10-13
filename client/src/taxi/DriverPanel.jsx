@@ -185,7 +185,14 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
           {mine.length === 0 && <div className="text-sm text-secondary-text">Нет активных заказов</div>}
           {mine.map((order) => (
             <div key={order._id} className="bg-secondary rounded p-3 text-sm">
-              <div className="font-semibold">{order.from?.text} → {order.to?.text}</div>
+              <div className="flex items-center gap-2">
+                <div className="font-semibold">{order.from?.text} → {order.to?.text}</div>
+                {order.unreadCount > 0 && (
+                  <span className="ml-auto bg-danger text-white rounded-full px-2 text-xs">
+                    {order.unreadCount}
+                  </span>
+                )}
+              </div>
               <div className="text-secondary-text">{statusLabel(order.status)}</div>
               <div className="flex gap-2 mt-2 flex-wrap">
                 {order.status === "ASSIGNED" && (

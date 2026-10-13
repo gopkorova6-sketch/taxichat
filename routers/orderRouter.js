@@ -25,6 +25,7 @@ router.route("/:id/messages").post(orderController.sendOrderMessage);
 router.route("/:id/calls").get(callController.listOrderCalls);
 router.route("/:id/decline").post(orderController.declineDirectOrder);
 router.route("/:id/republish").post(orderController.republishOrder);
+router.route("/:id/read").post(orderController.markOrderRead);
 router.route("/:id/rating").post(reputationController.rateOrder);
 router.route("/:id/sos").post(reputationController.raiseSos);
 router.route("/:id/share").get(shareController.createShareLink);

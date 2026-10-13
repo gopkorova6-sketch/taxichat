@@ -44,7 +44,12 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
 
   useEffect(() => {
     load();
-    const onChanged = () => load();
+    // Mark the chat as read while it is open
+    apiPost(`/api/orders/${orderId}/read`, {}).catch(() => {});
+    const onChanged = () => {
+      load();
+      apiPost(`/api/orders/${orderId}/read`, {}).catch(() => {});
+    };
     socketListen("chat:message", onChanged);
     socketListen("order:status", onChanged);
     socketListen("order:offer", onChanged);

@@ -155,6 +155,24 @@ ACTIVE-членствам. На этапе рукопожатия сервер �
 - Журнал аудита назначений, бан аккаунта,
   rate limiting (300 req/min глобально, 20/15 мин на логин).
 
+## Соответствие критериям MVP (концепция 1.17)
+
+| Критерий | Где реализовано / проверено |
+|---|---|
+| Пассажир: регистрация, город, статус, роль | auth API + `/api/geo/*`, вкладка «Роли»; тесты `auth`, `geo` |
+| Водитель: анкета, проверка диспетчером | `POST /api/memberships`, `/api/dispatch/*`; тесты `memberships` |
+| Заказ: создание, каскад, таймауты | конечный автомат + Agenda (`order:cascade`, `order:expire`); тесты `orders`, `jobs` |
+| Отклики и «первый принял» без гонок | `assignAtomically`; тест «first-take race gives exactly one winner» |
+| Чат заказа: карточка, системные сообщения, кнопки, медиа | `botDispatcher`, Message kinds; тесты `botChat` |
+| Сокрытие точных адресов до ASSIGNED | `orderViews`; тест «driver sees the card without exact addresses» |
+| Голосовые звонки: статусы, лимиты, TURN | `callService`, `orderCallController`, `/api/calls/ice`; тесты `calls` |
+| Прямой вызов: список, лимиты, заказ, отказ | `/api/cities/:id/free-drivers`, direct signaling; тесты `directCalls` |
+| Предзаказы: активация, напоминания | `preorder:activate/reminder`, DRAFT до активации; тесты `jobs`, `orders` |
+| Авто-offline и пересчёт статусов городов | `driver:heartbeatSweep`, `city:recalcStatus`; тесты `jobs` |
+| Оценки, SOS, блокировки, автобан | Rating/Complaint/SOS/Block/penalty; тесты `reputation` |
+| Аудит назначений ролей | AuditLog + `/api/admin/audit`; тесты `memberships` |
+| Приватность: телефоны скрыты, verified-сокеты | сериализаторы, socket-handshake JWT; тесты по всем спискам |
+
 ## Клиент
 
 После логина открывается рабочее пространство TaxiChat:
