@@ -56,6 +56,7 @@ const protect = catchAsyncError(async (req, res, next) => {
 
   const user = await User.findById(payload.userId);
   if (!user) return next(new ApiError(401, "Пользователь не найден"));
+  if (user.banned) return next(new ApiError(403, "Аккаунт заблокирован"));
 
   req.user = user;
   next();

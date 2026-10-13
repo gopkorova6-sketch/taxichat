@@ -62,6 +62,9 @@ exports.login = catchAsyncError(async (req, res, next) => {
   if (!foundUser)
     return next(new ApiError(400, "Неверный логин или пароль"));
 
+  if (foundUser.banned)
+    return next(new ApiError(403, "Аккаунт заблокирован"));
+
   const passwordGivenCorrect = await foundUser.checkPasswordValidity(
     password,
     foundUser.password

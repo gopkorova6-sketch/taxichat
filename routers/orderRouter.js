@@ -1,6 +1,8 @@
 const express = require("express");
 const orderController = require("../controllers/orderController");
 const callController = require("../controllers/callController");
+const reputationController = require("../controllers/reputationController");
+const shareController = require("../controllers/shareController");
 const { protect } = require("../utilities/auth");
 const { loadMemberships } = require("../utilities/rbac");
 
@@ -23,5 +25,8 @@ router.route("/:id/messages").post(orderController.sendOrderMessage);
 router.route("/:id/calls").get(callController.listOrderCalls);
 router.route("/:id/decline").post(orderController.declineDirectOrder);
 router.route("/:id/republish").post(orderController.republishOrder);
+router.route("/:id/rating").post(reputationController.rateOrder);
+router.route("/:id/sos").post(reputationController.raiseSos);
+router.route("/:id/share").get(shareController.createShareLink);
 
 module.exports = router;

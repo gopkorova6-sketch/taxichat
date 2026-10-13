@@ -10,5 +10,6 @@ router.route("/applications").get(adminController.listApplications);
 router.route("/applications/:id").patch(adminController.reviewApplication);
 router.route("/roles").post(adminController.assignRole);
 router.route("/audit").get(adminController.getAudit);
+router.route("/users/:id/ban").patch(adminController.setUserBan);
 
 module.exports = router;

@@ -37,6 +37,9 @@ const driverProfileSchema = new mongoose.Schema(
     acceptDirectCalls: { type: Boolean, default: true },
     // Set while a direct call is in progress; hides the driver from the list
     inCall: { type: Boolean, default: false },
+    // Cached rating aggregate (avg stars), refreshed on each new rating
+    rating: { type: Number, default: null },
+    ratingCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
