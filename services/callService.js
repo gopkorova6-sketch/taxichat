@@ -172,6 +172,12 @@ const finalizeCall = async (io, { callId, result, endedBy, notify = false }) => 
   callLog.durationSec = durationSec;
   await callLog.save();
 
+  // Direct calls release the driver back into the free-drivers list
+  if (callLog.kind === "direct" && callLog.calleeId) {
+    const { setInCall } = require("./directCallService");
+    await setInCall(callLog.calleeId, false);
+  }
+
   if (callLog.chatId) {
     let text;
     if (result === "answered") text = `Звонок ${formatDuration(durationSec)}`;

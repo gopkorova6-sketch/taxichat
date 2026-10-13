@@ -1,21 +1,60 @@
 const callService = require("../services/callService");
+const directCallService = require("../services/directCallService");
 const User = require("../models/User");
 const ApiError = require("../utilities/errors");
 
-// Signaling for calls inside order chats (concept 1.7.1): the server relays
-// WebRTC signals only between participants of the same call. The client uses
-// iceTransportPolicy 'relay' so IP addresses are not exposed (TURN).
+// Signaling for voice calls (concept 1.6 / 1.7.1):
+// - kind "order": calls between participants of an order chat;
+// - kind "direct": a passenger calling a free driver before placing an order.
+// The server relays WebRTC signals only between the two parties. The client
+// uses iceTransportPolicy 'relay' so IPs are not exposed (TURN).
 exports.registerOrderCallHandlers = (io, socket) => {
   socket.on("call:invite", async (payload, acknowledgementFn) => {
+    const kind = payload?.kind;
     try {
-      const { orderId, target, signalData } = payload ?? {};
-      if (!socket.userId || !orderId || !target)
+      const { orderId, target, signalData, cityId } = payload ?? {};
+      if (!socket.userId || !target)
         throw new ApiError(400, "Некорректный вызов");
       if (String(target) === String(socket.userId))
         throw new ApiError(400, "Нельзя позвонить самому себе");
 
       const caller = await User.findById(socket.userId).select("banned name");
       if (!caller || caller.banned) throw new ApiError(403, "Аккаунт заблокирован");
+
+      if (kind === "direct") {
+        // Direct call to a free driver, no order yet
+        directCallService.assertNoConcurrentCall(
+          callService.activeCalls,
+          socket.userId
+        );
+
+        const { callId, chat } = await directCallService.startDirectCall({
+          passenger: caller,
+          driverId: target,
+          cityId: cityId ?? payload.cityId,
+        });
+
+        callService.trackCall(io, {
+          callId,
+          callerId: socket.userId,
+          calleeId: target,
+          kind: "direct",
+        });
+
+        io.to(`user:${target}`).emit("call:invite", {
+          callId,
+          chatId: String(chat._id),
+          kind: "direct",
+          from: socket.userId,
+          fromName: caller.name,
+          signalData,
+        });
+
+        if (acknowledgementFn) acknowledgementFn({ callId, chatId: String(chat._id) });
+        return;
+      }
+
+      if (!orderId) throw new ApiError(400, "Некорректный вызов");
 
       const { callId } = await callService.startCall({
         orderId,
@@ -29,6 +68,7 @@ exports.registerOrderCallHandlers = (io, socket) => {
         callId,
         callerId: socket.userId,
         calleeId: target,
+        kind: "order",
       });
 
       io.to(`user:${target}`).emit("call:invite", {
@@ -44,6 +84,10 @@ exports.registerOrderCallHandlers = (io, socket) => {
       if (acknowledgementFn) acknowledgementFn({ callId });
     } catch (error) {
       if (acknowledgementFn) acknowledgementFn({ error: error.message });
+      // For direct calls a busy or unavailable driver gets a busy signal
+      if (kind === "direct") {
+        socket.emit("call:busy", { target: payload?.target, error: error.message });
+      }
     }
   });
 

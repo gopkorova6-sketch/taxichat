@@ -26,6 +26,7 @@ const {
 } = require("./socketControllers/userActionController");
 
 const { registerOrderCallHandlers } = require("./socketControllers/orderCallController");
+const { registerDriverPresenceHandlers } = require("./socketControllers/driverPresenceController");
 const callService = require("./services/callService");
 
 // Attaches Socket.io to an http server; exported as a factory so tests can
@@ -85,6 +86,10 @@ const initSocket = (httpServer) => {
 
     // ----------- Order voice call signaling ------------ //
     registerOrderCallHandlers(io, socket);
+    //--------------------------------------------------//
+
+    // ----------- Driver shift and heartbeat ------------ //
+    registerDriverPresenceHandlers(io, socket);
     //--------------------------------------------------//
 
     socket.on("disconnect", async () => {
