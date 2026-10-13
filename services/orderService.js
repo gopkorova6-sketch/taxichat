@@ -4,6 +4,7 @@ const Message = require("../models/Message");
 const Membership = require("../models/Membership");
 const DriverProfile = require("../models/DriverProfile");
 const ApiError = require("../utilities/errors");
+const botDispatcher = require("./botDispatcher");
 
 const ORDER_STATUSES = [
   "DRAFT",
@@ -100,7 +101,8 @@ const setDriverShift = async (userId, shift) => {
   );
 };
 
-// Adds the bot system message and keeps chat membership in sync
+// Adds the bot system message, refreshes the pinned order card and posts
+// the quick action buttons for the new status (concept 1.7)
 const updateOrderChat = async (order, { membersToAdd = [], systemText } = {}) => {
   if (!order.chatId) return;
 
@@ -112,13 +114,11 @@ const updateOrderChat = async (order, { membersToAdd = [], systemText } = {}) =>
   }
 
   if (systemText) {
-    await Message.create({
-      chatId: order.chatId,
-      senderType: "bot",
-      kind: "system",
-      body: systemText,
-    });
+    await botDispatcher.postSystemMessage(order.chatId, systemText);
   }
+
+  await botDispatcher.upsertOrderCard(order);
+  await botDispatcher.postActionButtons(order.chatId, order.status);
 
   // Messages of finished orders expire after 90 days (concept 1.10)
   if (TERMINAL_STATUSES.includes(order.status)) {

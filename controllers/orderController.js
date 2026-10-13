@@ -654,6 +654,9 @@ const sendOrderMessageSchema = z.object({
 });
 exports.sendOrderMessageSchema = sendOrderMessageSchema;
 
+const PHONE_PATTERN = /(\+?7|8)[\s\-()]?\d{3}[\s\-()]?\d{3}[\s\-()]?\d{2}[\s\-()]?\d{2}/;
+const URL_PATTERN = /(https?:\/\/|www\.)\S+|\b[\w-]+\.(?:ru|рф|com|net|org)\b/i;
+
 exports.sendOrderMessage = [
   validateBody(sendOrderMessageSchema),
   catchAsyncError(async (req, res) => {
@@ -672,6 +675,17 @@ exports.sendOrderMessage = [
 
     if (!isPassenger && !isAssignedDriver && !isDispatcher)
       throw new ApiError(403, "Нет доступа к чату этого заказа");
+
+    // Optional city-level filter for phone numbers and links (concept 1.7)
+    const city = await City.findById(order.cityId).select("settings.filterContacts");
+    if (city?.settings?.filterContacts) {
+      if (PHONE_PATTERN.test(req.body.body) || URL_PATTERN.test(req.body.body)) {
+        throw new ApiError(
+          400,
+          "Отправка телефонных номеров и ссылок запрещена настройками города"
+        );
+      }
+    }
 
     const message = await Message.create({
       chatId: order.chatId,
