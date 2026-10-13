@@ -78,8 +78,20 @@ exports.logout = (req, res) => {
   res.status(200).json({ status: "success", message: "Вы вышли из аккаунта" });
 };
 
-exports.me = (req, res) => {
-  const user = req.user.toObject();
-  user.password = undefined;
-  res.status(200).json({ status: "success", data: { user } });
-};
+exports.me = catchAsyncError(async (req, res) => {
+  const Membership = require("../models/Membership");
+  const DriverProfile = require("../models/DriverProfile");
+
+  const memberships = await Membership.find({ userId: req.user._id })
+    .populate("cityId", "name status tz")
+    .populate("zones", "name");
+
+  const driverProfiles = await DriverProfile.find({
+    membershipId: { $in: memberships.map((membership) => membership._id) },
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: { user: req.user, memberships, driverProfiles },
+  });
+});

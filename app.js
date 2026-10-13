@@ -9,6 +9,12 @@ const chatRoomRouter = require("./routers/chatRoomRouter");
 const profileRouter = require("./routers/profileRouter");
 const uploadRouter = require("./routers/uploadRouter");
 const geoRouter = require("./routers/geoRouter");
+const membershipRouter = require("./routers/membershipRouter");
+const dispatchRouter = require("./routers/dispatchRouter");
+const applicationRouter = require("./routers/applicationRouter");
+const adminRouter = require("./routers/adminRouter");
+const driverRouter = require("./routers/driverRouter");
+const userRouter = require("./routers/userRouter");
 const { protect } = require("./utilities/auth");
 const errorController = require("./controllers/errorController");
 
@@ -42,6 +48,12 @@ app.use("/api/profile", profileRouter);
 app.use("/api/chatRoom", chatRoomRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/geo", geoRouter);
+app.use("/api/memberships", membershipRouter);
+app.use("/api/dispatch", dispatchRouter);
+app.use("/api/applications", applicationRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api/drivers", driverRouter);
+app.use("/api/users", userRouter);
 
 // Error handle middleware
 app.use(errorController);
