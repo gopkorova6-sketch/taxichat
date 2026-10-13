@@ -8,23 +8,33 @@ const contactsRouter = require("./routers/contactsRouter");
 const chatRoomRouter = require("./routers/chatRoomRouter");
 const profileRouter = require("./routers/profileRouter");
 const uploadRouter = require("./routers/uploadRouter");
-const ReqError = require("./utilities/ReqError");
+const { protect } = require("./utilities/auth");
 const errorController = require("./controllers/errorController");
+
+const allowedOrigins = (process.env.CLIENT_URL ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(cookieParser());
-app.use(cors());
+app.use(
+  cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    credentials: true,
+  })
+);
+
+// Health check
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
+});
 
 // Routes
 app.use("/api/user", authRouter);
 
-// Protector
-app.use("/api/*", (req, res, next) => {
-  if (!req.cookies.userId)
-    return next(new ReqError(400, "You are not logged in"));
-
-  next();
-});
+// Protector: verifies JWT cookie on every remaining API route
+app.use("/api/*", protect);
 
 app.use("/api/contacts", contactsRouter);
 app.use("/api/profile", profileRouter);

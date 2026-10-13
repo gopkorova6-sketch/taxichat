@@ -7,11 +7,24 @@ const app = require("./app");
 
 dotenv.config({ path: "./.env" });
 
+if (!process.env.MONGO_URI) {
+  console.error("MONGO_URI is not set. Copy .env.example to .env and configure it.");
+  process.exit(1);
+}
+
+if (!process.env.JWT_SECRET_KEY) {
+  console.error("JWT_SECRET_KEY is not set. Copy .env.example to .env and configure it.");
+  process.exit(1);
+}
+
 // Connect database
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("Database connected..."))
-  .catch((error) => console.log("An error occured..."));
+  .catch((error) => {
+    console.error("Database connection failed:", error.message);
+    process.exit(1);
+  });
 
 // Serve client folder
 app.use(express.static(path.join(__dirname, "client", "build")));

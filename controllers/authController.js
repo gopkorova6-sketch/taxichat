@@ -1,66 +1,85 @@
+const { z } = require("zod");
 const User = require("../models/User");
-const ReqError = require("../utilities/ReqError");
-const jwt = require("jsonwebtoken");
+const ApiError = require("../utilities/errors");
 const catchAsyncError = require("../utilities/catchAsyncError");
+const { sendAuthCookie, clearAuthCookie } = require("../utilities/auth");
 
-const signToken = (user) => {
-  return jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
+const registerSchema = z
+  .object({
+    name: z.string().trim().min(1, "Укажите имя").max(50, "Имя слишком длинное"),
+    username: z
+      .string()
+      .trim()
+      .min(3, "Логин должен содержать минимум 3 символа")
+      .max(30, "Логин слишком длинный")
+      .regex(/^[a-zA-Z0-9_.-]+$/, "Логин: только латиница, цифры и символы . _ -")
+      .transform((value) => value.toLowerCase()),
+    password: z.string().min(8, "Пароль должен содержать минимум 8 символов"),
+    confirmPassword: z.string().min(1, "Повторите пароль"),
+    bio: z.string().max(100).optional(),
+    avatar: z.string().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Пароли не совпадают",
+    path: ["confirmPassword"],
   });
-};
 
-const assignTokenToCookie = (user, res, statusCode) => {
-  const token = signToken(user);
+const loginSchema = z.object({
+  username: z
+    .string()
+    .trim()
+    .min(1, "Введите логин")
+    .transform((value) => value.toLowerCase()),
+  password: z.string().min(1, "Введите пароль"),
+});
 
-  const cookieOptions = {
-    httpOnly: true,
-    secure: true,
-    expires: new Date(
-      Date.now() + parseInt(process.env.JWT_EXPIRES_IN) * 24 * 60 * 60 * 1000
-    ),
-  };
+exports.registerSchema = registerSchema;
+exports.loginSchema = loginSchema;
 
-  res.cookie("telegramToken", token, cookieOptions);
-  res.cookie("userId", user._id);
+exports.register = catchAsyncError(async (req, res) => {
+  const { name, username, password, bio, avatar } = req.body;
 
-  user.password = undefined;
+  const existing = await User.findOne({ username });
+  if (existing) throw new ApiError(409, "Логин уже занят");
 
-  res.status(statusCode).json({
-    status: "success",
-    data: {
-      token,
-      user,
-    },
+  const newUser = await User.create({
+    name,
+    username,
+    password,
+    confirmPassword: req.body.confirmPassword,
+    ...(bio !== undefined && { bio }),
+    ...(avatar !== undefined && { avatar }),
   });
-};
+
+  sendAuthCookie(newUser, res, 201);
+});
 
 exports.login = catchAsyncError(async (req, res, next) => {
-  // Takes in username and password
   const { username, password } = req.body;
-
-  // If there's no details given
-  if (!username) return next(new ReqError(400, "Username and Password needed"));
 
   const foundUser = await User.findOne({ username });
 
-  //   If username does not exist
   if (!foundUser)
-    return next(new ReqError(400, "Username or Password incorrect"));
+    return next(new ApiError(400, "Неверный логин или пароль"));
 
   const passwordGivenCorrect = await foundUser.checkPasswordValidity(
     password,
     foundUser.password
   );
 
-  //   If given password is incorrect
   if (!passwordGivenCorrect)
-    return next(new ReqError(400, "Username or Password incorrect"));
+    return next(new ApiError(400, "Неверный логин или пароль"));
 
-  assignTokenToCookie(foundUser, res, 200);
+  sendAuthCookie(foundUser, res, 200);
 });
 
-exports.register = catchAsyncError(async (req, res, next) => {
-  const newUser = await User.create(req.body);
+exports.logout = (req, res) => {
+  clearAuthCookie(res);
+  res.status(200).json({ status: "success", message: "Вы вышли из аккаунта" });
+};
 
-  assignTokenToCookie(newUser, res, 201);
-});
+exports.me = (req, res) => {
+  const user = req.user.toObject();
+  user.password = undefined;
+  res.status(200).json({ status: "success", data: { user } });
+};
