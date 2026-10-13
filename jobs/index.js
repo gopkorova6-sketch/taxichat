@@ -1,3 +1,4 @@
+const Agenda = require("agenda");
 const handlers = require("./handlers");
 
 let agenda = null;
@@ -64,9 +65,10 @@ const scheduleWaitingTimer = async (order, waitingMinutes) => {
 };
 
 const initJobs = async (mongoUri) => {
-  // Agenda 5 is ESM-only; loaded dynamically so CJS tests never import it
-  const { default: Agenda } = await import("agenda");
-  agenda = new Agenda({ db: { address: mongoUri, collection: "agendaJobs" } });
+  agenda = new Agenda({
+    db: { address: mongoUri, collection: "agendaJobs" },
+    processEvery: "15 seconds",
+  });
 
   agenda.define("order:cascade", { concurrency: 5 }, (job) =>
     handlers.runCascadeStep(job.attrs.data)

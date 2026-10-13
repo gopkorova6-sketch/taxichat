@@ -111,8 +111,7 @@ const runPreorderActivate = async ({ orderId }) => {
     ["city", timeouts.neighbors ?? 120],
   ];
   const agenda = require("./index").getAgenda();
-  if (!agenda) return;
-  for (const [step, delaySec] of steps) {
+  if (!agenda) return;  for (const [step, delaySec] of steps) {
     await agenda.schedule(
       new Date(Date.now() + delaySec * 1000),
       "order:cascade",
