@@ -5,6 +5,8 @@ dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 const mongoose = require("mongoose");
 const User = require("../models/User");
+const { importGeoData } = require("./geoImport");
+const geoSeed = require("../data/geoSeed");
 
 const PASSWORD = "password123";
 
@@ -26,6 +28,13 @@ const seed = async () => {
   await mongoose.connect(process.env.MONGO_URI);
   console.log(`Connected to database "${mongoose.connection.name}"`);
 
+  console.log("Importing geo reference data...");
+  const summary = await importGeoData(geoSeed);
+  console.log(
+    `  regions: ${summary.regions}, cities: ${summary.cities}, zones: ${summary.zones}, landmarks: ${summary.landmarks}`
+  );
+
+  console.log("Creating demo accounts:");
   for (const { username, name } of users) {
     await User.deleteOne({ username });
     await User.create({
