@@ -163,7 +163,7 @@ function Settings() {
                   value={values.bio}
                   name="bio"
                   required={false}
-                  labelName="Bio"
+                  labelName="О себе"
                 />
                 <button
                   className={`bg-cta-icon text-center mt-auto py-[1rem] mb-[2rem] uppercase font-semibold rounded-xl text-white ${

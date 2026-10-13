@@ -25,6 +25,7 @@ function EmojiModal({ emojiVisible, setEmojiVisible, addEmojiToMessage }) {
           <EmojiPicker
             width="100%"
             lazyLoadEmojis={true}
+            locale="ru"
             // onEmojiClick={(emoji, getImageUrl) =>
             //   setTimeout(() => addEmojiToMessage(emoji, getImageUrl), 100)
             // }

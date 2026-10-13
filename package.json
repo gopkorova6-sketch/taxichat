@@ -1,5 +1,5 @@
 {
-  "name": "taxichat",
+  "name": "bombila",
   "version": "0.1.0",
   "description": "Text messenger for ordering private taxi across Russian cities: order rooms, roles and a server-side dispatcher bot",
   "main": "index.js",

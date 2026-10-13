@@ -13,8 +13,8 @@ const schema = Yup.object().shape({
     .max(50, "Too long")
     .required("Обязательное поле"),
   username: Yup.string()
-    .min(1, "Too short")
-    .max(50, "Too long")
+    .min(1, "Слишком коротко")
+    .max(50, "Слишком длинно")
     .required("Обязательное поле"),
   password: Yup.string().required("Обязательное поле"),
   confirmPassword: Yup.string()
@@ -36,7 +36,7 @@ function Register({ setUserWantsToLogin }) {
   return (
     <div className="basis-[35rem]">
       <h1 className="text-cta-icon font-semibold text-[2rem] uppercase mb-[2rem]">
-        Регистрация TaxiChat
+        Бомбила
       </h1>
       <Formik
         initialValues={{
@@ -118,7 +118,7 @@ function Register({ setUserWantsToLogin }) {
         onClick={() => setUserWantsToLogin(true)}
         className="mt-[2rem] text-right  text-secondary-text underline cursor-pointer hover:text-cta-icon"
       >
-        Уже есть аккаунт TaxiChat
+        Уже есть аккаунт
       </div>
     </div>
   );

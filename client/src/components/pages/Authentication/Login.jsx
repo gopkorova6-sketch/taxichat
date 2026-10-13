@@ -25,8 +25,8 @@ function Login({ setUserWantsToLogin }) {
 
   return (
     <div className="basis-[35rem]">
-      <h1 className="text-cta-icon font-semibold text-[2rem] uppercase mb-[2rem]">
-        Вход в TaxiChat
+      <h1 className="text-cta-icon font-semibold text-[2.4rem] uppercase mb-[2rem]">
+        Бомбила
       </h1>
       <Formik
         initialValues={{
@@ -78,7 +78,7 @@ function Login({ setUserWantsToLogin }) {
         onClick={() => setUserWantsToLogin(false)}
         className="mt-[2rem] text-right  text-secondary-text underline cursor-pointer hover:text-cta-icon"
       >
-        Впервые в TaxiChat
+        Ещё не с нами?
       </div>
     </div>
   );

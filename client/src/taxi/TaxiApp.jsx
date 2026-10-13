@@ -12,7 +12,7 @@ import DispatcherPanel from "./DispatcherPanel";
 import RolesSection from "./RolesSection";
 import { apiPost } from "./api";
 
-// Main TaxiChat workspace: city and role switcher, role panels, order chats
+// Main Бомбила workspace: city and role switcher, role panels, order chats
 // and voice calls. The legacy contact chats stay available in the "Чаты" tab.
 const ROLE_LABELS = {
   passenger: "Пассажир",
@@ -48,7 +48,7 @@ const TaxiApp = () => {
   return (
     <div className="w-full h-full flex flex-col">
       <header className="flex items-center gap-3 p-2 border-b border-secondary-text/20 bg-secondary">
-        <span className="font-bold uppercase tracking-wide">TaxiChat</span>
+        <span className="font-bold uppercase tracking-wide">Бомбила</span>
         <select
           className="bg-primary rounded p-1 text-sm"
           value={cityId ?? ""}

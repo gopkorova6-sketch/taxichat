@@ -33,7 +33,8 @@ function FormField({
         group-focus-within:text-[1.4rem]
         `}
       >
-        {labelName} ({required ? "required" : "optional"})
+        {labelName}
+        {required && <span className="text-cta-icon"> *</span>}
       </label>
       <Field
         name={name}
