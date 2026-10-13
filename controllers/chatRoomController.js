@@ -256,6 +256,7 @@ exports.addMessageToChatRoom = async (chatRoomId, message) => {
 exports.getMessageFromChatRoom = async ({ chatRoomId, messageId, day }) => {
   // Get chat room
   const chatRoom = await ChatRoom.findById(chatRoomId);
+  if (!chatRoom) return {};
 
   if (!chatRoom.messageHistory.length) return {};
 
@@ -263,10 +264,11 @@ exports.getMessageFromChatRoom = async ({ chatRoomId, messageId, day }) => {
   const dayMessage = chatRoom.messageHistory.find(
     (dayMessage) => dayMessage.day === day
   );
+  if (!dayMessage) return {};
 
   // Get message obj
   const message = dayMessage.messages.find(
-    (message) => message._id.toString() === messageId.toString()
+    (message) => message._id && message._id.toString() === String(messageId)
   );
 
   return { chatRoom, message };
@@ -286,7 +288,9 @@ exports.checkMembersOffUndeliveredListInMessage = async ({
     chatRoomId,
   });
 
-  if (!message) return;
+  // The message may be gone (e.g. processed by another ack after a client
+  // left); deliver a sane result so callers never crash
+  if (!message) return { undeliveredMembers: [] };
 
   message.undeliveredMembers = message.undeliveredMembers.filter(
     (memberId) => !membersId.includes(memberId.toString())
