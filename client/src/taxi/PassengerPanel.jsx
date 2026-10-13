@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
+import { notificationActions } from "../store/notificationSlice";
 import { apiGet, apiPost, apiDelete } from "./api";
 import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
 import DirectChat from "./DirectChat";
 import ChatList from "./ChatList";
 import { statusLabel } from "./statusLabels";
-
 // Passenger panel: order form, my orders, free drivers with direct calls
 const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
+  const dispatch = useDispatch();
   const { socketListen, socket } = useSocket();
   const [view, setView] = useState(null); // { type: "order" | "direct", id }
   const [orders, setOrders] = useState([]);
+  const [ordersFilter, setOrdersFilter] = useState("active");
   const [zones, setZones] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [favorites, setFavorites] = useState([]);
@@ -84,12 +87,24 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
 
   useEffect(() => {
     load();
-    const onChanged = () => load();
-    socketListen("order:status", onChanged);
-    socketListen("driver:presence", onChanged);
+    const onStatusChanged = (payload) => {
+      // Toast for own orders even when the chat is closed
+      if (orders.some((order) => order._id === payload.orderId)) {
+        dispatch(
+          notificationActions.addNotification({
+            message: `Заказ: ${statusLabel(payload.status)}`,
+            type: payload.status === "DISPUTE" ? "error" : "info",
+          })
+        );
+      }
+      load();
+    };
+    const onMembershipUpdated = () => refreshMe();
+    socketListen("order:status", onStatusChanged);
+    socketListen("membership:updated", onMembershipUpdated);
     return () => {
-      socket.off("order:status", onChanged);
-      socket.off("driver:presence", onChanged);
+      socket.off("order:status", onStatusChanged);
+      socket.off("membership:updated", onMembershipUpdated);
     };
   }, [cityId]);
 
@@ -315,8 +330,28 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
 
       {tab === "orders" && (
         <div className="space-y-2">
-          {orders.length === 0 && <div className="text-secondary-text text-sm">Заказов пока нет</div>}
-          {orders.map((order) => (
+          <div className="flex gap-2 text-sm">
+            {[
+              ["active", "Активные"],
+              ["all", "Все"],
+            ].map(([key, label]) => (
+              <button
+                key={key}
+                className={`px-2 py-1 rounded ${ordersFilter === key ? "bg-accent text-white" : "bg-secondary"}`}
+                onClick={() => setOrdersFilter(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {orders.filter((order) => ordersFilter === "all" ||
+            !["COMPLETED", "CANCELLED", "NO_SHOW", "EXPIRED"].includes(order.status)).length === 0 && (
+            <div className="text-secondary-text text-sm">Заказов пока нет</div>
+          )}
+          {orders
+            .filter((order) => ordersFilter === "all" ||
+              !["COMPLETED", "CANCELLED", "NO_SHOW", "EXPIRED"].includes(order.status))
+            .map((order) => (
             <button
               key={order._id}
               className="w-full text-left bg-secondary rounded p-3 text-sm"
