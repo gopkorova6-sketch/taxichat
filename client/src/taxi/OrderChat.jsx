@@ -200,6 +200,16 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
     }
   };
 
+  const blockPeer = async () => {
+    if (!window.confirm("Заблокировать участника? Звонки и диалоги станут недоступны.")) return;
+    try {
+      await apiPost("/api/blocks", { userId: String(otherId) });
+      setError("Участник заблокирован");
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   if (error && !order) {
     return (
       <div className="p-6 text-danger">
@@ -247,6 +257,11 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
             ["ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE", "PUBLISHED"].includes(order.status) && (
               <button className="text-danger underline" onClick={sos}>SOS</button>
             )}
+          {isParticipant && otherId && (
+            <button className="underline text-secondary-text" onClick={blockPeer}>
+              Блок
+            </button>
+          )}
         </div>
       </div>
 

@@ -10,7 +10,6 @@ const DirectChat = ({ chatId, me, onBack }) => {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [error, setError] = useState(null);
-
   const load = async () => {
     try {
       const history = await apiGet(`/api/chats/${chatId}/messages`);
@@ -45,6 +44,17 @@ const DirectChat = ({ chatId, me, onBack }) => {
       await apiPost(`/api/chats/${chatId}/messages`, payload);
       setText("");
       load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const blockPeer = async () => {
+    if (!chat?.peer?._id) return;
+    if (!window.confirm("Заблокировать собеседника? Звонки и диалоги станут недоступны.")) return;
+    try {
+      await apiPost("/api/blocks", { userId: String(chat.peer._id) });
+      setError("Собеседник заблокирован");
     } catch (err) {
       setError(err.message);
     }
@@ -150,6 +160,14 @@ const DirectChat = ({ chatId, me, onBack }) => {
       <div className="flex items-center gap-3 p-3 border-b border-secondary-text/20">
         <button className="underline" onClick={onBack}>← Назад</button>
         <div className="font-semibold">Диалог: {chat?.peer?.name ?? "..."}</div>
+        {chat?.peer?._id && (
+          <button
+            className="ml-auto underline text-secondary-text"
+            onClick={blockPeer}
+          >
+            Блок
+          </button>
+        )}
       </div>
 
       {error && <div className="text-danger text-sm px-3 py-1">{error}</div>}

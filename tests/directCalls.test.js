@@ -505,6 +505,55 @@ describe("Direct call to a free driver", () => {
     await new Promise((resolve) => setTimeout(resolve, 200));
   });
 
+  it("prevents a second active order in the same dialog", async () => {
+    const orderRes = await request(app)
+      .post("/api/orders")
+      .set("Cookie", world.passenger.cookie)
+      .send({
+        cityId: world.city._id,
+        fromZoneId: world.zones[0]._id,
+        fromText: "Точка А",
+        toText: "Точка Б",
+        targetDriverId: String(world.drivers[0].user._id),
+      });
+    const directOrder = orderRes.body.data.order;
+
+    // The direct chat became an order chat with an active order
+    const second = await request(app)
+      .post("/api/orders")
+      .set("Cookie", world.passenger.cookie)
+      .send({
+        cityId: world.city._id,
+        fromZoneId: world.zones[0]._id,
+        fromText: "Другая точка",
+        toText: "Другой конец",
+        targetDriverId: String(world.drivers[0].user._id),
+        chatId: directOrder.chatId,
+      });
+    expect(second.status).toBe(409);
+    expect(second.body.message).toContain("уже есть активный заказ");
+
+    // After cancellation the dialog can be reused
+    await request(app)
+      .post(`/api/orders/${directOrder._id}/cancel`)
+      .set("Cookie", world.passenger.cookie)
+      .send({ reason: "Передумал" });
+
+    const third = await request(app)
+      .post("/api/orders")
+      .set("Cookie", world.passenger.cookie)
+      .send({
+        cityId: world.city._id,
+        fromZoneId: world.zones[0]._id,
+        fromText: "Точка А",
+        toText: "Точка Б",
+        targetDriverId: String(world.drivers[0].user._id),
+        chatId: directOrder.chatId,
+      });
+    expect(third.status).toBe(201);
+    expect(String(third.body.data.order.chatId)).toBe(String(directOrder.chatId));
+  });
+
   it("scheduled direct orders can be accepted by an offline driver", async () => {
     await setDriverOnline(world.drivers[0].user._id, { shift: "offline" });
 

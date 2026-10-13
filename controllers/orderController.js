@@ -233,6 +233,14 @@ exports.createOrder = [
       ) {
         throw new ApiError(400, "Чат не найден между пассажиром и водителем");
       }
+      // Only one active order per dialog
+      if (chat.orderId) {
+        const previous = await Order.findById(chat.orderId).select("status");
+        const TERMINAL = ["COMPLETED", "CANCELLED", "NO_SHOW", "EXPIRED"];
+        if (previous && !TERMINAL.includes(previous.status)) {
+          throw new ApiError(409, "В этом диалоге уже есть активный заказ");
+        }
+      }
       chat.type = "order";
       chat.orderId = order._id;
       await chat.save();
@@ -241,7 +249,8 @@ exports.createOrder = [
         type: "order",
         cityId: data.cityId,
         orderId: order._id,
-        members: [req.user._id],
+        // Direct orders include the target driver from the start
+        members: [req.user._id, ...(directContext ? [data.targetDriverId] : [])],
       });
     }
     order.chatId = chat._id;
