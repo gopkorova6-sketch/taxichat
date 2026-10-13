@@ -65,7 +65,7 @@ const TaxiApp = () => {
           {availableRoles.map((r) => (
             <button
               key={r}
-              className={`px-2 py-1 rounded text-sm ${role === r ? "bg-accent text-white" : "bg-primary"}`}
+              className={`px-2 py-1 rounded text-sm ${role === r ? "bg-accent text-black" : "bg-primary"}`}
               onClick={() => setRole(r)}
             >
               {ROLE_LABELS[r]}
@@ -101,7 +101,7 @@ const TaxiApp = () => {
               Статус города: {city?.status}.
             </div>
             <button
-              className="bg-accent text-white px-4 py-2 rounded text-sm"
+              className="bg-accent text-black px-4 py-2 rounded text-sm"
               onClick={async () => {
                 try {
                   await apiPost("/api/memberships", { cityId, role: "passenger" });

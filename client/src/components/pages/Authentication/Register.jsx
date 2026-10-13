@@ -96,7 +96,7 @@ function Register({ setUserWantsToLogin }) {
               fieldType="password"
             />
             <button
-              className={`bg-cta-icon mt-[1rem] p-[1rem] rounded-xl uppercase text-white font-semibold opacity-80 flex items-center justify-center ${
+              className={`bg-cta-icon mt-[1rem] p-[1rem] rounded-xl uppercase text-black font-semibold opacity-80 flex items-center justify-center ${
                 !errors.name &&
                 !errors.username &&
                 !errors.phoneNumber &&

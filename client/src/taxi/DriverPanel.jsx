@@ -174,7 +174,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                     Принять
                   </button>
                 ) : (
-                  <button className="bg-accent text-white px-3 py-1 rounded" onClick={() => sendOffer(order)}>
+                  <button className="bg-accent text-black px-3 py-1 rounded" onClick={() => sendOffer(order)}>
                     Прислать отклик
                   </button>
                 )}
@@ -202,10 +202,10 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
               <div className="text-secondary-text">{statusLabel(order.status)}</div>
               <div className="flex gap-2 mt-2 flex-wrap">
                 {order.status === "ASSIGNED" && (
-                  <button className="bg-accent text-white px-3 py-1 rounded" onClick={() => myAction(order, "arrive")}>Выехал</button>
+                  <button className="bg-accent text-black px-3 py-1 rounded" onClick={() => myAction(order, "arrive")}>Выехал</button>
                 )}
                 {order.status === "ARRIVING" && (
-                  <button className="bg-accent text-white px-3 py-1 rounded" onClick={() => myAction(order, "wait")}>Я на месте</button>
+                  <button className="bg-accent text-black px-3 py-1 rounded" onClick={() => myAction(order, "wait")}>Я на месте</button>
                 )}
                 {order.status === "WAITING" && (
                   <>

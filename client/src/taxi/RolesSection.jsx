@@ -143,7 +143,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
         ))}
         {!memberships.some((membership) => membership.role === "passenger") && (
           <button
-            className="bg-accent text-white px-3 py-1 rounded text-sm mt-2"
+            className="bg-accent text-black px-3 py-1 rounded text-sm mt-2"
             onClick={becomePassenger}
           >
             Стать пассажиром
@@ -202,7 +202,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
                 type="button"
                 key={zone._id}
                 className={`px-2 py-1 rounded text-xs ${
-                  driverForm.zones.includes(zone._id) ? "bg-accent text-white" : "bg-primary"
+                  driverForm.zones.includes(zone._id) ? "bg-accent text-black" : "bg-primary"
                 }`}
                 onClick={() => toggleZone(zone._id)}
               >
@@ -210,7 +210,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
               </button>
             ))}
           </div>
-          <button className="bg-accent text-white px-4 py-2 rounded text-sm w-full" type="submit">
+          <button className="bg-accent text-black px-4 py-2 rounded text-sm w-full" type="submit">
             Отправить анкету
           </button>
         </form>
@@ -225,7 +225,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
             value={dispatcherNote}
             onChange={(event) => setDispatcherNote(event.target.value)}
           />
-          <button className="bg-accent text-white px-4 py-2 rounded text-sm w-full" type="submit">
+          <button className="bg-accent text-black px-4 py-2 rounded text-sm w-full" type="submit">
             Подать заявку
           </button>
         </form>

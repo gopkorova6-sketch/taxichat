@@ -206,7 +206,7 @@ const DirectChat = ({ chatId, me, onBack }) => {
           placeholder={uploading ? "Загрузка..." : "Сообщение..."}
           disabled={uploading || recording}
         />
-        <button className="bg-accent text-white px-4 rounded" type="submit">➤</button>
+        <button className="bg-accent text-black px-4 rounded" type="submit">➤</button>
       </form>
     </div>
   );

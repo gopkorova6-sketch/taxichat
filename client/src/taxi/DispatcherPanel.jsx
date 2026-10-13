@@ -234,7 +234,7 @@ const DispatcherPanel = ({ cityId, role, me }) => {
             ].map(([key, label]) => (
               <button
                 key={key}
-                className={`px-2 py-1 rounded ${adminTab === key ? "bg-accent text-white" : "bg-secondary"}`}
+                className={`px-2 py-1 rounded ${adminTab === key ? "bg-accent text-black" : "bg-secondary"}`}
                 onClick={() => setAdminTab(adminTab === key ? null : key)}
               >
                 {label}

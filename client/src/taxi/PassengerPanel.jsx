@@ -199,7 +199,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
         ].map(([key, label]) => (
           <button
             key={key}
-            className={`px-2 py-1 rounded ${tab === key ? "bg-accent text-white" : "bg-secondary"}`}
+            className={`px-2 py-1 rounded ${tab === key ? "bg-accent text-black" : "bg-secondary"}`}
             onClick={() => setTab(key)}
           >
             {label}
@@ -322,7 +322,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
               Прямой заказ водителю {directTarget.driverName ?? directTarget.driverId}
             </div>
           )}
-          <button className="bg-accent text-white px-4 py-2 rounded w-full" type="submit">
+          <button className="bg-accent text-black px-4 py-2 rounded w-full" type="submit">
             {directTarget ? "Оформить заказ водителю" : "Опубликовать заказ"}
           </button>
         </form>
@@ -337,7 +337,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
             ].map(([key, label]) => (
               <button
                 key={key}
-                className={`px-2 py-1 rounded ${ordersFilter === key ? "bg-accent text-white" : "bg-secondary"}`}
+                className={`px-2 py-1 rounded ${ordersFilter === key ? "bg-accent text-black" : "bg-secondary"}`}
                 onClick={() => setOrdersFilter(key)}
               >
                 {label}

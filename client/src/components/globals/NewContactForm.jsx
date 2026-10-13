@@ -87,7 +87,7 @@ function NewContactForm() {
               </h2>
               <button
                 type="submit"
-                className={`text-white uppercase px-[2rem] py-[1rem] rounded-md bg-cta-icon ml-auto
+                className={`text-black uppercase px-[2rem] py-[1rem] rounded-md bg-cta-icon ml-auto
                 ${(!values.name || !values.username) && "opacity-60"}`}
               >
                 Add
@@ -96,7 +96,7 @@ function NewContactForm() {
             {/* Top */}
             <div className="flex items-center mb-[.5rem] gap-[1.5rem]">
               {/* Avatar */}
-              <div className="w-[10rem] h-[10rem] rounded-full bg-cta-icon flex items-center justify-center text-[2.5rem] text-white font-bold uppercase">
+              <div className="w-[10rem] h-[10rem] rounded-full bg-cta-icon flex items-center justify-center text-[2.5rem] text-black font-bold uppercase">
                 {values.name[0]} {values.name?.split(" ")?.[1]?.[0]}
               </div>
               {/* Forms */}

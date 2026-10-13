@@ -324,7 +324,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
                   .map((button) => (
                     <button
                       key={button.action + button.label}
-                      className="bg-accent text-white px-3 py-1 rounded text-sm"
+                      className="bg-accent text-black px-3 py-1 rounded text-sm"
                       onClick={() => runAction(button)}
                     >
                       {button.label}
@@ -433,7 +433,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           placeholder={uploading ? "Загрузка..." : "Сообщение..."}
           disabled={uploading || recording}
         />
-        <button className="bg-accent text-white px-4 rounded" type="submit">➤</button>
+        <button className="bg-accent text-black px-4 rounded" type="submit">➤</button>
       </form>
     </div>
   );
