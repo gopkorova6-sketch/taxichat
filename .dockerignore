@@ -1,0 +1,10 @@
+node_modules
+client/node_modules
+client/build
+client/.env
+.env
+smoke.log
+*.log
+.git
+.gitignore
+AGENTS.md

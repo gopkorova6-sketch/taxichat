@@ -6,6 +6,27 @@ services:
     volumes:
       - mongo-data:/data/db
 
+  # Full application: API + sockets + Agenda + prebuilt client
+  app:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: "4000"
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongo:27017/taxichat
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-30d}
+      CLIENT_URL: ${CLIENT_URL:-}
+      CLOUDINARY_NAME: ${CLOUDINARY_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      TURN_URL: ${TURN_URL:-}
+      TURN_SECRET: ${TURN_SECRET:-}
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
   # TURN server for voice calls: traffic is relayed so participant IP
   # addresses are not exposed to each other (concept 1.7.1)
   coturn:
