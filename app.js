@@ -5,6 +5,9 @@ const rateLimit = require("express-rate-limit");
 const mongoose = require("mongoose");
 
 const app = express();
+// One proxy hop (CRA dev proxy or reverse proxy) forwards the client IP in
+// X-Forwarded-For; required for correct rate-limit keys
+app.set("trust proxy", 1);
 const authRouter = require("./routers/authRouter");
 const contactsRouter = require("./routers/contactsRouter");
 const chatRoomRouter = require("./routers/chatRoomRouter");

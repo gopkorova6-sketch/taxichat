@@ -26,7 +26,10 @@ npm run dev              # http://localhost:4000
 cd client && npm install && npm start   # http://localhost:3000 (прокси на :4000)
 ```
 
-Тесты: `npm test` (jest + supertest + mongodb-memory-server, 98 тестов).
+Тесты: `npm test` (jest + supertest + mongodb-memory-server, 107 тестов).
+
+Проверка полного dev-цикла (Mongo в памяти, API, CRA dev-сервер, прокси REST
+и WebSocket): `npm run smoke:dev`.
 
 ### Демо-аккаунты (после `npm run seed`)
 
