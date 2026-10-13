@@ -8,6 +8,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
   const { socketListen, socketEmit, socket } = useSocket();
   const [order, setOrder] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [offers, setOffers] = useState([]);
   const [text, setText] = useState("");
   const [error, setError] = useState(null);
   const [stars, setStars] = useState(0);
@@ -24,6 +25,8 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
       setOrder(res.data.order);
       const history = await apiGet(`/api/orders/${orderId}/messages`);
       setMessages(history.data.messages);
+      const offersRes = await apiGet(`/api/orders/${orderId}/offers`);
+      setOffers(offersRes.data.offers);
     } catch (err) {
       setError(err.message);
     }
@@ -31,16 +34,14 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
 
   useEffect(() => {
     load();
-    const onMessage = ({ orderId: id }) => {
-      if (String(id) === String(orderId)) load();
-    };
-    socketListen("chat:message", onMessage);
-    socketListen("order:status", onMessage);
-    socketListen("order:offer", onMessage);
+    const onChanged = () => load();
+    socketListen("chat:message", onChanged);
+    socketListen("order:status", onChanged);
+    socketListen("order:offer", onChanged);
     return () => {
-      socket.off("chat:message", onMessage);
-      socket.off("order:status", onMessage);
-      socket.off("order:offer", onMessage);
+      socket.off("chat:message", onChanged);
+      socket.off("order:status", onChanged);
+      socket.off("order:offer", onChanged);
     };
   }, [orderId]);
 
@@ -49,6 +50,15 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
     try {
       await apiPost(`/api/orders/${orderId}/messages`, { body });
       setText("");
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const acceptOffer = async (offerId) => {
+    try {
+      await apiPost(`/api/orders/${orderId}/accept`, { offerId });
       load();
     } catch (err) {
       setError(err.message);
@@ -70,9 +80,6 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
         const reason = window.prompt("Опишите проблему:");
         if (!reason) return;
         await apiPost(`/api/orders/${orderId}/dispute`, { reason });
-      } else if (action === "accept_offer") {
-        const offerId = window.prompt("ID отклика:");
-        await apiPost(`/api/orders/${orderId}/accept`, { offerId });
       } else {
         await apiPost(`/api/orders/${orderId}/action`, { action });
       }
@@ -155,6 +162,36 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
       </div>
 
       {error && <div className="text-danger text-sm px-3 py-1">{error}</div>}
+
+      {order.status === "PUBLISHED" && offers.length > 0 && (
+        <div className="p-3 border-b border-secondary-text/20 space-y-2">
+          <div className="text-xs text-secondary-text">Отклики водителей</div>
+          {offers.map((offer) => (
+            <div
+              key={offer._id}
+              className="flex items-center gap-3 bg-secondary rounded p-2 text-sm"
+            >
+              <div>
+                <div className="font-semibold">{offer.driverName}</div>
+                <div className="text-secondary-text">
+                  {offer.priceText} · подача {offer.etaMin} мин · {offer.carCaption}
+                </div>
+              </div>
+              {myRole === "passenger" && offer.status === "PENDING" && (
+                <button
+                  className="ml-auto bg-success text-white px-3 py-1 rounded"
+                  onClick={() => acceptOffer(offer._id)}
+                >
+                  Принять
+                </button>
+              )}
+              {offer.status === "ACCEPTED" && (
+                <span className="ml-auto text-success text-xs">Принят</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {messages.map((message) => {

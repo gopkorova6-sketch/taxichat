@@ -9,6 +9,7 @@ import CallModal from "./CallModal";
 import PassengerPanel from "./PassengerPanel";
 import DriverPanel from "./DriverPanel";
 import DispatcherPanel from "./DispatcherPanel";
+import RolesSection from "./RolesSection";
 import { apiPost } from "./api";
 
 // Main TaxiChat workspace: city and role switcher, role panels, order chats
@@ -72,6 +73,7 @@ const TaxiApp = () => {
           <button className="underline" onClick={() => setTab(tab === "taxi" ? "chats" : "taxi")}>
             {tab === "taxi" ? "Чаты" : "Заказы"}
           </button>
+          <button className="underline" onClick={() => setTab("roles")}>Роли</button>
           <button className="underline text-danger" onClick={logout}>Выйти</button>
         </div>
       </header>
@@ -84,6 +86,8 @@ const TaxiApp = () => {
             <Sidebar />
             <Chat />
           </div>
+        ) : tab === "roles" ? (
+          <RolesSection me={me} cityId={cityId} cities={cities} refreshMe={refreshMe} />
         ) : !cityId ? (
           <div className="p-6 text-secondary-text">Выберите город</div>
         ) : availableRoles.length === 0 ? (
@@ -105,6 +109,12 @@ const TaxiApp = () => {
             >
               Стать пассажиром в этом городе
             </button>
+            <button
+              className="underline text-sm"
+              onClick={() => setTab("roles")}
+            >
+              Или оформите роль водителя / диспетчера
+            </button>
           </div>
         ) : role === "driver" ? (
           <DriverPanel
@@ -115,7 +125,7 @@ const TaxiApp = () => {
             startCall={startCall}
           />
         ) : role === "dispatcher" || role === "region_admin" ? (
-          <DispatcherPanel cityId={cityId} />
+          <DispatcherPanel cityId={cityId} role={role} me={me} />
         ) : (
           <PassengerPanel
             me={me}
