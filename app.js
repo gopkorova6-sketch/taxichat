@@ -2,6 +2,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
+const mongoose = require("mongoose");
 
 const app = express();
 const authRouter = require("./routers/authRouter");
@@ -65,9 +66,12 @@ app.use(shareRouter);
 app.use(globalLimiter);
 app.use("/api/user", authRouter);
 
-// Health check
+// Health check with the database connection state (for monitoring)
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
+  res.json({
+    status: "ok",
+    db: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+  });
 });
 
 // Protector: verifies JWT cookie on every remaining API route
