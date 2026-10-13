@@ -15,10 +15,18 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
   const [stars, setStars] = useState(0);
   const [rated, setRated] = useState(false);
 
-  const myRole = order?.driverId && String(order.driverId) === String(me.user._id)
-    ? "driver"
-    : "passenger";
-  const otherId = myRole === "driver" ? order?.passengerId : order?.driverId;
+  const isParticipant =
+    String(order.passengerId) === String(me.user._id) ||
+    (order.driverId && String(order.driverId) === String(me.user._id));
+  const myRole = !isParticipant
+    ? "dispatcher"
+    : String(order.driverId) === String(me.user._id)
+      ? "driver"
+      : "passenger";
+  const otherId =
+    myRole === "driver"
+      ? order?.passengerId
+      : order?.driverId;
 
   const load = async () => {
     try {
@@ -208,7 +216,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
         </div>
         <div className="text-sm text-secondary-text">{order.status}</div>
         <div className="ml-auto flex gap-2">
-          {CALLABLE.includes(order.status) && otherId && (
+          {isParticipant && CALLABLE.includes(order.status) && otherId && (
             <button
               className="bg-success text-white px-3 py-1 rounded"
               onClick={() =>
@@ -223,10 +231,13 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
               Позвонить
             </button>
           )}
-          <button className="underline" onClick={share}>Поделиться</button>
-          {["ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE", "PUBLISHED"].includes(order.status) && (
-            <button className="text-danger underline" onClick={sos}>SOS</button>
+          {isParticipant && (
+            <button className="underline" onClick={share}>Поделиться</button>
           )}
+          {isParticipant &&
+            ["ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE", "PUBLISHED"].includes(order.status) && (
+              <button className="text-danger underline" onClick={sos}>SOS</button>
+            )}
         </div>
       </div>
 
@@ -344,7 +355,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
         })}
       </div>
 
-      {canRate && (
+      {isParticipant && canRate && (
         <div className="p-3 border-t border-secondary-text/20">
           <div className="text-sm mb-1">Оцените поездку:</div>
           <div className="flex gap-1">

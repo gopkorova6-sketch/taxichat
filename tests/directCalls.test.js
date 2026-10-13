@@ -424,6 +424,64 @@ describe("Direct call to a free driver", () => {
     expect(["ASSIGNED", "CANCELLED"]).toContain(finalOrder.status);
   });
 
+  it("dialog appears in my chats with text and media support", async () => {
+    const passengerClient = await connectClient(world.passenger.user._id);
+    const driverClient = await connectClient(world.drivers[0].user._id);
+
+    const invitePromise = waitFor(driverClient, "call:invite");
+    const endedPromise = waitFor(passengerClient, "call:end");
+
+    const ack = await passengerClient
+      .timeout(3000)
+      .emitWithAck("call:invite", {
+        kind: "direct",
+        target: String(world.drivers[0].user._id),
+        cityId: String(world.city._id),
+        signalData: { type: "offer" },
+      });
+
+    await invitePromise;
+    driverClient.emit("call:end", { callId: ack.callId, reason: "decline" });
+    await endedPromise;
+
+    // The passenger sees the dialog with the driver, without the phone
+    const mine = await request(app)
+      .get("/api/chats/my")
+      .set("Cookie", world.passenger.cookie);
+    expect(mine.status).toBe(200);
+    const dialog = mine.body.data.chats.find(
+      (chat) => String(chat._id) === String(ack.chatId)
+    );
+    expect(dialog).toBeTruthy();
+    expect(dialog.peer.name).toBe(world.drivers[0].user.name);
+    expect(dialog.carCaption).toBeTruthy();
+    expect(dialog.lastMessage.body).toBe("Звонок отклонён");
+
+    // Text and media messages work in the direct chat
+    const text = await request(app)
+      .post(`/api/chats/${ack.chatId}/messages`)
+      .set("Cookie", world.passenger.cookie)
+      .send({ body: "Здравствуйте, вы свободны?" });
+    expect(text.status).toBe(201);
+
+    const photo = await request(app)
+      .post(`/api/chats/${ack.chatId}/messages`)
+      .set("Cookie", world.passenger.cookie)
+      .send({ kind: "photo", imageUrl: "https://res.cloudinary.com/test/p.jpg" });
+    expect(photo.status).toBe(201);
+
+    const history = await request(app)
+      .get(`/api/chats/${ack.chatId}/messages`)
+      .set("Cookie", world.drivers[0].cookie);
+    const kinds = history.body.data.messages.map((message) => message.kind);
+    expect(kinds).toContain("text");
+    expect(kinds).toContain("photo");
+
+    passengerClient.close();
+    driverClient.close();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  });
+
   it("scheduled direct orders can be accepted by an offline driver", async () => {
     await setDriverOnline(world.drivers[0].user._id, { shift: "offline" });
 

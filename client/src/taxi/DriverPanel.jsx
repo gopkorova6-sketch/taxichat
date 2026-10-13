@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { notificationActions } from "../store/notificationSlice";
 import { apiGet, apiPost, apiPatch } from "./api";
 import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
+import DirectChat from "./DirectChat";
+import ChatList from "./ChatList";
 
 // Driver panel: shift toggle, live feed of published orders, assigned orders
 const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
+  const dispatch = useDispatch();
   const { socketListen, socketEmit, socket } = useSocket();
-  const [view, setView] = useState(null);
+  const [view, setView] = useState(null); // { type, id }
   const [orders, setOrders] = useState([]);
   const [online, setOnline] = useState(driverProfile?.shift === "online");
   const [error, setError] = useState(null);
@@ -22,14 +27,32 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
 
   useEffect(() => {
     load();
+    const onNew = () => {
+      dispatch(
+        notificationActions.addNotification({
+          message: "Новый заказ в ленте",
+          type: "info",
+        })
+      );
+      load();
+    };
+    const onTaken = () => {
+      dispatch(
+        notificationActions.addNotification({
+          message: "Один из заказов уже взят",
+          type: "info",
+        })
+      );
+      load();
+    };
     const onChanged = () => load();
-    socketListen("order:new", onChanged);
-    socketListen("order:taken", onChanged);
+    socketListen("order:new", onNew);
+    socketListen("order:taken", onTaken);
     socketListen("order:status", onChanged);
     socketListen("driver:presence", onChanged);
     return () => {
-      socket.off("order:new", onChanged);
-      socket.off("order:taken", onChanged);
+      socket.off("order:new", onNew);
+      socket.off("order:taken", onTaken);
       socket.off("order:status", onChanged);
       socket.off("driver:presence", onChanged);
     };
@@ -51,8 +74,16 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
     await refreshMe();
   };
 
-  if (view) {
-    return <OrderChat orderId={view} me={me} onBack={() => setView(null)} startCall={startCall} />;
+  // Sync the shift toggle with the server state (busy while assigned)
+  useEffect(() => {
+    if (driverProfile) setOnline(driverProfile.shift !== "offline");
+  }, [driverProfile?.shift]);
+
+  if (view?.type === "order") {
+    return <OrderChat orderId={view.id} me={me} onBack={() => setView(null)} startCall={startCall} />;
+  }
+  if (view?.type === "direct") {
+    return <DirectChat chatId={view.id} me={me} onBack={() => setView(null)} />;
   }
 
   const accept = async (order) => {
@@ -140,7 +171,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                     Прислать отклик
                   </button>
                 )}
-                <button className="underline" onClick={() => setView(order._id)}>Чат</button>
+                <button className="underline" onClick={() => setView({ type: "order", id: order._id })}>Чат</button>
               </div>
             </div>
           ))}
@@ -174,11 +205,16 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                     <button className="underline" onClick={() => myAction(order, "undo_start")}>Отменить начало</button>
                   </>
                 )}
-                <button className="underline" onClick={() => setView(order._id)}>Чат</button>
+                <button className="underline" onClick={() => setView({ type: "order", id: order._id })}>Чат</button>
               </div>
             </div>
           ))}
         </div>
+      </div>
+
+      <div>
+        <h3 className="font-semibold mb-2">Диалоги</h3>
+        <ChatList onOpen={(chatId) => setView({ type: "direct", id: chatId })} />
       </div>
     </div>
   );

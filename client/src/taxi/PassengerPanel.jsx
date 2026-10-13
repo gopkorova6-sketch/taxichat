@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { apiGet, apiPost, apiPatch, apiDelete } from "./api";
+import { apiGet, apiPost, apiDelete } from "./api";
 import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
+import DirectChat from "./DirectChat";
+import ChatList from "./ChatList";
 
 // Passenger panel: order form, my orders, free drivers with direct calls
 const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   const { socketListen, socket } = useSocket();
-  const [view, setView] = useState(null); // orderId when chat is open
+  const [view, setView] = useState(null); // { type: "order" | "direct", id }
   const [orders, setOrders] = useState([]);
   const [zones, setZones] = useState([]);
   const [drivers, setDrivers] = useState([]);
@@ -90,8 +92,11 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
     };
   }, [cityId]);
 
-  if (view) {
-    return <OrderChat orderId={view} me={me} onBack={() => setView(null)} startCall={startCall} />;
+  if (view?.type === "order") {
+    return <OrderChat orderId={view.id} me={me} onBack={() => setView(null)} startCall={startCall} />;
+  }
+  if (view?.type === "direct") {
+    return <DirectChat chatId={view.id} me={me} onBack={() => setView(null)} />;
   }
 
   const submit = async (event) => {
@@ -130,7 +135,6 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   };
 
   const callDriver = async (driver) => {
-    setTab("new");
     startCall({
       kind: "direct",
       target: String(driver.driverId),
@@ -169,12 +173,13 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
 
   return (
     <div className="p-4 space-y-4 overflow-y-auto h-full">
-      <div className="flex gap-3 text-sm">
+      <div className="flex gap-3 text-sm flex-wrap">
         {[
           ["new", directTarget ? `Заказ ${directTarget.driverName ?? ""}` : "Новый заказ"],
           ["orders", "Мои заказы"],
           ["drivers", "Свободные водители"],
           ["favorites", "Избранные"],
+          ["dialogs", "Диалоги"],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -314,7 +319,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
             <button
               key={order._id}
               className="w-full text-left bg-secondary rounded p-3 text-sm"
-              onClick={() => setView(order._id)}
+              onClick={() => setView({ type: "order", id: order._id })}
             >
               <div className="font-semibold">{order.from?.text} → {order.to?.text}</div>
               <div className="text-secondary-text">{order.status} · {order.pax} пасс.</div>
@@ -365,6 +370,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           )}
         </div>
       )}
+      {tab === "dialogs" && <ChatList onOpen={(chatId) => setView({ type: "direct", id: chatId })} />}
     </div>
   );
 };

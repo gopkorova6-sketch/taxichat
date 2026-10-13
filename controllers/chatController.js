@@ -3,17 +3,32 @@ const mongoose = require("mongoose");
 const Chat = require("../models/Chat");
 const Message = require("../models/Message");
 const City = require("../models/City");
+const User = require("../models/User");
+const Membership = require("../models/Membership");
+const DriverProfile = require("../models/DriverProfile");
 const ApiError = require("../utilities/errors");
 const catchAsyncError = require("../utilities/catchAsyncError");
 const { validateBody } = require("../utilities/catchAsyncError");
 const { emitOrderEvents } = require("../utilities/sockets");
+const { carCaption } = require("../utilities/drivers");
 
 const PHONE_PATTERN = /(\+?7|8)[\s\-()]?\d{3}[\s\-()]?\d{3}[\s\-()]?\d{2}[\s\-()]?\d{2}/;
 const URL_PATTERN = /(https?:\/\/|www\.)\S+|\b[\w-]+\.(?:ru|рф|com|net|org)\b/i;
 
-const messageSchema = z.object({
-  body: z.string().trim().min(1, "Введите сообщение").max(2000, "Сообщение слишком длинное"),
-});
+const messageSchema = z.union([
+  z.object({
+    body: z.string().trim().min(1, "Введите сообщение").max(2000, "Сообщение слишком длинное"),
+  }),
+  z.object({
+    kind: z.literal("photo"),
+    imageUrl: z.string().min(1, "Не передано фото"),
+  }),
+  z.object({
+    kind: z.literal("voice"),
+    voiceNoteUrl: z.string().min(1, "Не передана голосовая запись"),
+    voiceNoteDuration: z.number().int().min(1, "Длительность от 1 секунды").max(600),
+  }),
+]);
 
 const offerSchema = z.object({
   priceText: z.string().trim().min(1, "Укажите цену").max(50),
@@ -52,6 +67,86 @@ const serializeMessage = (message, userId) => ({
   createdAt: message.createdAt,
 });
 
+// GET /api/chats/my — dialogs from direct calls (concept 1.6): peer name,
+// car caption and last message preview; phone numbers stay hidden
+exports.listMyChats = catchAsyncError(async (req, res) => {
+  const chats = await Chat.find({ members: req.user._id, type: "direct" })
+    .sort({ lastActivityAt: -1 })
+    .limit(50);
+
+  const chatIds = chats.map((chat) => chat._id);
+  const peerIds = [
+    ...new Set(
+      chats.map((chat) =>
+        String(chat.members.find((member) => String(member) !== String(req.user._id)))
+      )
+    ),
+  ].filter((id) => id && id !== "undefined");
+
+  const [peers, lastMessages] = await Promise.all([
+    User.find({ _id: { $in: peerIds } }).select("name username"),
+    Message.aggregate([
+      { $match: { chatId: { $in: chatIds } } },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "$chatId",
+          kind: { $first: "$kind" },
+          body: { $first: "$body" },
+          createdAt: { $first: "$createdAt" },
+        },
+      },
+    ]),
+  ]);
+
+  const peerMemberships = await Membership.find({
+    userId: { $in: peerIds },
+    role: "driver",
+  }).select("userId _id");
+  const profiles = await DriverProfile.find({
+    membershipId: { $in: peerMemberships.map((membership) => membership._id) },
+  });
+  const profileByUser = new Map();
+  for (const membership of peerMemberships) {
+    const profile = profiles.find(
+      (item) => String(item.membershipId) === String(membership._id)
+    );
+    if (profile) profileByUser.set(String(membership.userId), profile);
+  }
+  const peerById = new Map(peers.map((peer) => [String(peer._id), peer]));
+  const lastByChat = new Map(
+    lastMessages.map((entry) => [String(entry._id), entry])
+  );
+
+  res.json({
+    status: "success",
+    data: {
+      chats: chats
+        .map((chat) => {
+          const peerId = String(
+            chat.members.find((member) => String(member) !== String(req.user._id))
+          );
+          const peer = peerById.get(peerId);
+          const profile = profileByUser.get(peerId);
+          const last = lastByChat.get(String(chat._id));
+          return {
+            _id: chat._id,
+            peer: peer ? { _id: peer._id, name: peer.name } : { name: "Удалённый пользователь" },
+            carCaption: profile?.car
+              ? carCaption(profile.car)
+              : undefined,
+            lastMessage: last
+              ? { kind: last.kind, body: last.body, createdAt: last.createdAt }
+              : null,
+            lastActivityAt: chat.lastActivityAt,
+            closedAt: chat.closedAt,
+          };
+        })
+        .filter(Boolean),
+    },
+  });
+});
+
 // GET /api/chats/:id/messages?before=
 exports.listChatMessages = catchAsyncError(async (req, res) => {
   const chat = await getDirectChatForUser(req.params.id, req.user._id);
@@ -71,14 +166,14 @@ exports.listChatMessages = catchAsyncError(async (req, res) => {
   });
 });
 
-// POST /api/chats/:id/messages — text message in the direct chat
+// POST /api/chats/:id/messages — text, photo and voice messages
 exports.sendChatMessage = [
   validateBody(messageSchema),
   catchAsyncError(async (req, res) => {
     const chat = await getDirectChatForUser(req.params.id, req.user._id);
 
     const city = await City.findById(chat.cityId).select("settings.filterContacts");
-    if (city?.settings?.filterContacts) {
+    if (city?.settings?.filterContacts && req.body.body) {
       if (PHONE_PATTERN.test(req.body.body) || URL_PATTERN.test(req.body.body)) {
         throw new ApiError(
           400,
@@ -91,8 +186,18 @@ exports.sendChatMessage = [
       chatId: chat._id,
       senderId: req.user._id,
       senderType: "user",
-      kind: "text",
-      body: req.body.body,
+      ...(req.body.body
+        ? { kind: "text", body: req.body.body }
+        : req.body.kind === "photo"
+          ? { kind: "photo", body: "Фото", meta: { imageUrl: req.body.imageUrl } }
+          : {
+              kind: "voice",
+              body: "Голосовое сообщение",
+              meta: {
+                voiceNoteUrl: req.body.voiceNoteUrl,
+                voiceNoteDuration: req.body.voiceNoteDuration,
+              },
+            }),
     });
     await Chat.updateOne({ _id: chat._id }, { $set: { lastActivityAt: new Date() } });
 
