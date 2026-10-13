@@ -34,6 +34,10 @@ const TaxiApp = () => {
         (m) => m.role === r && m.status === "ACTIVE" && String(m.cityId?._id) === String(cityId)
       )
   );
+  // Superadmin manages any city without memberships
+  if (user?.isSuperadmin && !availableRoles.includes("dispatcher")) {
+    availableRoles.push("dispatcher");
+  }
 
   const logout = async () => {
     await fetch("/api/user/logout", { method: "POST", credentials: "include" });

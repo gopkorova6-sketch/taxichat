@@ -57,7 +57,10 @@ const useTaxi = () => {
     setRole(nextRole);
   }, [cityId, memberships.length]);
 
-  const userRole = cityMembership(role) ? role : "passenger";
+  const userRole =
+    cityMembership(role) || (me?.user?.isSuperadmin && role === "dispatcher")
+      ? role
+      : "passenger";
 
   return {
     me,
