@@ -1,0 +1,102 @@
+const handlers = require("./handlers");
+
+let agenda = null;
+
+// Scheduling helpers used by controllers and the state machine; they no-op
+// while Agenda is not initialized (e.g. in tests)
+const scheduleOrderJobs = async (order) => {
+  if (!agenda) return;
+
+  if (order.when?.type === "scheduled" && order.when?.at) {
+    const leadMinutes = 30;
+    const city = await require("../models/City").findById(order.cityId).select("settings");
+    const lead = (city?.settings?.preorderLeadMinutes ?? leadMinutes) * 60 * 1000;
+    const activateAt = new Date(order.when.at).getTime() - lead;
+    const reminderAt = new Date(order.when.at).getTime() - 10 * 60 * 1000;
+
+    await agenda.schedule(
+      new Date(Math.max(Date.now(), activateAt)),
+      "preorder:activate",
+      { orderId: String(order._id) }
+    );
+    await agenda.schedule(
+      new Date(Math.max(Date.now(), reminderAt)),
+      "preorder:reminder",
+      { orderId: String(order._id) }
+    );
+    return;
+  }
+
+  await scheduleCascade(order);
+  await agenda.schedule(
+    order.expiresAt ?? new Date(Date.now() + 300 * 1000),
+    "order:expire",
+    { orderId: String(order._id) }
+  );
+};
+
+const scheduleCascade = async (order) => {
+  if (!agenda) return;
+  const city = await require("../models/City").findById(order.cityId).select("settings");
+  const timeouts = city?.settings?.cascadeTimeouts ?? {};
+  const steps = [
+    ["favorites", 0],
+    ["zone", timeouts.favorites ?? 20],
+    ["neighbors", timeouts.zone ?? 60],
+    ["city", timeouts.neighbors ?? 120],
+  ];
+  for (const [step, delaySec] of steps) {
+    await agenda.schedule(
+      new Date(Date.now() + delaySec * 1000),
+      "order:cascade",
+      { orderId: String(order._id), step }
+    );
+  }
+};
+
+const scheduleWaitingTimer = async (order, waitingMinutes) => {
+  if (!agenda) return;
+  await agenda.schedule(
+    new Date(Date.now() + waitingMinutes * 60 * 1000),
+    "order:waitingTimeout",
+    { orderId: String(order._id) }
+  );
+};
+
+const initJobs = async (mongoUri) => {
+  // Agenda 5 is ESM-only; loaded dynamically so CJS tests never import it
+  const { default: Agenda } = await import("agenda");
+  agenda = new Agenda({ db: { address: mongoUri, collection: "agendaJobs" } });
+
+  agenda.define("order:cascade", { concurrency: 5 }, (job) =>
+    handlers.runCascadeStep(job.attrs.data)
+  );
+  agenda.define("order:expire", { concurrency: 5 }, (job) =>
+    handlers.runOrderExpire(job.attrs.data)
+  );
+  agenda.define("order:waitingTimeout", { concurrency: 5 }, (job) =>
+    handlers.runWaitingTimeout(job.attrs.data)
+  );
+  agenda.define("preorder:activate", { concurrency: 5 }, (job) =>
+    handlers.runPreorderActivate(job.attrs.data)
+  );
+  agenda.define("preorder:reminder", { concurrency: 5 }, (job) =>
+    handlers.runPreorderReminder(job.attrs.data)
+  );
+  agenda.define("driver:heartbeatSweep", (job) => handlers.runHeartbeatSweep());
+  agenda.define("city:recalcStatus", (job) => handlers.runCityStatusRecalc());
+  agenda.define("chat:closeDirect", (job) => handlers.runDirectChatCleanup());
+
+  await agenda.start();
+
+  // Recurring maintenance jobs
+  await agenda.every("30 seconds", "driver:heartbeatSweep");
+  await agenda.every("5 minutes", "city:recalcStatus");
+  await agenda.every("5 minutes", "chat:closeDirect");
+
+  return agenda;
+};
+
+const getAgenda = () => agenda;
+
+module.exports = { initJobs, getAgenda, scheduleOrderJobs, scheduleCascade, scheduleWaitingTimer };

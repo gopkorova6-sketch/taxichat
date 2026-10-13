@@ -251,6 +251,10 @@ exports.createOrder = [
     await order.save();
     await botDispatcher.upsertOrderCard(order);
 
+    // Cascade fan-out, expiry and preorder timers (concept 1.6 / 1.14)
+    const { scheduleOrderJobs } = require("../jobs/index");
+    await scheduleOrderJobs(order);
+
     // Direct orders go to the target driver only; broadcast orders fan out
     // to the zone of departure and the city (concept 1.6)
     if (order.mode !== "direct") {
@@ -747,6 +751,9 @@ exports.republishOrder = catchAsyncError(async (req, res) => {
     { room: `city:${order.cityId}`, event: "order:new", payload: { orderId: order._id } }
   );
   emitOrderEvents(events);
+
+  const { scheduleOrderJobs } = require("../jobs/index");
+  await scheduleOrderJobs(order);
 
   res.status(201).json({
     status: "success",

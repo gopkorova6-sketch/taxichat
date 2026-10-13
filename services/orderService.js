@@ -38,7 +38,8 @@ const TRANSITIONS = {
   cancel: {
     from: ["DRAFT", "PUBLISHED", "ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE"],
     to: "CANCELLED",
-    roles: ["passenger", "driver", "dispatcher"],
+    // "system" cancels timed-out direct orders (concept 1.6)
+    roles: ["passenger", "driver", "dispatcher", "system"],
   },
   dispute: {
     from: ["PUBLISHED", "ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE"],
@@ -192,6 +193,14 @@ const transition = async (order, event, actor, { reason } = {}) => {
   }
   if (TERMINAL_STATUSES.includes(order.status) && order.driverId) {
     await setDriverShift(order.driverId, "online");
+  }
+
+  // Waiting timer for the no-show window (concept 1.6)
+  if (event === "wait") {
+    const { scheduleWaitingTimer } = require("../jobs/index");
+    const City = require("../models/City");
+    const city = await City.findById(order.cityId).select("settings.waitingMinutes");
+    await scheduleWaitingTimer(order, city?.settings?.waitingMinutes ?? 10);
   }
 
   const events = [
