@@ -6,7 +6,6 @@ import useFetch from "../../../hooks/useFetch";
 import { useDispatch } from "react-redux";
 import { authActions } from "../../../store/authSlice";
 import Spinner from "../../globals/Spinner";
-import useChatBot from "../../../hooks/useChatBot";
 
 const schema = Yup.object().shape({
   name: Yup.string()
@@ -26,29 +25,11 @@ const schema = Yup.object().shape({
 function Register({ setUserWantsToLogin }) {
   const dispatch = useDispatch();
 
-  // Add bot as contact
-  const { reqFn: addBotAsContact, reqState: addBotState } = useFetch(
-    { url: "/contacts", method: "POST" },
-    (data) => {
-      dispatch(
-        authActions.setUserIsNew({
-          isNew: true,
-          payload: { chatRoomId: data.data.contact.chatRoomId },
-        })
-      );
-
-      dispatch(authActions.login());
-    }
-  );
-
   // Register user
   const { reqFn, reqState } = useFetch(
     { url: "/user/register", method: "POST" },
     () => {
-      addBotAsContact({
-        name: process.env.REACT_APP_BOT_NAME,
-        username: process.env.REACT_APP_BOT_USERNAME,
-      });
+      dispatch(authActions.login());
     }
   );
 
@@ -125,8 +106,8 @@ function Register({ setUserWantsToLogin }) {
               }`}
               type="submit"
             >
-              {reqState !== "loading" && addBotState !== "loading" && "Join"}
-              {(reqState === "loading" || addBotState === "loading") && (
+              {reqState !== "loading" && "Join"}
+              {reqState === "loading" && (
                 <Spinner className="w-[2.5rem] h-[2.5rem]" />
               )}
             </button>
