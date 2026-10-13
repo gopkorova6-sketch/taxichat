@@ -7,54 +7,53 @@ const contactSchema = new mongoose.Schema({
   chatRoomId: mongoose.Schema.Types.ObjectId,
 });
 
+// Account of a person; roles live in city memberships, not here.
+// `username` is the account login.
 const Schema = new mongoose.Schema({
-  // name
-  name: {
-    type: String,
-    required: true,
-  },
-  // Username
+  // Login of the account
   username: {
     unique: true,
     type: String,
     required: true,
-    lower: true,
   },
-  //   Bio, shouldn't be more than 100 characters
+  // Display name
+  name: {
+    type: String,
+    required: true,
+  },
+  // Bio, shouldn't be more than 100 characters
   bio: {
     type: String,
     min: 1,
     max: 100,
-    default: "Hi there, I'm using Telegram",
+    default: "Hi there, I'm using TaxiChat",
   },
-  //   User profile image (Avatar)
+  // User profile image (Avatar)
   avatar: {
     type: String,
     default:
       "https://res.cloudinary.com/dlanhtzbw/image/upload/v1675343188/Telegram%20Clone/no-profile_aknbeq.jpg",
   },
-  //   User contacts
+  // User contacts
   contacts: [contactSchema],
   // Status, whether user is online or not
   status: {
     online: { type: Boolean, default: true },
     lastSeen: Date,
   },
-  //   User password
+  // User password (bcrypt hash)
   password: {
     type: String,
     required: true,
     min: [8, "Password too short"],
   },
-  confirmPassword: {
-    type: String,
-    validate: {
-      validator: function (givenPassword) {
-        return givenPassword === this.password;
-      },
-      message: "Passwords do not match",
-    },
-  },
+  // Platform-wide superadmin flag; city roles live in Membership
+  isSuperadmin: { type: Boolean, default: false, index: true },
+  // Banned users cannot log in or use the platform
+  banned: { type: Boolean, default: false },
+  // Home city; changes are limited to once per 30 days
+  homeCityId: { type: mongoose.Schema.Types.ObjectId, ref: "City" },
+  homeCityChangedAt: Date,
   // Chat rooms user belongs to
   chatRooms: [mongoose.Schema.Types.ObjectId],
   // Pinned chat rooms by user
@@ -73,7 +72,6 @@ Schema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const hashedPassword = await bcrypt.hash(this.password, 12);
   this.password = hashedPassword;
-  this.confirmPassword = undefined;
   next();
 });
 
@@ -81,5 +79,13 @@ Schema.methods.checkPasswordValidity = async (
   givenPassword,
   originalPassword
 ) => await bcrypt.compare(givenPassword, originalPassword);
+
+Schema.set("toJSON", {
+  transform: (doc, ret) => {
+    delete ret.password;
+    delete ret.__v;
+    return ret;
+  },
+});
 
 module.exports = mongoose.model("User", Schema);

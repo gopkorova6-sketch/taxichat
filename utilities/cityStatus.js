@@ -19,4 +19,30 @@ const computeCityStatus = (city, counts = {}) => {
   return "WAITLIST";
 };
 
-module.exports = { computeCityStatus, CITY_STATUSES };
+// Recounts memberships of the city and persists the recalculated status.
+// Runs on every membership change (concept 1.4: transitions are automatic).
+const recalcCityStatus = async (cityId) => {
+  const Membership = require("../models/Membership");
+  const City = require("../models/City");
+
+  const [members, drivers, dispatchers] = await Promise.all([
+    Membership.countDocuments({ cityId }),
+    Membership.countDocuments({ cityId, role: "driver", status: "ACTIVE" }),
+    Membership.countDocuments({ cityId, role: "dispatcher", status: "ACTIVE" }),
+  ]);
+
+  const city = await City.findById(cityId);
+  if (!city) return null;
+
+  const from = city.status;
+  const to = computeCityStatus(city, { members, drivers, dispatchers });
+
+  if (to !== from) {
+    city.status = to;
+    await city.save();
+  }
+
+  return { from, to, counts: { members, drivers, dispatchers }, changed: to !== from };
+};
+
+module.exports = { computeCityStatus, recalcCityStatus, CITY_STATUSES };
