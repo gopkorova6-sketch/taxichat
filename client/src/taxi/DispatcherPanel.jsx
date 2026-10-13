@@ -164,7 +164,7 @@ const DispatcherPanel = ({ cityId, role, me }) => {
                   )}
                 </div>
                 <div className="text-secondary-text">
-                  {order.status} · {order.exactFrom ?? "адрес скрыт"} · {order.pax} пасс.
+                  {statusLabel(order.status)} · {order.exactFrom ?? "адрес скрыт"} · {order.pax} пасс.
                 </div>
                 <div className="flex gap-2 mt-2">
                   {order.status === "PUBLISHED" && (

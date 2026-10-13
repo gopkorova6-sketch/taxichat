@@ -310,7 +310,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
             return (
               <div key={message._id} className="border border-secondary-text/30 rounded p-3 text-sm">
                 <div className="font-semibold">Заказ</div>
-                <div>Статус: {message.meta?.status}</div>
+                <div>Статус: {statusLabel(message.meta?.status)}</div>
                 <div>{message.meta?.from} → {message.meta?.to}</div>
                 <div>Пассажиров: {message.meta?.pax}{message.meta?.priceAgreed ? `, цена: ${message.meta.priceAgreed}` : ""}</div>
               </div>

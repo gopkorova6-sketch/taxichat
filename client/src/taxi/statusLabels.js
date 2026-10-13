@@ -14,3 +14,15 @@ export const STATUS_LABELS = {
 };
 
 export const statusLabel = (status) => STATUS_LABELS[status] ?? status;
+
+// Shared Russian labels for city statuses (concept 1.4)
+export const CITY_STATUS_LABELS = {
+  DORMANT: "Не запущен",
+  WAITLIST: "Список ожидания",
+  PILOT: "Пилот",
+  ACTIVE: "Работает",
+  SUSPENDED: "Приостановлен",
+};
+
+export const cityStatusLabel = (status) =>
+  CITY_STATUS_LABELS[status] ?? status;

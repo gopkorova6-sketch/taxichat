@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { apiGet, apiPost } from "./api";
+import { statusLabel, cityStatusLabel } from "./statusLabels";
 import useSocket from "../hooks/useSocket";
 
 const ROLE_LABELS = {
@@ -121,7 +122,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
 
       <div className="bg-secondary rounded p-3">
         <div className="font-semibold mb-1">
-          Город: {city?.name ?? "—"} · статус: {city?.status ?? "—"}
+          Город: {city?.name ?? "—"} · статус: {cityStatusLabel(city?.status)}
         </div>
         <div className="text-sm text-secondary-text">
           Пассажиры могут создавать заказы в городах PILOT и ACTIVE.
