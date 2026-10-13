@@ -1,16 +1,27 @@
 const request = require("supertest");
 
 // Registers a unique user and returns the auth cookie for API tests
-const registerAndLogin = async (app) => {
-  const userData = {
-    name: "Тестовый Пользователь",
-    username: `user_${Date.now()}_${Math.floor(Math.random() * 100000)}`,
-    password: "password123",
-    confirmPassword: "password123",
-  };
-
-  const res = await request(app).post("/api/user/register").send(userData);
-  return res.headers["set-cookie"];
+const registerAndLogin = async (app, overrides = {}) => {
+  const { cookie } = await registerUser(app, overrides);
+  return cookie;
 };
 
-module.exports = { registerAndLogin };
+// Registers a unique user and returns { cookie, user }
+const registerUser = async (app, overrides = {}) => {
+  const username =
+    overrides.username ?? `user_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+
+  const res = await request(app)
+    .post("/api/user/register")
+    .send({
+      name: "Тестовый Пользователь",
+      password: "password123",
+      confirmPassword: "password123",
+      username,
+      ...overrides,
+    });
+
+  return { cookie: res.headers["set-cookie"], user: res.body.data.user };
+};
+
+module.exports = { registerAndLogin, registerUser };
