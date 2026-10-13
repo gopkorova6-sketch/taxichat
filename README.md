@@ -180,20 +180,21 @@ ACTIVE-членствам. На этапе рукопожатия сервер �
 
 1. Откройте репозиторий → **Code** → **Codespaces** → **Create codespace**.
 2. Контейнер собирается сам (Node 20 + сборка клиента), занимает пару минут.
-3. В терминале Codespace: `npm start` — сервер поднимет ephemeral MongoDB,
-   сам засеет демо-данные и начнёт слушать :4000 (клиент уже собран).
-4. Вкладка **Ports** → порт 4000 → ПКМ → **Port visibility → Public**.
-5. Откройте проброшенный URL — приложение доступно из сети.
-   Демо-входы: `passenger`, `driver1`…`driver3`, `dispatcher` (пароль
-   `password123`, см. `npm run seed`).
+3. Сервер и публичный туннель запускаются автоматически (`postStartCommand`).
+4. Вкладка **Ports** → порт 4000 → ПКМ → **Port visibility → Public** — URL
+   вида `*.app.github.dev` открывается под вашим аккаунтом GitHub.
+   Полностью анонимная ссылка — `*.trycloudflare.com` из `cf.log` внутри
+   Codespace (адрес ротируется при каждом перезапуске туннеля).
+5. Демо-входы: `passenger`, `driver1`…`driver3`, `dispatcher`, `regionadmin`,
+   `superadmin` — пароль `password123`.
+
+При пробуждении Codespace после простоя сервер и туннель поднимаются сами
+(`postStartCommand`), но адрес trycloudflare обновится — актуальный смотрится
+командой `grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' cf.log | tail -1`
+или командой `npm run smoke:dev`.
 
 Для горячей перезагрузки клиента вместо шага 3 запустите `npm run dev` и
 `npm start --prefix client` (порт 3000).
-
-### Google Colab (запасной вариант)
-
-Ноутбук `colab/TaxiChat_Colab.ipynb`: ставит Node 20, клонирует репозиторий,
-запускает приложение и публикует его через cloudflared-туннель.
 
 ### Docker (VPS или любой хост с Docker)
 
