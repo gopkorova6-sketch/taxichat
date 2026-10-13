@@ -119,7 +119,7 @@ actor)` (services/orderService.js): проверка таблицы перехо
 | GET | `/api/calls/ice` | временные TURN-креды (HMAC) |
 | GET | `/api/cities/:id/free-drivers` | свободные водители (без телефонов) |
 | POST/GET/DELETE | `/api/favorites`, `/api/blocks` | избранные и блокировки |
-| GET/POST | `/api/chats/:id/messages`, `/api/chats/:id/offers` | прямые чаты |
+| GET/POST | `/api/chats/my`, `/api/chats/:id/messages`, `/read`, `/offers` | диалоги прямых звонков с непрочитанными |
 | PATCH | `/api/drivers/me/settings`, `/api/users/me/home-city` | настройки |
 
 ## Сокет-события

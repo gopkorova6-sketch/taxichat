@@ -28,7 +28,12 @@ const DirectChat = ({ chatId, me, onBack }) => {
       })
       .catch((err) => setError(err.message));
     load();
-    const onChanged = () => load();
+    // Mark the dialog as read while it is open
+    apiPost(`/api/chats/${chatId}/read`, {}).catch(() => {});
+    const onChanged = () => {
+      load();
+      apiPost(`/api/chats/${chatId}/read`, {}).catch(() => {});
+    };
     socketListen("chat:message", onChanged);
     return () => {
       socket.off("chat:message", onChanged);

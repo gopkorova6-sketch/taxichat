@@ -478,6 +478,28 @@ describe("Direct call to a free driver", () => {
     expect(kinds).toContain("text");
     expect(kinds).toContain("photo");
 
+    // Unread count for the driver, cleared after marking read
+    const mineBefore = await request(app)
+      .get("/api/chats/my")
+      .set("Cookie", world.drivers[0].cookie);
+    const dialogBefore = mineBefore.body.data.chats.find(
+      (chat) => String(chat._id) === String(ack.chatId)
+    );
+    expect(dialogBefore.unreadCount).toBe(2);
+
+    await request(app)
+      .post(`/api/chats/${ack.chatId}/read`)
+      .set("Cookie", world.drivers[0].cookie)
+      .send({});
+
+    const mineAfter = await request(app)
+      .get("/api/chats/my")
+      .set("Cookie", world.drivers[0].cookie);
+    const dialogAfter = mineAfter.body.data.chats.find(
+      (chat) => String(chat._id) === String(ack.chatId)
+    );
+    expect(dialogAfter.unreadCount).toBe(0);
+
     passengerClient.close();
     driverClient.close();
     await new Promise((resolve) => setTimeout(resolve, 200));

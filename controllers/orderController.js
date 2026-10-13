@@ -106,7 +106,9 @@ const driverProfileForOrder = async (order) => {
   return DriverProfile.findOne({ membershipId: membership._id });
 };
 
-const serializeOrderFor = async (order, req) => {
+// serializeOrderFor(order, req, cache) — cache optionally carries preloaded
+// driver profiles and passenger users so list endpoints avoid N+1 queries
+const serializeOrderFor = async (order, req, cache = null) => {
   const viewerId = String(req.user._id);
   const isDispatcher =
     (req.memberships ?? []).some(
@@ -116,17 +118,19 @@ const serializeOrderFor = async (order, req) => {
         String(item.cityId?._id ?? item.cityId) === String(order.cityId)
     ) || req.user.isSuperadmin === true;
 
+  const driverProfile = cache
+    ? (cache.profileByUser.get(String(order.driverId)) ?? null)
+    : await driverProfileForOrder(order);
+  const passengerUser = cache
+    ? (cache.passengerById.get(String(order.passengerId)) ?? null)
+    : await User.findById(order.passengerId).select("name");
+
   if (String(order.passengerId) === viewerId) {
-    return toPassengerView(order, {
-      driverProfile: await driverProfileForOrder(order),
-    });
+    return toPassengerView(order, { driverProfile });
   }
   if (isDispatcher) {
-    return toDispatcherView(order, {
-      driverProfile: await driverProfileForOrder(order),
-    });
+    return toDispatcherView(order, { driverProfile });
   }
-  const passengerUser = await User.findById(order.passengerId).select("name");
   return toDriverView(order, { viewerId, passenger: passengerUser });
 };
 
@@ -331,9 +335,40 @@ exports.listOrders = catchAsyncError(async (req, res) => {
       .limit(100);
   }
 
+  // Preload driver profiles and passenger names once for the whole list
+  const driverUserIds = [
+    ...new Set(
+      orders
+        .map((order) => order.driverId)
+        .filter(Boolean)
+        .map(String)
+    ),
+  ];
+  const driverMemberships = await Membership.find({
+    userId: { $in: driverUserIds },
+    role: "driver",
+  }).select("_id userId");
+  const driverProfiles = await DriverProfile.find({
+    membershipId: { $in: driverMemberships.map((membership) => membership._id) },
+  });
+  const profileByUser = new Map();
+  for (const membership of driverMemberships) {
+    const profile = driverProfiles.find(
+      (item) => String(item.membershipId) === String(membership._id)
+    );
+    if (profile) profileByUser.set(String(membership.userId), profile);
+  }
+  const passengerUsers = await User.find({
+    _id: { $in: [...new Set(orders.map((order) => String(order.passengerId)))] },
+  }).select("_id name");
+  const passengerById = new Map(
+    passengerUsers.map((user) => [String(user._id), user])
+  );
+  const cache = { profileByUser, passengerById };
+
   const serialized = [];
   for (const order of orders) {
-    serialized.push(await serializeOrderFor(order, req));
+    serialized.push(await serializeOrderFor(order, req, cache));
   }
 
   // Unread human messages per order chat for the current viewer

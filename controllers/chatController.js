@@ -118,6 +118,22 @@ exports.listMyChats = catchAsyncError(async (req, res) => {
     lastMessages.map((entry) => [String(entry._id), entry])
   );
 
+  // Unread human messages per dialog for the current viewer
+  const unreadAgg = await Message.aggregate([
+    {
+      $match: {
+        chatId: { $in: chatIds },
+        senderType: "user",
+        senderId: { $ne: req.user._id },
+        readBy: { $ne: req.user._id },
+      },
+    },
+    { $group: { _id: "$chatId", count: { $sum: 1 } } },
+  ]);
+  const unreadByChat = new Map(
+    unreadAgg.map((entry) => [String(entry._id), entry.count])
+  );
+
   res.json({
     status: "success",
     data: {
@@ -138,12 +154,33 @@ exports.listMyChats = catchAsyncError(async (req, res) => {
             lastMessage: last
               ? { kind: last.kind, body: last.body, createdAt: last.createdAt }
               : null,
+            unreadCount: unreadByChat.get(String(chat._id)) ?? 0,
             lastActivityAt: chat.lastActivityAt,
             closedAt: chat.closedAt,
           };
         })
         .filter(Boolean),
     },
+  });
+});
+
+// POST /api/chats/:id/read — mark all messages of the dialog as read
+exports.markChatRead = catchAsyncError(async (req, res) => {
+  const chat = await getDirectChatForUser(req.params.id, req.user._id);
+
+  const result = await Message.updateMany(
+    {
+      chatId: chat._id,
+      senderType: "user",
+      senderId: { $ne: req.user._id },
+      readBy: { $ne: req.user._id },
+    },
+    { $addToSet: { readBy: req.user._id } }
+  );
+
+  res.json({
+    status: "success",
+    data: { marked: result.modifiedCount ?? 0 },
   });
 });
 
