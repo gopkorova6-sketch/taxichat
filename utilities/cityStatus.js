@@ -6,10 +6,12 @@ const computeCityStatus = (city, counts = {}) => {
   const { members = 0, drivers = 0, dispatchers = 0 } = counts;
 
   if (city.status === "SUSPENDED") return "SUSPENDED";
-  if (members === 0) return "DORMANT";
 
-  // Города, принудительно активные (Слюдянский район и т.п.)
+  // Города, принудительно активные (Слюдянский район и т.п.) —
+  // даже без зарегистрированных пользователей
   if (city.alwaysActive) return "ACTIVE";
+
+  if (members === 0) return "DORMANT";
 
   const thresholds = city.thresholds ?? {};
   const pilotDrivers = thresholds.pilotDrivers ?? 3;

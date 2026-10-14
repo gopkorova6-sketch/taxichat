@@ -77,4 +77,8 @@ describe("alwaysActive cities", () => {
   it("SUSPENDED still overrides alwaysActive", () => {
     expect(computeCityStatus({ ...always, status: "SUSPENDED" }, { members: 5, drivers: 3, dispatchers: 1 })).toBe("SUSPENDED");
   });
+
+  it("alwaysActive with zero members stays ACTIVE (no DORMANT)", () => {
+    expect(computeCityStatus({ ...always, status: "ACTIVE" }, { members: 0 })).toBe("ACTIVE");
+  });
 });
