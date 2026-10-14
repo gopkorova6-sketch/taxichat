@@ -146,7 +146,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   };
 
   const driverCard = (driver, extra = {}) => (
-    <div key={driver.driverId} className="bg-secondary rounded-xl p-3 text-sm text-center">
+    <div key={driver.driverId} className="glass anim-rise rounded-2xl p-3 text-sm text-center">
       <div className="font-semibold text-center">{driver.displayName}</div>
       <div className="text-secondary-text">{driver.carCaption}</div>
       {driver.rating != null && <div>★ {driver.rating}</div>}
@@ -264,7 +264,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
                 children: (
                   <div className="flex gap-2 mt-2">
                     <button
-                      className="bg-success text-white px-3 py-2 rounded-lg flex-1"
+                      className="bg-success text-white px-3 py-2 rounded-xl press font-semibold flex-1"
                       onClick={() => callDriver(driver)}
                     >
                       Позвонить
@@ -291,7 +291,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
               driverCard(driver, {
                 children: (
                   <button
-                    className="bg-success text-white px-3 py-2 rounded-lg mt-2 w-full"
+                    className="bg-success text-white px-3 py-2 rounded-xl press font-semibold mt-2 w-full"
                     onClick={() => callDriver(driver)}
                   >
                     Позвонить
@@ -339,7 +339,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
 
           {whenType === "scheduled" && (
             <input
-              className="w-full bg-primary border border-secondary-text/40 rounded-lg p-3 text-[1.6rem] text-primary-text"
+              className="w-full bg-primary/70 border border-secondary-text/20 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.6rem] text-primary-text"
               type="datetime-local"
               required
               min={defaultScheduledAt()}
@@ -349,7 +349,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           )}
 
           <input
-            className="w-full bg-primary border border-secondary-text/40 rounded-xl p-3 text-[1.6rem] text-primary-text"
+            className="w-full bg-primary/70 border border-secondary-text/20 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.6rem] text-primary-text"
             required
             autoFocus
             placeholder="Куда едем? Например: от ЖД до Центра"
@@ -361,7 +361,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           />
 
           <input
-            className="w-full bg-primary border border-secondary-text/40 rounded-lg p-2.5 text-[1.5rem] text-primary-text"
+            className="w-full bg-primary/70 border border-secondary-text/20 rounded-2xl p-2.5 focus:border-accent focus:outline-none transition-colors text-[1.5rem] text-primary-text"
             placeholder="Комментарий (необязательно)"
             value={notes}
             onChange={(event) => setNotes(event.target.value)}

@@ -227,7 +227,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                     Принять
                   </button>
                 ) : (
-                  <button className="bg-accent text-black px-3 py-1.5 rounded-lg" onClick={() => sendOffer(order)}>
+                  <button className="btn-accent press px-3 py-1.5 rounded-xl font-semibold" onClick={() => sendOffer(order)}>
                     Прислать отклик
                   </button>
                 )}
@@ -266,17 +266,17 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
               <div className="flex gap-2 mt-2 justify-center flex-wrap">
                 {order.status === "BOOKED" && (
                   <button
-                    className="bg-accent text-black px-3 py-1.5 rounded-lg"
+                    className="btn-accent press px-3 py-1.5 rounded-xl font-semibold"
                     onClick={() => activateBooking(order)}
                   >
                     🚕 Приступить к брони
                   </button>
                 )}
                 {order.status === "ASSIGNED" && (
-                  <button className="bg-accent text-black px-3 py-1.5 rounded-lg" onClick={() => myAction(order, "arrive")}>Выехал</button>
+                  <button className="btn-accent press px-3 py-1.5 rounded-xl font-semibold" onClick={() => myAction(order, "arrive")}>Выехал</button>
                 )}
                 {order.status === "ARRIVING" && (
-                  <button className="bg-accent text-black px-3 py-1 rounded" onClick={() => myAction(order, "wait")}>Я на месте</button>
+                  <button className="btn-accent press px-3 py-1 rounded-xl font-semibold" onClick={() => myAction(order, "wait")}>Я на месте</button>
                 )}
                 {order.status === "WAITING" && (
                   <>
@@ -298,7 +298,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
       </div>
 
       <div>
-        <h3 className="font-semibold mb-2 text-center">Диалоги</h3>
+        <h3 className="font-display font-bold mb-2 text-center tracking-wide">Диалоги</h3>
         <ChatList onOpen={(chatId) => setView({ type: "direct", id: chatId })} />
       </div>
     </div>
@@ -306,4 +306,5 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
 };
 
 export default DriverPanel;
+
 

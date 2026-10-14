@@ -29,7 +29,7 @@ const ChatList = ({ onOpen, refreshKey = 0 }) => {
       {chats.map((chat) => (
         <button
           key={chat._id}
-          className="w-full text-center bg-secondary rounded p-3 text-sm"
+          className="press glass anim-rise w-full text-center rounded-2xl p-3 text-sm"
           onClick={() => onOpen(chat._id)}
         >
           <div className="flex items-center gap-2">
@@ -57,3 +57,4 @@ const ChatList = ({ onOpen, refreshKey = 0 }) => {
 };
 
 export default ChatList;
+

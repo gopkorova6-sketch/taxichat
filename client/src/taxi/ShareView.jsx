@@ -33,7 +33,7 @@ const ShareView = () => {
 
   return (
     <div className="min-h-screen bg-primary flex items-center justify-center p-4">
-      <div className="bg-secondary text-primary-text rounded-lg p-6 w-full max-w-sm">
+      <div className="glass-strong text-primary-text rounded-3xl p-6 anim-rise w-full max-w-sm">
         <div className="font-bold uppercase tracking-wide mb-1">Бомбила</div>
         <div className="text-xs text-secondary-text mb-4">
           Поездка близкого человека — только статус, без личных данных
@@ -70,3 +70,4 @@ const ShareView = () => {
 };
 
 export default ShareView;
+

@@ -392,7 +392,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
                   .map((button) => (
                     <button
                       key={button.action + button.label}
-                      className="bg-accent text-black px-3 py-1 rounded text-sm"
+                      className="btn-accent press px-3 py-1 rounded-xl text-sm font-semibold"
                       onClick={() => runAction(button)}
                     >
                       {button.label}
@@ -508,4 +508,5 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
 };
 
 export default OrderChat;
+
 

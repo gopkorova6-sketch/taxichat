@@ -120,7 +120,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
       {error && <div className="text-danger text-sm">{error}</div>}
       {notice && <div className="text-success text-sm">{notice}</div>}
 
-      <div className="bg-secondary rounded p-3">
+      <div className="glass rounded-2xl p-3">
         <div className="font-semibold mb-1 text-center">
           Город: {city?.name ?? "—"} · статус: {cityStatusEmoji(city?.status)}
         </div>
@@ -129,8 +129,8 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
         </div>
       </div>
 
-      <div className="bg-secondary rounded p-3">
-        <h3 className="font-semibold mb-2 text-center">Мои роли в этом городе</h3>
+      <div className="glass rounded-2xl p-3">
+        <h3 className="font-display font-bold mb-2 text-center tracking-wide">Мои роли в этом городе</h3>
         {memberships.length === 0 && (
           <div className="text-sm text-secondary-text mb-2">Ролей пока нет</div>
         )}
@@ -144,7 +144,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
         ))}
         {!memberships.some((membership) => membership.role === "passenger") && (
           <button
-            className="bg-accent text-black px-3 py-1 rounded text-sm mt-2"
+            className="btn-accent press px-3 py-1 rounded-xl text-sm font-semibold mt-2"
             onClick={becomePassenger}
           >
             Стать пассажиром
@@ -158,8 +158,8 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
       </div>
 
       {!memberships.some((membership) => membership.role === "driver") && (
-        <form className="bg-secondary rounded p-3 space-y-2" onSubmit={submitDriver}>
-          <h3 className="font-semibold text-center">Анкета водителя</h3>
+        <form className="glass rounded-2xl p-3 space-y-2" onSubmit={submitDriver}>
+          <h3 className="font-display font-bold text-center tracking-wide">Анкета водителя</h3>
           <input
             className="w-full bg-primary p-2 rounded text-sm"
             placeholder="Имя для пассажиров"
@@ -211,22 +211,22 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
               </button>
             ))}
           </div>
-          <button className="bg-accent text-black px-4 py-2 rounded text-sm w-full" type="submit">
+          <button className="btn-accent press px-4 py-2.5 rounded-2xl text-sm font-bold w-full" type="submit">
             Отправить анкету
           </button>
         </form>
       )}
 
       {!memberships.some((membership) => membership.role === "dispatcher") && (
-        <form className="bg-secondary rounded p-3 space-y-2" onSubmit={submitDispatcher}>
-          <h3 className="font-semibold text-center">Заявка на диспетчера</h3>
+        <form className="glass rounded-2xl p-3 space-y-2" onSubmit={submitDispatcher}>
+          <h3 className="font-display font-bold text-center tracking-wide">Заявка на диспетчера</h3>
           <textarea
             className="w-full bg-primary p-2 rounded text-sm"
             placeholder="Коротко о себе (необязательно)"
             value={dispatcherNote}
             onChange={(event) => setDispatcherNote(event.target.value)}
           />
-          <button className="bg-accent text-black px-4 py-2 rounded text-sm w-full" type="submit">
+          <button className="btn-accent press px-4 py-2.5 rounded-2xl text-sm font-bold w-full" type="submit">
             Подать заявку
           </button>
         </form>
@@ -236,3 +236,4 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
 };
 
 export default RolesSection;
+

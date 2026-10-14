@@ -25,7 +25,7 @@ const CallModal = ({ call, acceptCall, endCall }) => {
 
   return (
     <div className="absolute inset-0 z-50 bg-black/70 flex items-center justify-center">
-      <div className="bg-secondary text-primary-text rounded-lg p-6 w-[20rem] text-center">
+      <div className="glass-strong text-primary-text rounded-3xl p-6 anim-rise w-[20rem] text-center">
         <div className="text-lg font-semibold mb-2">{title}</div>
         {call.error && (
           <div className="text-danger text-sm mb-4">{call.error}</div>
@@ -63,3 +63,4 @@ const CallModal = ({ call, acceptCall, endCall }) => {
 };
 
 export default CallModal;
+

@@ -134,7 +134,7 @@ const TaxiApp = () => {
               Статус города: {cityStatusEmoji(city?.status)}.
             </div>
             <button
-              className="bg-accent text-black px-4 py-2 rounded text-sm"
+              className="btn-accent press px-4 py-2 rounded-2xl text-sm font-bold"
               onClick={async () => {
                 try {
                   await apiPost("/api/memberships", { cityId, role: "passenger" });
@@ -202,3 +202,4 @@ const TaxiApp = () => {
 };
 
 export default TaxiApp;
+

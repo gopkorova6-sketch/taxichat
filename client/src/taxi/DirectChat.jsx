@@ -123,7 +123,7 @@ const DirectChat = ({ chatId, me, onBack }) => {
       return (
         <div
           key={message._id}
-          className={`max-w-[70%] rounded p-2 text-sm ${message.mine ? "bg-accent/20 ml-auto" : "bg-secondary"}`}
+          className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-sm ${message.mine ? "btn-accent ml-auto" : "glass"}`}
         >
           {message.senderName && <div className="text-xs text-secondary-text">{message.senderName}</div>}
           <img src={message.meta?.imageUrl} alt="Фото" className="rounded max-h-[16rem]" />
@@ -134,7 +134,7 @@ const DirectChat = ({ chatId, me, onBack }) => {
       return (
         <div
           key={message._id}
-          className={`max-w-[70%] rounded p-2 text-sm ${message.mine ? "bg-accent/20 ml-auto" : "bg-secondary"}`}
+          className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-sm ${message.mine ? "btn-accent ml-auto" : "glass"}`}
         >
           {message.senderName && <div className="text-xs text-secondary-text">{message.senderName}</div>}
           <div className="flex items-center gap-2">
@@ -147,7 +147,7 @@ const DirectChat = ({ chatId, me, onBack }) => {
     return (
       <div
         key={message._id}
-        className={`max-w-[70%] rounded p-2 text-sm ${message.mine ? "bg-accent/20 ml-auto" : "bg-secondary"}`}
+        className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-sm ${message.mine ? "btn-accent ml-auto" : "glass"}`}
       >
         {message.senderName && <div className="text-xs text-secondary-text">{message.senderName}</div>}
         {message.body}
@@ -202,16 +202,17 @@ const DirectChat = ({ chatId, me, onBack }) => {
           {recording ? `⏺ ${recordSeconds}с` : "🎤"}
         </button>
         <input
-          className="flex-1 bg-secondary rounded px-3 py-2 text-sm"
+          className="flex-1 bg-primary/70 border border-secondary-text/20 rounded-2xl px-4 py-2.5 text-[1.5rem] focus:border-accent focus:outline-none transition-colors"
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder={uploading ? "Загрузка..." : "Сообщение..."}
           disabled={uploading || recording}
         />
-        <button className="bg-accent text-black px-4 rounded" type="submit">➤</button>
+        <button className="press btn-accent px-4 rounded-2xl font-display font-bold" type="submit">➤</button>
       </form>
     </div>
   );
 };
 
 export default DirectChat;
+
