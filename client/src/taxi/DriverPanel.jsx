@@ -184,10 +184,10 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
   );
 
   return (
-    <div className="p-4 space-y-4 overflow-y-auto h-full max-w-[42rem] mx-auto w-full">
+    <div className="p-4 space-y-4 overflow-y-auto h-full max-w-[42rem] mx-auto w-full anim-rise">
       <div className="flex items-center gap-3">
         <button
-          className={`px-6 py-3 rounded-lg text-white font-semibold ${online ? "bg-success" : "bg-danger"}`}
+          className={`press px-6 py-3 rounded-2xl text-white font-display font-bold tracking-wide ${online ? "bg-success shadow-[0_0_24px_rgba(46,160,67,0.45)]" : "bg-danger"}`}
           onClick={toggleShift}
         >
           {online ? "На линии" : "Не на линии"}
@@ -209,11 +209,11 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
       )}
 
       <div>
-        <h3 className="font-semibold mb-2 text-center">Лента заказов</h3>
+        <h3 className="font-display font-bold mb-2 text-center tracking-wide">Лента заказов</h3>
           <div className="space-y-2">
           {feed.length === 0 && <div className="text-sm text-secondary-text">Пока нет заказов</div>}
           {feed.map((order) => (
-            <div key={order._id} className="bg-secondary rounded-xl p-3 text-sm text-center">
+            <div key={order._id} className="anim-rise glass rounded-2xl p-3 text-sm text-center">
                 <div className="font-semibold text-center">
                   {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
                 </div>
@@ -247,11 +247,11 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
       </div>
 
       <div>
-        <h3 className="font-semibold mb-2 text-center">Мои заказы</h3>
+        <h3 className="font-display font-bold mb-2 text-center tracking-wide">Мои заказы</h3>
           <div className="space-y-2">
           {mine.length === 0 && <div className="text-sm text-secondary-text">Нет активных заказов</div>}
           {mine.map((order) => (
-            <div key={order._id} className="bg-secondary rounded-xl p-3 text-sm text-center">
+            <div key={order._id} className="anim-rise glass rounded-2xl p-3 text-sm text-center">
               <div className="flex items-center gap-2 justify-center">
               <div className="font-semibold text-center">
                 {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
@@ -306,3 +306,4 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
 };
 
 export default DriverPanel;
+
