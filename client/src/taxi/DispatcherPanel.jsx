@@ -163,7 +163,7 @@ await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
       {error && <div className="text-danger text-sm">{error}</div>}
 
       <div>
-        <h3 className="font-semibold mb-2">Очередь города</h3>
+        <h3 className="font-semibold mb-2 text-center">Очередь города</h3>
         <div className="space-y-2 max-w-lg">
           {orders.filter((order) => OPEN.includes(order.status)).length === 0 && (
             <div className="text-sm text-secondary-text">Активных заказов нет</div>
@@ -171,9 +171,9 @@ await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
           {orders
             .filter((order) => OPEN.includes(order.status))
             .map((order) => (
-              <div key={order._id} className="bg-secondary rounded p-3 text-sm">
+              <div key={order._id} className="bg-secondary rounded-xl p-3 text-sm text-center">
                 <div className="flex items-center gap-2">
-                <div className="font-semibold">
+                <div className="font-semibold text-center">
                   {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
                 </div>
                   {order.unreadCount > 0 && (
@@ -182,7 +182,7 @@ await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
                     </span>
                   )}
                 </div>
-                <div className="text-secondary-text">
+                <div className="text-secondary-text text-center">
                   {statusBadge(order.status)} · {formatWhen(order.when)} · {order.pax} пасс.
                 </div>
                 <div className="flex gap-2 mt-2">
@@ -212,15 +212,15 @@ await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
       </div>
 
       <div>
-        <h3 className="font-semibold mb-2">Анкеты водителей</h3>
+        <h3 className="font-semibold mb-2 text-center">Анкеты водителей</h3>
         <div className="space-y-2 max-w-lg">
           {pending.length === 0 && (
             <div className="text-sm text-secondary-text">Новых анкет нет</div>
           )}
           {pending.map((driver) => (
-            <div key={driver._id} className="bg-secondary rounded p-3 text-sm">
-              <div className="font-semibold">{driver.displayName}</div>
-              <div className="text-secondary-text">
+            <div key={driver._id} className="bg-secondary rounded-xl p-3 text-sm text-center">
+              <div className="font-semibold text-center">{driver.displayName}</div>
+              <div className="text-secondary-text text-center">
                 {driver.carCaption} · {driver.user?.name}
               </div>
               <div className="flex gap-2 mt-2">
@@ -244,7 +244,7 @@ await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
 
       {isRegionAdmin && (
         <div>
-          <h3 className="font-semibold mb-2">Админ региона</h3>
+          <h3 className="font-semibold mb-2 text-center">Админ региона</h3>
           <div className="flex gap-2 text-sm mb-2">
             {[
               ["applications", "Заявки на диспетчера"],
@@ -267,12 +267,12 @@ await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
                 <div className="text-sm text-secondary-text">Заявок нет</div>
               )}
               {applications.map((application) => (
-                <div key={application._id} className="bg-secondary rounded p-3 text-sm">
-                  <div className="font-semibold">
+                <div key={application._id} className="bg-secondary rounded-xl p-3 text-sm text-center">
+                  <div className="font-semibold text-center">
                     {application.userId?.name} → {application.cityId?.name}
                   </div>
                   {application.note && (
-                    <div className="text-secondary-text">{application.note}</div>
+                    <div className="text-secondary-text text-center">{application.note}</div>
                   )}
                   <div className="flex gap-2 mt-2">
                     <button
@@ -299,8 +299,8 @@ await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
                 <div className="text-sm text-secondary-text">Открытых жалоб нет</div>
               )}
               {complaints.map((complaint) => (
-                <div key={complaint._id} className="bg-secondary rounded p-3 text-sm">
-                  <div className="font-semibold">
+                <div key={complaint._id} className="bg-secondary rounded-xl p-3 text-sm text-center">
+                  <div className="font-semibold text-center">
                     {complaint.type === "sos" ? "SOS" : "Жалоба"} ·{" "}
                     {complaint.reporterId?.name}
                   </div>
@@ -327,7 +327,7 @@ await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
           {adminTab === "audit" && (
             <div className="space-y-1 max-w-lg text-sm">
               {audit.map((entry) => (
-                <div key={entry._id} className="text-secondary-text">
+                <div key={entry._id} className="text-secondary-text text-center">
                   {new Date(entry.at).toLocaleString()} · {entry.action} ·{" "}
                   {entry.actorId?.name ?? "система"}
                 </div>

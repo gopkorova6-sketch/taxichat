@@ -157,12 +157,14 @@ const DirectChat = ({ chatId, me, onBack }) => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 p-3 border-b border-secondary-text/20">
-        <button className="underline" onClick={onBack}>← Назад</button>
-        <div className="font-semibold">Диалог: {chat?.peer?.name ?? "..."}</div>
+      <div className="relative p-3 border-b border-secondary-text/20">
+        <button className="underline absolute left-3 top-3 text-sm" onClick={onBack}>← Назад</button>
+        <div className="text-center px-16 font-semibold truncate">
+          Диалог: {chat?.peer?.name ?? "..."}
+        </div>
         {chat?.peer?._id && (
           <button
-            className="ml-auto underline text-secondary-text"
+            className="absolute right-3 top-3 underline text-secondary-text text-sm"
             onClick={blockPeer}
           >
             Блок

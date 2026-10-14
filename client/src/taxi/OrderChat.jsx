@@ -286,18 +286,19 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 border-b border-secondary-text/20">
-        <div className="flex items-center gap-3 min-w-0">
-          <button className="underline shrink-0" onClick={onBack}>← Назад</button>
-          <div className="font-semibold min-w-0 truncate">
-            {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
-          </div>
-          <div className="text-sm text-secondary-text shrink-0">
-            {order.passenger?.name ? `${order.passenger.name} · ` : ""}
-            {statusBadge(order.status)} · {formatWhen(order.when)}
+      <div className="relative p-3 border-b border-secondary-text/20">
+          <button className="underline absolute left-3 top-3 text-sm" onClick={onBack}>← Назад</button>
+          <div className="text-center px-16 min-w-0">
+            <div className="font-semibold truncate">
+              {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
+            </div>
+            <div className="text-sm text-secondary-text truncate">
+              {order.passenger?.name ? `${order.passenger.name} · ` : ""}
+              {statusBadge(order.status)} · {formatWhen(order.when)}
+            </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 mt-2">
+        <div className="flex flex-wrap items-center gap-2 mt-2 justify-center">
           {isParticipant && CALLABLE.includes(order.status) && otherId && (
             <button
               className="bg-success text-white px-3 py-1.5 rounded-lg text-sm"
@@ -330,12 +331,11 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
             </button>
           )}
         </div>
-      </div>
 
       {error && <div className="text-danger text-sm px-3 py-1">{error}</div>}
 
       {order.status === "PUBLISHED" && offers.length > 0 && (
-        <div className="p-3 border-b border-secondary-text/20 space-y-2">
+        <div className="p-3 border-b border-secondary-text/20 space-y-2 text-center">
           <div className="text-xs text-secondary-text">Отклики водителей</div>
           {offers.map((offer) => (
             <div
@@ -343,7 +343,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
               className="flex items-center gap-3 bg-secondary rounded p-2 text-sm"
             >
               <div>
-                <div className="font-semibold">{offer.driverName}</div>
+                <div className="font-semibold text-center">{offer.driverName}</div>
                 <div className="text-secondary-text">
                   {offer.priceText} · подача {offer.etaMin} мин · {offer.carCaption}
                 </div>
@@ -376,7 +376,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           if (message.kind === "order_card") {
             return (
               <div key={message._id} className="border border-secondary-text/30 rounded p-3 text-sm">
-                <div className="font-semibold">Заказ</div>
+                <div className="font-semibold text-center">Заказ</div>
                 <div>Статус: {statusBadge(message.meta?.status)}</div>
                 <div>{message.meta?.to ? `${message.meta?.from} → ${message.meta?.to}` : message.meta?.from}</div>
                 <div>Когда: {formatWhen(message.meta?.when)}</div>

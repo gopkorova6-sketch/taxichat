@@ -209,19 +209,19 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
       )}
 
       <div>
-        <h3 className="font-semibold mb-2">Лента заказов</h3>
+        <h3 className="font-semibold mb-2 text-center">Лента заказов</h3>
           <div className="space-y-2">
           {feed.length === 0 && <div className="text-sm text-secondary-text">Пока нет заказов</div>}
           {feed.map((order) => (
-            <div key={order._id} className="bg-secondary rounded p-3 text-sm">
-                <div className="font-semibold">
+            <div key={order._id} className="bg-secondary rounded-xl p-3 text-sm text-center">
+                <div className="font-semibold text-center">
                   {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
                 </div>
-              <div className="text-secondary-text">
+              <div className="text-secondary-text text-center">
                 {formatWhen(order.when)} · {order.pax} пасс.
                 {order.notes ? ` · ${order.notes}` : ""}
               </div>
-              <div className="flex gap-2 mt-2 flex-wrap">
+              <div className="flex gap-2 mt-2 justify-center flex-wrap">
                 {order.isTarget || order.matchMode === "first_take" ? (
                   <button className="bg-success text-white px-3 py-1.5 rounded-lg" onClick={() => accept(order)}>
                     Принять
@@ -247,13 +247,13 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
       </div>
 
       <div>
-        <h3 className="font-semibold mb-2">Мои заказы</h3>
+        <h3 className="font-semibold mb-2 text-center">Мои заказы</h3>
           <div className="space-y-2">
           {mine.length === 0 && <div className="text-sm text-secondary-text">Нет активных заказов</div>}
           {mine.map((order) => (
-            <div key={order._id} className="bg-secondary rounded p-3 text-sm">
-              <div className="flex items-center gap-2">
-              <div className="font-semibold">
+            <div key={order._id} className="bg-secondary rounded-xl p-3 text-sm text-center">
+              <div className="flex items-center gap-2 justify-center">
+              <div className="font-semibold text-center">
                 {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
               </div>
                 {order.unreadCount > 0 && (
@@ -262,8 +262,8 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                   </span>
                 )}
               </div>
-              <div className="text-secondary-text">{statusBadge(order.status)} · {formatWhen(order.when)}</div>
-              <div className="flex gap-2 mt-2 flex-wrap">
+              <div className="text-secondary-text text-center">{statusBadge(order.status)} · {formatWhen(order.when)}</div>
+              <div className="flex gap-2 mt-2 justify-center flex-wrap">
                 {order.status === "BOOKED" && (
                   <button
                     className="bg-accent text-black px-3 py-1.5 rounded-lg"
@@ -298,7 +298,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
       </div>
 
       <div>
-        <h3 className="font-semibold mb-2">Диалоги</h3>
+        <h3 className="font-semibold mb-2 text-center">Диалоги</h3>
         <ChatList onOpen={(chatId) => setView({ type: "direct", id: chatId })} />
       </div>
     </div>

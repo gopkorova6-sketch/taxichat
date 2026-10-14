@@ -146,8 +146,8 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   };
 
   const driverCard = (driver, extra = {}) => (
-    <div key={driver.driverId} className="bg-secondary rounded-xl p-3 text-sm">
-      <div className="font-semibold">{driver.displayName}</div>
+    <div key={driver.driverId} className="bg-secondary rounded-xl p-3 text-sm text-center">
+      <div className="font-semibold text-center">{driver.displayName}</div>
       <div className="text-secondary-text">{driver.carCaption}</div>
       {driver.rating != null && <div>★ {driver.rating}</div>}
       {extra.children}
@@ -160,11 +160,11 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   const orderCard = (order) => (
     <button
       key={order._id}
-      className="w-full text-left bg-secondary rounded-xl p-3 text-sm"
+      className="w-full text-center bg-secondary rounded-xl p-3 text-sm"
       onClick={() => setView({ type: "order", id: order._id })}
     >
-      <div className="flex items-center gap-2">
-        <div className="font-semibold min-w-0 truncate">{routeTitle(order)}</div>
+      <div className="flex items-center gap-2 justify-center">
+        <div className="font-semibold min-w-0 text-center">{routeTitle(order)}</div>
         {order.unreadCount > 0 && (
           <span className="ml-auto bg-danger text-white rounded-full px-2 text-xs shrink-0">
             {order.unreadCount}

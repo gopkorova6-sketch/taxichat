@@ -29,18 +29,18 @@ const ChatList = ({ onOpen, refreshKey = 0 }) => {
       {chats.map((chat) => (
         <button
           key={chat._id}
-          className="w-full text-left bg-secondary rounded p-3 text-sm"
+          className="w-full text-center bg-secondary rounded p-3 text-sm"
           onClick={() => onOpen(chat._id)}
         >
           <div className="flex items-center gap-2">
-            <div className="font-semibold">{chat.peer?.name}</div>
+            <div className="font-semibold text-center">{chat.peer?.name}</div>
             {chat.unreadCount > 0 && (
               <span className="ml-auto bg-danger text-white rounded-full px-2 text-xs">
                 {chat.unreadCount}
               </span>
             )}
           </div>
-          {chat.carCaption && <div className="text-secondary-text">{chat.carCaption}</div>}
+          {chat.carCaption && <div className="text-secondary-text text-center">{chat.carCaption}</div>}
           {chat.lastMessage && (
             <div className="text-secondary-text truncate">
               {chat.lastMessage.kind === "photo"
