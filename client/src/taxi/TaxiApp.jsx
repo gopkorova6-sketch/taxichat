@@ -49,7 +49,7 @@ const TaxiApp = () => {
   return (
     <div className="w-full h-full flex flex-col">
       <header className="flex flex-col gap-2 p-2 border-b border-secondary-text/20 bg-secondary">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center justify-center gap-2 min-w-0">
           <span className="font-bold uppercase tracking-wide text-cta-icon shrink-0">Бомбила</span>
           <select
             className="bg-primary rounded-lg p-2 text-sm flex-1 min-w-0 truncate"
@@ -65,7 +65,7 @@ const TaxiApp = () => {
           </select>
         </div>
         {/* Роли в шапке — только на десктопе; на мобильных нижняя навигация */}
-        <div className="sm:hidden flex gap-1 flex-wrap">
+        <div className="sm:hidden flex gap-1 flex-wrap justify-center">
           {availableRoles.map((r) => (
             <button
               key={r}
@@ -78,9 +78,9 @@ const TaxiApp = () => {
             </button>
           ))}
         </div>
-        <div className="flex items-center justify-between gap-2 text-sm min-w-0">
+        <div className="flex flex-wrap items-center justify-center gap-2 text-sm min-w-0 text-center">
           <span className="truncate">{user?.name}</span>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center justify-center gap-3 shrink-0">
             <button className="underline" onClick={() => setTab(tab === "taxi" ? "chats" : "taxi")}>
               {tab === "taxi" ? "Чаты" : "Заказы"}
             </button>
