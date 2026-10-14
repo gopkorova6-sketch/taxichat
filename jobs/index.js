@@ -9,6 +9,8 @@ const scheduleOrderJobs = async (order) => {
   if (!agenda) return;
 
   if (order.when?.type === "scheduled" && order.when?.at) {
+    // Предзаказ опубликован сразу; за указанное время до поездки приходит
+    // напоминание, а в само время — попытка активации брони
     const leadMinutes = 30;
     const city = await require("../models/City").findById(order.cityId).select("settings");
     const lead = (city?.settings?.preorderLeadMinutes ?? leadMinutes) * 60 * 1000;
@@ -17,12 +19,12 @@ const scheduleOrderJobs = async (order) => {
 
     await agenda.schedule(
       new Date(Math.max(Date.now(), activateAt)),
-      "preorder:activate",
+      "preorder:reminder",
       { orderId: String(order._id) }
     );
     await agenda.schedule(
       new Date(Math.max(Date.now(), reminderAt)),
-      "preorder:reminder",
+      "preorder:activate",
       { orderId: String(order._id) }
     );
     return;

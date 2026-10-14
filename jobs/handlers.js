@@ -111,14 +111,22 @@ const runWaitingTimeout = async ({ orderId }) => {
   );
 };
 
-// Scheduled order activation: publishes the draft and starts the cascade
-// before the ride (concept 1.6)
+// Scheduled order time has come: activate a booking or publish a draft
 const runPreorderActivate = async ({ orderId }) => {
   const order = await Order.findById(orderId).populate("cityId", "settings");
   if (!order || order.when?.type !== "scheduled") return;
 
+  // Бронь активируется: водитель приступает к заказу
+  if (order.status === "BOOKED") {
+    const { events } = await transition(order, "activate", SYSTEM_ACTOR);
+    emitOrderEvents(events);
+    return;
+  }
+
+  // Совместимость: черновик публикуется
   if (order.status === "DRAFT") {
-    await transition(order, "publish", SYSTEM_ACTOR);
+    const { events } = await transition(order, "publish", SYSTEM_ACTOR);
+    emitOrderEvents(events);
   } else if (order.status !== "PUBLISHED") {
     return;
   }

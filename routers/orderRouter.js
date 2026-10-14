@@ -19,6 +19,8 @@ router.route("/:id/dispute").post(orderController.openDispute);
 router.route("/:id/offers").get(orderController.listOffers);
 router.route("/:id/offers").post(orderController.createOffer);
 router.route("/:id/accept").post(orderController.acceptOrder);
+router.route("/:id/book").post(orderController.bookOrder);
+router.route("/:id/activate").post(orderController.activateBooking);
 router.route("/:id/assign").post(orderController.assignByDispatcher);
 router.route("/:id/messages").get(orderController.listMessages);
 router.route("/:id/messages").post(orderController.sendOrderMessage);

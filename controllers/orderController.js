@@ -223,11 +223,10 @@ exports.createOrder = [
     order.chatId = chat._id;
 
     const actor = { userId: req.user._id, role: "passenger" };
-    const isDeferredBroadcast = data.whenType === "scheduled" && !data.targetDriverId;
+    // Предзаказы публикуются сразу и видны водителям (можно забронировать);
+    // бронь не занимает водителя до наступления времени
+    const isDeferredBroadcast = false;
 
-    // Broadcast scheduled orders stay DRAFT until the preorder activation
-    // job publishes them before the ride (concept 1.6); direct scheduled
-    // orders publish immediately so the target driver can accept in advance
     let events = [];
     if (!isDeferredBroadcast) {
       ({ events } = await transition(order, "publish", actor));
@@ -236,7 +235,11 @@ exports.createOrder = [
         directContext
           ? (city.settings?.directOrderTimeoutMin ?? 10) * 60
           : (city.settings?.cascadeTimeouts?.expire ?? 300);
-      order.expiresAt = new Date(Date.now() + timeoutSeconds * 1000);
+      // Для заказов «на время» срок публикации не ограничен коротким окном
+      order.expiresAt =
+        data.whenType === "scheduled"
+          ? new Date(new Date(order.when.at).getTime() + 60 * 60 * 1000)
+          : new Date(Date.now() + timeoutSeconds * 1000);
     }
     await order.save();
     await botDispatcher.upsertOrderCard(order);
@@ -286,17 +289,16 @@ exports.listOrders = catchAsyncError(async (req, res) => {
   let orders;
 
   if (driverMembership) {
-    // City-wide feed: all broadcast orders of the city, plus the driver's
-    // own assigned and targeted orders. Zone-scoped feeds kept only for
-    // memberships that still define zones.
+    // Лента водителя: заказы его города, доступные для отклика/брони,
+    // плюс его собственные заказы и брони
     const zoneIds = driverMembership.zones ?? [];
     const feedClauses = [
       { driverId: req.user._id },
       { targetDriverId: req.user._id },
-      { fromZone: null, mode: "broadcast" },
+      { status: "PUBLISHED", mode: "broadcast" },
     ];
     if (zoneIds.length > 0) {
-      feedClauses.push({ fromZone: { $in: zoneIds } });
+      feedClauses.push({ fromZone: { $in: zoneIds }, status: "PUBLISHED" });
     }
     orders = await Order.find({
       cityId,
@@ -850,6 +852,54 @@ exports.republishOrder = catchAsyncError(async (req, res) => {
   await scheduleOrderJobs(order);
 
   res.status(201).json({
+    status: "success",
+    data: { order: await serializeOrderFor(order, req) },
+  });
+});
+
+// POST /api/orders/:id/book — водитель бронирует заказ «на время»,
+// оставаясь свободным для текущих заказов
+exports.bookOrder = catchAsyncError(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new ApiError(404, "Заказ не найден");
+  if (order.mode === "direct" && String(order.targetDriverId) !== String(req.user._id))
+    throw new ApiError(403, "Этот заказ оформлен другому водителю");
+
+  const driverMembership = (req.memberships ?? []).find(
+    (item) =>
+      item.role === "driver" &&
+      item.status === "ACTIVE" &&
+      String(item.cityId?._id ?? item.cityId) === String(order.cityId)
+  );
+  if (!driverMembership) throw new ApiError(403, "Вы не водитель этого города");
+
+  const actor = { userId: req.user._id, role: "driver" };
+  const { events } = await transition(order, "book", actor);
+  events.push(
+    { room: `city:${order.cityId}`, event: "order:taken", payload: { orderId: order._id } }
+  );
+  emitOrderEvents(events);
+
+  res.json({
+    status: "success",
+    data: { order: await serializeOrderFor(order, req) },
+  });
+});
+
+// POST /api/orders/:id/activate — водитель приступает к своей брони
+exports.activateBooking = catchAsyncError(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new ApiError(404, "Заказ не найден");
+  if (order.status !== "BOOKED")
+    throw new ApiError(409, "Заказ не находится в брони");
+  if (String(order.driverId) !== String(req.user._id))
+    throw new ApiError(403, "Это не ваша бронь");
+
+  const actor = { userId: req.user._id, role: "driver" };
+  const { events } = await transition(order, "activate", actor);
+  emitOrderEvents(events);
+
+  res.json({
     status: "success",
     data: { order: await serializeOrderFor(order, req) },
   });

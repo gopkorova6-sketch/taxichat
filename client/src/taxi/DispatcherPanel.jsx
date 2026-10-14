@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { apiGet, apiPost, apiPatch } from "./api";
-import { statusLabel, formatWhen } from "./statusLabels";
+import { statusBadge, formatWhen } from "./statusLabels";
+import { useDispatch } from "react-redux";
+import { notificationActions } from "../store/notificationSlice";
 import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
 
 // Dispatcher panel: city order queue, manual assignment, driver applications
 // review and the region admin sections (concept 1.3 / 1.9)
 const DispatcherPanel = ({ cityId, role, me }) => {
+  const dispatch = useDispatch();
   const { socketListen, socket } = useSocket();
   const [orders, setOrders] = useState([]);
   const [pending, setPending] = useState([]);
@@ -83,6 +86,12 @@ const DispatcherPanel = ({ cityId, role, me }) => {
   const assign = async (orderId, membershipId) => {
     try {
       await apiPost(`/api/orders/${orderId}/assign`, { membershipId });
+      dispatch(
+        notificationActions.addNotification({
+          message: "Водитель назначен на заказ",
+          type: "success",
+        })
+      );
       load();
     } catch (err) {
       setError(err.message);
@@ -96,8 +105,17 @@ const DispatcherPanel = ({ cityId, role, me }) => {
         reason = window.prompt("Причина отказа:");
         if (!reason) return;
       }
-      await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
-      load();
+await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
+        dispatch(
+          notificationActions.addNotification({
+            message:
+              decision === "approve"
+                ? "Водитель одобрен"
+                : "Анкета отклонена",
+            type: decision === "approve" ? "success" : "info",
+          })
+        );
+        load();
     } catch (err) {
       setError(err.message);
     }
@@ -165,7 +183,7 @@ const DispatcherPanel = ({ cityId, role, me }) => {
                   )}
                 </div>
                 <div className="text-secondary-text">
-                  {statusLabel(order.status)} · {formatWhen(order.when)} · {order.pax} пасс.
+                  {statusBadge(order.status)} · {formatWhen(order.when)} · {order.pax} пасс.
                 </div>
                 <div className="flex gap-2 mt-2">
                   {order.status === "PUBLISHED" && (

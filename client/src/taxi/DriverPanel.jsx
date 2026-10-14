@@ -6,7 +6,7 @@ import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
 import DirectChat from "./DirectChat";
 import ChatList from "./ChatList";
-import { statusLabel, formatWhen } from "./statusLabels";
+import { statusBadge, formatWhen } from "./statusLabels";
 
 // Driver panel: shift toggle, live feed of published orders, assigned orders
 const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
@@ -90,7 +90,44 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
   const accept = async (order) => {
     try {
       await apiPost(`/api/orders/${order._id}/accept`, {});
-      setView(order._id);
+      dispatch(
+        notificationActions.addNotification({
+          message: "Заказ принят — открываю чат",
+          type: "success",
+        })
+      );
+      setView({ type: "order", id: order._id });
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const book = async (order) => {
+    try {
+      await apiPost(`/api/orders/${order._id}/book`, {});
+      dispatch(
+        notificationActions.addNotification({
+          message: "Заказ забронирован. Вы остаётесь свободны до времени поездки",
+          type: "success",
+        })
+      );
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const activateBooking = async (order) => {
+    try {
+      await apiPost(`/api/orders/${order._id}/activate`, {});
+      dispatch(
+        notificationActions.addNotification({
+          message: "Бронь активирована — вы назначены на заказ",
+          type: "success",
+        })
+      );
+      setView({ type: "order", id: order._id });
       load();
     } catch (err) {
       setError(err.message);
@@ -117,6 +154,20 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
   const myAction = async (order, action) => {
     try {
       await apiPost(`/api/orders/${order._id}/action`, { action });
+      const labels = {
+        arrive: "Отмечено: выехал",
+        wait: "Отмечено: на месте",
+        start: "Поездка началась",
+        finish: "Поездка завершена ✅",
+        no_show: "Отмечена неявка пассажира",
+        undo_start: "Начало поездки отменено",
+      };
+      dispatch(
+        notificationActions.addNotification({
+          message: labels[action] ?? "Готово",
+          type: "success",
+        })
+      );
       load();
     } catch (err) {
       setError(err.message);
@@ -170,14 +221,22 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                 {formatWhen(order.when)} · {order.pax} пасс.
                 {order.notes ? ` · ${order.notes}` : ""}
               </div>
-              <div className="flex gap-2 mt-2">
+              <div className="flex gap-2 mt-2 flex-wrap">
                 {order.isTarget || order.matchMode === "first_take" ? (
-                  <button className="bg-success text-white px-3 py-1 rounded" onClick={() => accept(order)}>
+                  <button className="bg-success text-white px-3 py-1.5 rounded-lg" onClick={() => accept(order)}>
                     Принять
                   </button>
                 ) : (
-                  <button className="bg-accent text-black px-3 py-1 rounded" onClick={() => sendOffer(order)}>
+                  <button className="bg-accent text-black px-3 py-1.5 rounded-lg" onClick={() => sendOffer(order)}>
                     Прислать отклик
+                  </button>
+                )}
+                {order.when?.type === "scheduled" && (
+                  <button
+                    className="border border-accent text-cta-icon px-3 py-1.5 rounded-lg"
+                    onClick={() => book(order)}
+                  >
+                    🔖 Забронировать
                   </button>
                 )}
                 <button className="underline" onClick={() => setView({ type: "order", id: order._id })}>Чат</button>
@@ -203,10 +262,18 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                   </span>
                 )}
               </div>
-              <div className="text-secondary-text">{statusLabel(order.status)}</div>
+              <div className="text-secondary-text">{statusBadge(order.status)} · {formatWhen(order.when)}</div>
               <div className="flex gap-2 mt-2 flex-wrap">
+                {order.status === "BOOKED" && (
+                  <button
+                    className="bg-accent text-black px-3 py-1.5 rounded-lg"
+                    onClick={() => activateBooking(order)}
+                  >
+                    🚕 Приступить к брони
+                  </button>
+                )}
                 {order.status === "ASSIGNED" && (
-                  <button className="bg-accent text-black px-3 py-1 rounded" onClick={() => myAction(order, "arrive")}>Выехал</button>
+                  <button className="bg-accent text-black px-3 py-1.5 rounded-lg" onClick={() => myAction(order, "arrive")}>Выехал</button>
                 )}
                 {order.status === "ARRIVING" && (
                   <button className="bg-accent text-black px-3 py-1 rounded" onClick={() => myAction(order, "wait")}>Я на месте</button>

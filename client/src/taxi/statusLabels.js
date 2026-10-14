@@ -1,7 +1,8 @@
 // Shared Russian labels for order statuses (concept 1.6)
 export const STATUS_LABELS = {
-  DRAFT: "Запланирован (ждёт активации)",
+  DRAFT: "Запланирован",
   PUBLISHED: "Ожидает водителя",
+  BOOKED: "Забронирован",
   ASSIGNED: "Водитель назначен",
   ARRIVING: "Водитель выехал",
   WAITING: "Водитель на месте",
@@ -15,7 +16,34 @@ export const STATUS_LABELS = {
 
 export const statusLabel = (status) => STATUS_LABELS[status] ?? status;
 
-// Shared Russian labels for city statuses (concept 1.4)
+// Компактные статусы заказа для карточек: эмодзи + короткий текст
+export const statusBadge = (status) =>
+  ({
+    DRAFT: "🕓 Запланирован",
+    PUBLISHED: "🔎 Ищем водителя",
+    BOOKED: "🔖 Забронирован",
+    ASSIGNED: "🚕 Водитель назначен",
+    ARRIVING: "🚕 Выехал",
+    WAITING: "📍 На месте",
+    IN_RIDE: "🛣 В пути",
+    COMPLETED: "✅ Завершён",
+    EXPIRED: "⌛ Истёк",
+    CANCELLED: "✖️ Отменён",
+    NO_SHOW: "🚫 Неявка",
+    DISPUTE: "⚠️ Спор",
+  })[status] ?? status;
+
+// Эмодзи статуса города (вместо длинных подписей)
+export const cityStatusEmoji = (status) =>
+  ({
+    DORMANT: "😴",
+    WAITLIST: "🕓",
+    PILOT: "✅",
+    ACTIVE: "🟢",
+    SUSPENDED: "⛔",
+  })[status] ?? "❔";
+
+// Короткая подпись статуса города (для деталей)
 export const CITY_STATUS_LABELS = {
   DORMANT: "Не запущен",
   WAITLIST: "Список ожидания",

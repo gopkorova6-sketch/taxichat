@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
+import { notificationActions } from "../store/notificationSlice";
 import { useReactMediaRecorder } from "react-media-recorder";
 import { apiGet, apiPost, apiUpload } from "./api";
 import useSocket from "../hooks/useSocket";
-import { statusLabel, formatWhen } from "./statusLabels";
+import { statusBadge, formatWhen } from "./statusLabels";
 
 // Chat of a single order: bot card, system messages, quick action buttons,
 // offers, SOS and the trip rating (concept 1.7)
 const OrderChat = ({ orderId, me, onBack, startCall }) => {
+  const dispatch = useDispatch();
   const { socketListen, socketEmit, socket } = useSocket();
   const [order, setOrder] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -74,6 +77,12 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
   const acceptOffer = async (offerId) => {
     try {
       await apiPost(`/api/orders/${orderId}/accept`, { offerId });
+      dispatch(
+        notificationActions.addNotification({
+          message: "Отклик принят — водитель назначен",
+          type: "success",
+        })
+      );
       load();
     } catch (err) {
       setError(err.message);
@@ -88,20 +97,60 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
         if (!priceText) return;
         const etaMin = parseInt(window.prompt("Время подачи, минут:") ?? "10", 10);
         await apiPost(`/api/orders/${orderId}/offers`, { priceText, etaMin });
+        dispatch(
+          notificationActions.addNotification({
+            message: "Отклик отправлен пассажиру",
+            type: "success",
+          })
+        );
       } else if (action === "cancel") {
         const reason = window.prompt("Причина отмены:");
         if (!reason) return;
         await apiPost(`/api/orders/${orderId}/cancel`, { reason });
+        dispatch(
+          notificationActions.addNotification({
+            message: "Заказ отменён",
+            type: "info",
+          })
+        );
       } else if (action === "dispute") {
         const reason = window.prompt("Опишите проблему:");
         if (!reason) return;
         await apiPost(`/api/orders/${orderId}/dispute`, { reason });
+        dispatch(
+          notificationActions.addNotification({
+            message: "Спор открыт, диспетчер подключится",
+            type: "info",
+          })
+        );
       } else if (action === "text") {
         // Quick replies from the bot ("Опаздываю на 5 минут" etc.)
         await send(button.text ?? button.label);
         return;
       } else {
-        await apiPost(`/api/orders/${orderId}/action`, { action });
+        // Lifecycle actions: arrive/wait/start/finish etc., plus booking
+        const endpoint =
+          action === "book" ? "book" : action === "activate" ? "activate" : "action";
+        await apiPost(
+          `/api/orders/${orderId}/${endpoint}`,
+          endpoint === "action" ? { action } : {}
+        );
+        const labels = {
+          arrive: "Отмечено: выехал",
+          wait: "Отмечено: на месте",
+          start: "Поездка началась",
+          finish: "Поездка завершена ✅",
+          no_show: "Отмечена неявка",
+          undo_start: "Начало поездки отменено",
+          book: "🔖 Заказ забронирован — вы свободны до времени",
+          activate: "🚕 Бронь активирована — вы назначены",
+        };
+        dispatch(
+          notificationActions.addNotification({
+            message: labels[action] ?? "Готово",
+            type: "success",
+          })
+        );
       }
       load();
     } catch (err) {
@@ -175,6 +224,12 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
   const sos = async () => {
     try {
       await apiPost(`/api/orders/${orderId}/sos`, {});
+      dispatch(
+        notificationActions.addNotification({
+          message: "SOS отправлен — диспетчеры оповещены",
+          type: "error",
+        })
+      );
       load();
     } catch (err) {
       setError(err.message);
@@ -204,6 +259,12 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
     if (!window.confirm("Заблокировать участника? Звонки и диалоги станут недоступны.")) return;
     try {
       await apiPost("/api/blocks", { userId: String(otherId) });
+      dispatch(
+        notificationActions.addNotification({
+          message: "Участник заблокирован",
+          type: "info",
+        })
+      );
       setError("Участник заблокирован");
     } catch (err) {
       setError(err.message);
@@ -233,7 +294,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           </div>
           <div className="text-sm text-secondary-text shrink-0">
             {order.passenger?.name ? `${order.passenger.name} · ` : ""}
-            {statusLabel(order.status)} · {formatWhen(order.when)}
+            {statusBadge(order.status)} · {formatWhen(order.when)}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -316,7 +377,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
             return (
               <div key={message._id} className="border border-secondary-text/30 rounded p-3 text-sm">
                 <div className="font-semibold">Заказ</div>
-                <div>Статус: {statusLabel(message.meta?.status)}</div>
+                <div>Статус: {statusBadge(message.meta?.status)}</div>
                 <div>{message.meta?.to ? `${message.meta?.from} → ${message.meta?.to}` : message.meta?.from}</div>
                 <div>Когда: {formatWhen(message.meta?.when)}</div>
                 <div>Пассажиров: {message.meta?.pax}{message.meta?.priceAgreed ? `, цена: ${message.meta.priceAgreed}` : ""}</div>

@@ -6,7 +6,7 @@ import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
 import DirectChat from "./DirectChat";
 import ChatList from "./ChatList";
-import { statusLabel, formatWhen, defaultScheduledAt } from "./statusLabels";
+import { statusBadge, formatWhen, defaultScheduledAt } from "./statusLabels";
 
 // Passenger panel, mobile-first: the order composer sits at the BOTTOM of the
 // screen like a messenger input; recent orders fill the scrollable area above.
@@ -50,7 +50,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
       if (orders.some((order) => order._id === payload.orderId)) {
         dispatch(
           notificationActions.addNotification({
-            message: `Заказ: ${statusLabel(payload.status)}`,
+            message: `Заказ: ${statusBadge(payload.status)}`,
             type: payload.status === "DISPUTE" ? "error" : "info",
           })
         );
@@ -99,6 +99,15 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
       setWhenType("now");
       setWhenAt(defaultScheduledAt());
       setTab("orders");
+      dispatch(
+        notificationActions.addNotification({
+          message:
+            whenType === "scheduled"
+              ? "Заказ на время создан и виден водителям"
+              : "Заказ создан, ищем водителя",
+          type: "success",
+        })
+      );
       setView({ type: "order", id: res.data.order._id });
       load();
     } catch (err) {
@@ -163,7 +172,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
         )}
       </div>
       <div className="text-secondary-text">
-        {statusLabel(order.status)} · {formatWhen(order.when)}
+        {statusBadge(order.status)} · {formatWhen(order.when)}
       </div>
     </button>
   );

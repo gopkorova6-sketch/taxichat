@@ -15,7 +15,12 @@ const CAR_CAPTION = (profile) =>
 const ACTIONS_BY_STATUS = {
   PUBLISHED: [
     { action: "offer", label: "Прислать отклик", roles: ["driver"] },
+    { action: "book", label: "🔖 Забронировать на время", roles: ["driver"] },
     { action: "cancel", label: "Отменить заказ", roles: ["passenger"] },
+  ],
+  BOOKED: [
+    { action: "activate", label: "🚕 Приступить к брони", roles: ["driver"] },
+    { action: "cancel", label: "Отменить", roles: ["passenger", "driver"] },
   ],
   ASSIGNED: [
     { action: "arrive", label: "Выехал", roles: ["driver"] },

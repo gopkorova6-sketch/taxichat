@@ -64,46 +64,53 @@ describe("Orders and the state machine", () => {
     expect(getRes.body.data.order.passengerId).toBeUndefined();
   });
 
-  it("scheduled broadcast orders do not fan out until preorder activation", async () => {
+  it("scheduled broadcast orders are immediately visible to drivers for booking", async () => {
     const created = await createOrder(app, world.passenger, world.city, {
       whenType: "scheduled",
       whenAt: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
     });
     const scheduledOrder = created.body.data.order;
-    expect(scheduledOrder.status).toBe("DRAFT");
+    expect(scheduledOrder.status).toBe("PUBLISHED");
 
-    // The card is not in the drivers' feeds yet
+    // The card IS in the drivers' feeds immediately (booking)
     const feed = await request(app)
       .get(`/api/orders?cityId=${world.city._id}&status=PUBLISHED`)
       .set("Cookie", world.drivers[0].cookie);
     expect(
       feed.body.data.orders.some((order) => order._id === scheduledOrder._id)
-    ).toBe(false);
+    ).toBe(true);
 
-    // The passenger sees his draft and can cancel it without penalty
+    // Driver books it — status BOOKED, driverId set
+    const booked = await request(app)
+      .post(`/api/orders/${scheduledOrder._id}/book`)
+      .set("Cookie", world.drivers[0].cookie);
+    expect(booked.status).toBe(200);
+    expect(booked.body.data.order.status).toBe("BOOKED");
+    expect(String(booked.body.data.order.driverId)).toBe(
+      String(world.drivers[0].user._id)
+    );
+
+    // Passenger sees the booking
     const mine = await request(app)
       .get(`/api/orders?cityId=${world.city._id}`)
       .set("Cookie", world.passenger.cookie);
     const own = mine.body.data.orders.find(
       (order) => order._id === scheduledOrder._id
     );
-    expect(own).toBeDefined();
-    expect(own.status).toBe("DRAFT");
+    expect(own.status).toBe("BOOKED");
 
-    const cancelled = await request(app)
-      .post(`/api/orders/${scheduledOrder._id}/cancel`)
-      .set("Cookie", world.passenger.cookie)
-      .send({ reason: "Планы изменились" });
-    expect(cancelled.status).toBe(200);
+    // Another driver cannot book an already booked order
+    const foreignBook = await request(app)
+      .post(`/api/orders/${scheduledOrder._id}/book`)
+      .set("Cookie", world.drivers[1].cookie);
+    expect(foreignBook.status).toBe(409);
 
-    // "Now" orders still fan out immediately
-    const nowOrder = await createBroadcastOrder();
-    const feedAfter = await request(app)
-      .get(`/api/orders?cityId=${world.city._id}&status=PUBLISHED`)
+    // The booking driver activates it when the time comes
+    const activated = await request(app)
+      .post(`/api/orders/${scheduledOrder._id}/activate`)
       .set("Cookie", world.drivers[0].cookie);
-    expect(
-      feedAfter.body.data.orders.some((order) => order._id === nowOrder.body.data.order._id)
-    ).toBe(true);
+    expect(activated.status).toBe(200);
+    expect(activated.body.data.order.status).toBe("ASSIGNED");
   });
 
   it("unread message counts appear in lists and clear after marking read", async () => {

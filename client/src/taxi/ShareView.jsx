@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 // route, status and car caption only — no exact addresses or phone numbers
 const STATUS_LABELS = {
   PUBLISHED: "Ожидает водителя",
+  BOOKED: "Водитель забронирован",
   ASSIGNED: "Водитель назначен",
   ARRIVING: "Водитель в пути к вам",
   WAITING: "Водитель на месте",

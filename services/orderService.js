@@ -9,6 +9,7 @@ const botDispatcher = require("./botDispatcher");
 const ORDER_STATUSES = [
   "DRAFT",
   "PUBLISHED",
+  "BOOKED",
   "ASSIGNED",
   "ARRIVING",
   "WAITING",
@@ -29,6 +30,19 @@ const TRANSITIONS = {
     // "system" publishes scheduled orders at preorder activation
     roles: ["passenger", "system"],
   },
+  // Бронь: водитель резервирует заказ на будущее, оставаясь свободным
+  // для текущих заказов
+  book: {
+    from: ["PUBLISHED"],
+    to: "BOOKED",
+    roles: ["passenger", "driver", "dispatcher", "system"],
+  },
+  // Активация брони: когда время пришло, водитель приступает к заказу
+  activate: {
+    from: ["BOOKED"],
+    to: "ASSIGNED",
+    roles: ["system", "driver", "dispatcher"],
+  },
   assign: {
     from: ["PUBLISHED"],
     to: "ASSIGNED",
@@ -41,13 +55,21 @@ const TRANSITIONS = {
   finish: { from: ["IN_RIDE"], to: "COMPLETED", roles: ["driver"] },
   no_show: { from: ["WAITING"], to: "NO_SHOW", roles: ["driver"] },
   cancel: {
-    from: ["DRAFT", "PUBLISHED", "ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE"],
+    from: [
+      "DRAFT",
+      "PUBLISHED",
+      "BOOKED",
+      "ASSIGNED",
+      "ARRIVING",
+      "WAITING",
+      "IN_RIDE",
+    ],
     to: "CANCELLED",
     // "system" cancels timed-out direct orders (concept 1.6)
     roles: ["passenger", "driver", "dispatcher", "system"],
   },
   dispute: {
-    from: ["PUBLISHED", "ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE"],
+    from: ["PUBLISHED", "BOOKED", "ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE"],
     to: "DISPUTE",
     roles: ["passenger", "driver", "dispatcher"],
   },
@@ -56,6 +78,8 @@ const TRANSITIONS = {
 
 const SYSTEM_MESSAGES = {
   publish: "Заказ опубликован",
+  book: "Заказ забронирован водителем на указанное время",
+  activate: "Время брони наступило: водитель приступает к заказу",
   assign: "Водитель назначен: адреса и телефон водителя открыты в чате",
   arrive: "Водитель выехал",
   wait: "Водитель на месте",
@@ -127,7 +151,14 @@ const assertTransition = (order, event, actor) => {
       order.mode === "direct" &&
       order.status === "PUBLISHED" &&
       String(order.targetDriverId) === String(actor.userId);
-    if (!isAssigned && !isDirectTarget)
+    // Booking: a driver reserves a published order (becomes its driver)
+    const isBooking = event === "book" && order.status === "PUBLISHED";
+    // Activating a booking: only the driver who booked it
+    const isActivating =
+      event === "activate" &&
+      order.status === "BOOKED" &&
+      String(order.driverId) === String(actor.userId);
+    if (!isAssigned && !isDirectTarget && !isBooking && !isActivating)
       throw new ApiError(403, "Заказ назначен не вам");
   }
   // dispatcher membership in the order city is checked by the caller
@@ -197,6 +228,17 @@ const transition = async (order, event, actor, { reason } = {}) => {
     order.driverId = actor.userId;
   }
 
+  // Бронь: водитель резервирует заказ, не становясь занятым
+  if (event === "book") {
+    order.driverId = actor.userId;
+    order.bookedAt = new Date();
+  }
+
+  // Активация брони: заказ переходит в обычный поток
+  if (event === "activate") {
+    order.activatedAt = new Date();
+  }
+
   let membersToAdd = [];
   let systemText = SYSTEM_MESSAGES[event];
 
@@ -216,7 +258,10 @@ const transition = async (order, event, actor, { reason } = {}) => {
     systemText = `Заказ отменён: ${reason}`;
   }
 
-  if (event === "assign" && order.driverId) {
+  if (
+    (event === "assign" || event === "activate") &&
+    order.driverId
+  ) {
     membersToAdd.push(order.driverId);
   }
 
@@ -224,7 +269,9 @@ const transition = async (order, event, actor, { reason } = {}) => {
 
   await updateOrderChat(order, { membersToAdd, systemText });
 
-  if (event === "assign" && order.driverId) {
+  // Booking does NOT take the driver offline: he stays free for current
+  // orders; he becomes busy only when the booking is activated
+  if ((event === "assign" || event === "activate") && order.driverId) {
     await setDriverShift(order.driverId, "busy");
   }
   if (TERMINAL_STATUSES.includes(order.status) && order.driverId) {

@@ -84,29 +84,31 @@ describe("Background job handlers", () => {
     expect(order.status).toBe("ASSIGNED");
   });
 
-  it("preorder activation publishes the draft and idempotently skips later", async () => {
+  it("preorder activation activates a booking and is idempotent", async () => {
     const created = await createOrder(app, world.passenger, world.city, {
       whenType: "scheduled",
       whenAt: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
     });
     const order = created.body.data.order;
-    expect(order.status).toBe("DRAFT");
+    // Scheduled orders are published immediately for booking
+    expect(order.status).toBe("PUBLISHED");
 
+    // Driver books it
+    await request(app)
+      .post(`/api/orders/${order._id}/book`)
+      .set("Cookie", world.drivers[0].cookie);
+    const booked = await Order.findById(order._id);
+    expect(booked.status).toBe("BOOKED");
+
+    // Preorder activation moves BOOKED -> ASSIGNED
     await handlers.runPreorderActivate({ orderId: order._id });
-
     const activated = await Order.findById(order._id);
-    expect(activated.status).toBe("PUBLISHED");
+    expect(activated.status).toBe("ASSIGNED");
 
-    const systemMessage = await Message.findOne({
-      chatId: order.chatId,
-      body: "Заказ опубликован",
-    });
-    expect(systemMessage).toBeTruthy();
-
-    // Already published orders pass through without changes
+    // Running again is a no-op (already ASSIGNED, not BOOKED/DRAFT)
     await handlers.runPreorderActivate({ orderId: order._id });
-    const stillPublished = await Order.findById(order._id);
-    expect(stillPublished.status).toBe("PUBLISHED");
+    const stillAssigned = await Order.findById(order._id);
+    expect(stillAssigned.status).toBe("ASSIGNED");
   });
 
   it("heartbeat sweep sends stale online drivers offline", async () => {

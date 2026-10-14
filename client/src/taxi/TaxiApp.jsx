@@ -11,7 +11,7 @@ import DriverPanel from "./DriverPanel";
 import DispatcherPanel from "./DispatcherPanel";
 import RolesSection from "./RolesSection";
 import { apiPost } from "./api";
-import { cityStatusLabel } from "./statusLabels";
+import { cityStatusEmoji } from "./statusLabels";
 
 // Main Бомбила workspace: city and role switcher, role panels, order chats
 // and voice calls. The legacy contact chats stay available in the "Чаты" tab.
@@ -59,7 +59,7 @@ const TaxiApp = () => {
             <option value="" disabled>Город</option>
             {cities.map((item) => (
               <option key={item._id} value={item._id}>
-                {item.name} ({cityStatusLabel(item.status)})
+                {cityStatusEmoji(item.status)} {item.name}
               </option>
             ))}
           </select>
@@ -106,7 +106,7 @@ const TaxiApp = () => {
           <div className="p-6 space-y-2">
             <div className="text-secondary-text">
               В городе {city?.name ?? ""} у вас пока нет активной роли.
-              Статус города: {cityStatusLabel(city?.status)}.
+              Статус города: {cityStatusEmoji(city?.status)}.
             </div>
             <button
               className="bg-accent text-black px-4 py-2 rounded text-sm"

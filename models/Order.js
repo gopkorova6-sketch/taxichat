@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const ORDER_STATUSES = [
   "DRAFT",
   "PUBLISHED",
+  "BOOKED",
   "ASSIGNED",
   "ARRIVING",
   "WAITING",
