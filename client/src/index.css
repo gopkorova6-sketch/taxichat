@@ -225,3 +225,135 @@ html.dark #emojiPicker .EmojiPickerReact {
 #messageInput img {
   @apply inline-block w-[1.8rem] h-[1.8rem];
 }
+
+/* ==== Бомбила: мобильный стиль (стекло, шрифты, анимации) ==== */
+:root {
+  --font-display: "Unbounded", "Manrope", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --glass-bg: rgba(30, 30, 30, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --accent-glow: 0 0 24px rgba(247, 199, 0, 0.35);
+}
+
+body {
+  font-family: var(--font-body);
+  background:
+    radial-gradient(900px 500px at 10% -10%, rgba(247, 199, 0, 0.08), transparent 60%),
+    radial-gradient(700px 400px at 110% 110%, rgba(247, 199, 0, 0.05), transparent 60%),
+    var(--bg-primary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Жидкое стекло */
+.glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-strong {
+  background: rgba(20, 20, 20, 0.78);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Шрифты */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Кнопки: нажатие и мягкое увеличение */
+.press {
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background-color 0.25s ease;
+}
+.press:active {
+  transform: scale(0.95);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, #ffd84d 0%, #f7c700 55%, #e0a800 100%);
+  color: #111;
+  box-shadow: var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* Появление элементов */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(247, 199, 0, 0.55); }
+  70% { box-shadow: 0 0 0 16px rgba(247, 199, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(247, 199, 0, 0); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes marquee-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+.anim-rise { animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-fade { animation: fade-in 0.35s ease both; }
+.anim-sheet { animation: sheet-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-float { animation: float 3.2s ease-in-out infinite; }
+.anim-pulse-ring { animation: pulse-ring 1.8s ease-out infinite; }
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+/* Бегущий градиентный текст для названия города */
+.brand-gradient {
+  background: linear-gradient(90deg, #fff3b0, #f7c700, #ffb300, #fff3b0);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+
+/* Крупный адаптивный заголовок бренда */
+.brand-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 1;
+}
+
+/* Мягкий отклик на жест и уважение к reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Скрыть полосы прокрутки в горизонтальных рядах */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { scrollbar-width: none; }

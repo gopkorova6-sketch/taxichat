@@ -48,21 +48,46 @@ const TaxiApp = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <header className="flex flex-col gap-2 p-2 border-b border-secondary-text/20 bg-secondary">
-        <div className="flex items-center justify-center gap-2 min-w-0">
-          <span className="font-bold uppercase tracking-wide text-cta-icon shrink-0">Бомбила</span>
-          <select
-            className="bg-primary rounded-lg p-2 text-sm flex-1 min-w-0 truncate"
-            value={cityId ?? ""}
-            onChange={(event) => setCityId(event.target.value)}
-          >
-            <option value="" disabled>Город</option>
-            {cities.map((item) => (
-              <option key={item._id} value={item._id}>
-                {cityStatusEmoji(item.status)} {item.name}
-              </option>
-            ))}
-          </select>
+      <header className="glass-strong sticky top-0 z-30 flex flex-col gap-2 px-3 pt-3 pb-2 rounded-b-3xl anim-fade">
+        <div className="flex flex-col items-center gap-1">
+          <span className="brand-title brand-gradient">Бомбила</span>
+          <span className="text-[1.1rem] text-secondary-text tracking-wide">такси без посредников</span>
+        </div>
+        {/* Слайдер городов: выбранный город крупно, в стиле бренда */}
+        <div className="relative">
+          <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory hide-scrollbar py-1 px-[25%]">
+            {cities.map((item) => {
+              const selected = String(item._id) === String(cityId);
+              return (
+                <button
+                  key={item._id}
+                  onClick={() => setCityId(String(item._id))}
+                  className={`press snap-center shrink-0 rounded-2xl px-4 py-2 transition-all duration-300 ${
+                    selected
+                      ? "btn-accent font-display font-extrabold text-[1.8rem] scale-100"
+                      : "glass text-secondary-text text-[1.3rem] scale-90 opacity-70"
+                  }`}
+                >
+                  <span className="mr-1">{cityStatusEmoji(item.status)}</span>
+                  {item.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {/* Роли в шапке — только на десктопе; на мобильных нижняя навигация */}
+        <div className="sm:hidden flex gap-1 flex-wrap justify-center">
+          {availableRoles.map((r) => (
+            <button
+              key={r}
+              className={`press px-3 py-1.5 rounded-full text-sm ${
+                role === r ? "btn-accent font-semibold" : "glass text-secondary-text"
+              }`}
+              onClick={() => setRole(r)}
+            >
+              {ROLE_LABELS[r]}
+            </button>
+          ))}
         </div>
         {/* Роли в шапке — только на десктопе; на мобильных нижняя навигация */}
         <div className="sm:hidden flex gap-1 flex-wrap justify-center">
@@ -92,7 +117,7 @@ const TaxiApp = () => {
 
       {error && <div className="text-danger text-sm px-4 py-1">{error}</div>}
 
-      <div className="flex-1 overflow-hidden pb-[6rem] sm:pb-0">
+      <div className="flex-1 overflow-hidden pb-[7.5rem] sm:pb-0 anim-rise">
         {tab === "chats" ? (
           <div className="flex w-full h-full">
             <Sidebar />
@@ -149,22 +174,26 @@ const TaxiApp = () => {
       </div>
 
       {/* Мобильная нижняя навигация по ролям — под большим пальцем */}
-      <nav className="hidden sm:flex border-t border-secondary-text/20 bg-secondary safe-area-bottom">
-        {availableRoles.map((r) => (
-          <button
-            key={r}
-            className={`flex-1 py-3 text-sm flex flex-col items-center gap-0.5 ${
-              role === r ? "text-cta-icon font-semibold" : "text-secondary-text"
-            }`}
-            onClick={() => setRole(r)}
-          >
-            <span className="text-[2rem] leading-none">
-              {r === "driver" ? "🚕" : r === "dispatcher" || r === "region_admin" ? "🎧" : "🧍"}
-            </span>
-            {ROLE_LABELS[r]}
-          </button>
-        ))}
+      <nav className="fixed bottom-3 left-3 right-3 z-30 flex sm:hidden glass-strong rounded-3xl p-1.5 safe-area-bottom">
+        {availableRoles.map((r) => {
+          const active = role === r;
+          return (
+            <button
+              key={r}
+              className={`press relative flex-1 py-2.5 rounded-2xl text-[1.2rem] flex flex-col items-center gap-0.5 transition-all duration-300 ${
+                active ? "btn-accent font-bold" : "text-secondary-text"
+              }`}
+              onClick={() => setRole(r)}
+            >
+              <span className={`text-[2rem] leading-none ${active ? "anim-float" : ""}`}>
+                {r === "driver" ? "🚕" : r === "dispatcher" || r === "region_admin" ? "🎧" : "🧍"}
+              </span>
+              {ROLE_LABELS[r]}
+            </button>
+          );
+        })}
       </nav>
+      {/* Десктопная навигация по ролям — в шапке уже есть, нижняя панель скрыта */}
 
 
       <CallModal call={call} acceptCall={acceptCall} endCall={endCall} />

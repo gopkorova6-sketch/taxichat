@@ -160,7 +160,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   const orderCard = (order) => (
     <button
       key={order._id}
-      className="w-full text-center bg-secondary rounded-xl p-3 text-sm"
+      className="press anim-rise w-full text-center glass rounded-2xl p-3 text-sm"
       onClick={() => setView({ type: "order", id: order._id })}
     >
       <div className="flex items-center gap-2 justify-center">
@@ -310,7 +310,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
       {/* Нижний композер заказа */}
       {tab === "new" && (
         <form
-          className="shrink-0 border-t border-secondary-text/20 bg-secondary p-3 space-y-2 safe-area-bottom"
+          className="shrink-0 glass-strong rounded-t-3xl p-3 space-y-2.5 safe-area-bottom anim-sheet"
           onSubmit={submit}
         >
           {directTarget && (
@@ -319,16 +319,16 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="relative flex p-1 rounded-2xl bg-primary/70">
             {[
-              ["now", "Сейчас"],
-              ["scheduled", "На время"],
+              ["now", "⚡ Сейчас"],
+              ["scheduled", "🕓 На время"],
             ].map(([key, label]) => (
               <button
                 key={key}
                 type="button"
-                className={`flex-1 py-2 rounded-lg text-sm ${
-                  whenType === key ? "bg-accent text-black font-semibold" : "bg-primary text-secondary-text"
+                className={`press relative z-10 flex-1 py-2 rounded-xl text-[1.3rem] transition-all duration-300 ${
+                  whenType === key ? "btn-accent font-bold" : "text-secondary-text"
                 }`}
                 onClick={() => setWhenType(key)}
               >
@@ -368,8 +368,8 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           />
 
           <button
-            className={`bg-accent text-black font-semibold p-[1.2rem] rounded-xl w-full ${
-              !route.trim() || sending ? "opacity-50" : "opacity-100"
+            className={`press btn-accent font-display font-extrabold tracking-wide p-[1.3rem] rounded-2xl w-full text-[1.6rem] ${
+              !route.trim() || sending ? "opacity-50" : "opacity-100 anim-pulse-ring"
             }`}
             type="submit"
             disabled={!route.trim() || sending}
