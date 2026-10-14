@@ -46,8 +46,11 @@ const runCascadeStep = async ({ orderId, step }) => {
       });
     }
   } else if (step === "zone") {
+    // Orders without a zone (route-as-text) skip the zone and neighbor steps
+    if (!order.fromZone) return events;
     events.push({ room: `zone:${order.fromZone}`, event: "order:new", payload: card });
   } else if (step === "neighbors") {
+    if (!order.fromZone) return events;
     const zone = await Zone.findById(order.fromZone).select("neighbors");
     for (const neighborId of zone?.neighbors ?? []) {
       events.push({ room: `zone:${neighborId}`, event: "order:new", payload: card });
@@ -121,12 +124,18 @@ const runPreorderActivate = async ({ orderId }) => {
   }
 
   const timeouts = order.cityId?.settings?.cascadeTimeouts ?? {};
-  const steps = [
-    ["favorites", 0],
-    ["zone", timeouts.favorites ?? 20],
-    ["neighbors", timeouts.zone ?? 60],
-    ["city", timeouts.neighbors ?? 120],
-  ];
+  // Zone-less orders (route-as-text) go favorites -> city directly
+  const steps = order.fromZone
+    ? [
+        ["favorites", 0],
+        ["zone", timeouts.favorites ?? 20],
+        ["neighbors", timeouts.zone ?? 60],
+        ["city", timeouts.neighbors ?? 120],
+      ]
+    : [
+        ["favorites", 0],
+        ["city", timeouts.favorites ?? 20],
+      ];
   const agenda = require("./index").getAgenda();
   if (!agenda) return;
   for (const [step, delaySec] of steps) {

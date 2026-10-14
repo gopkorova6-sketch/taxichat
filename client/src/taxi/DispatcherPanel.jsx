@@ -155,9 +155,9 @@ const DispatcherPanel = ({ cityId, role, me }) => {
             .map((order) => (
               <div key={order._id} className="bg-secondary rounded p-3 text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="font-semibold">
-                    {order.from?.text} → {order.to?.text}
-                  </div>
+                <div className="font-semibold">
+                  {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
+                </div>
                   {order.unreadCount > 0 && (
                     <span className="ml-auto bg-danger text-white rounded-full px-2 text-xs">
                       {order.unreadCount}

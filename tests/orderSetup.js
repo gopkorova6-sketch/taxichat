@@ -8,14 +8,12 @@ const setupPilotCity = async (app, { cityName = "Казань", driversCount = 3
   const geoSeed = require("../data/geoSeed");
   const { clearTestDb } = require("./db");
   const City = require("../models/City");
-  const Zone = require("../models/Zone");
   const User = require("../models/User");
 
   await clearTestDb();
   await importGeoData(geoSeed);
 
   const city = await City.findOne({ name: cityName });
-  const zones = await Zone.find({ cityId: city._id }).sort({ name: 1 });
 
   const superadmin = await registerUser(app, {
     username: `root_${Date.now()}_${Math.floor(Math.random() * 100000)}`,
@@ -40,8 +38,10 @@ const setupPilotCity = async (app, { cityName = "Казань", driversCount = 3
         role: "driver",
         displayName: `Водитель ${i + 1}`,
         phone: `+7900000001${i}`,
-        car: { color: ["Белый", "Чёрный", "Серый", "Синий"][i % 4], plate: `10${i}` + String(Date.now()).slice(-4) },
-        zones: [zones[i % zones.length]._id.toString()],
+        car: {
+          color: ["Белый", "Чёрный", "Серый", "Синий"][i % 4],
+          plate: `10${i}` + String(Date.now()).slice(-4),
+        },
       });
     if (applied.status !== 201) throw new Error(`driver apply failed: ${JSON.stringify(applied.body)}`);
 
@@ -61,22 +61,17 @@ const setupPilotCity = async (app, { cityName = "Казань", driversCount = 3
     .send({ cityId: city._id, role: "passenger" });
   if (joined.status !== 201) throw new Error("passenger join failed");
 
-  return { city, zones, superadmin, dispatcher, drivers, passenger };
+  return { city, superadmin, dispatcher, drivers, passenger };
 };
 
-// Creates an order via the passenger and returns the response
-const createOrder = async (app, passenger, city, zones, overrides = {}) =>
+// Creates an order via the passenger: маршрут одной строкой
+const createOrder = async (app, passenger, city, overrides = {}) =>
   request(app)
     .post("/api/orders")
     .set("Cookie", passenger.cookie)
     .send({
       cityId: city._id,
-      fromZoneId: zones[0]._id,
-      toZoneId: zones[1 % zones.length]._id,
-      fromText: "От ЖД вокзала",
-      toText: "Главная площадь",
-      exactFrom: "ул. Привокзальная, 1",
-      exactTo: "пл. Свободы, 2",
+      route: "От ЖД вокзала до Центра",
       pax: 2,
       ...overrides,
     });

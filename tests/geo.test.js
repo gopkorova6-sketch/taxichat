@@ -50,9 +50,13 @@ describe("Geo API", () => {
     authCookie = await registerAndLogin(app);
   });
 
-  it("requires authentication", async () => {
-    const res = await request(app).get("/api/geo/regions");
-    expect(res.status).toBe(401);
+  it("city list is public for registration, zones require auth", async () => {
+    const cities = await request(app).get("/api/geo/cities");
+    expect(cities.status).toBe(200);
+
+    const kazan = await City.findOne({ name: "Казань" });
+    const zones = await request(app).get(`/api/geo/cities/${kazan._id}/zones`);
+    expect(zones.status).toBe(401);
   });
 
   it("lists regions", async () => {

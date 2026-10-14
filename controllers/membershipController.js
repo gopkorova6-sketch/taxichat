@@ -31,7 +31,8 @@ const createMembershipSchema = z
     displayName: z.string().trim().min(1, "Укажите имя водителя").max(50).optional(),
     phone: z.string().optional(),
     car: carSchema.optional(),
-    zones: z.array(z.string()).min(1, "Выберите от 1 до 5 зон").max(5, "Выберите от 1 до 5 зон").optional(),
+    // Зоны больше не обязательны: лента городская, маршрут — текстом
+    zones: z.array(z.string()).max(5, "Не больше 5 зон").optional(),
   })
   .superRefine((data, ctx) => {
     if (data.role !== "driver") return;
@@ -113,7 +114,9 @@ exports.createMembership = [
     if (!phone)
       throw new ApiError(400, "Телефон должен быть в формате +7XXXXXXXXXX");
 
-    const zoneIds = await validateZonesBelongToCity(cityId, req.body.zones ?? []);
+    const zoneIds = req.body.zones?.length
+      ? await validateZonesBelongToCity(cityId, req.body.zones)
+      : [];
 
     let status = "PENDING";
     if (city.settings?.autoApproveDrivers) {

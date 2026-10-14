@@ -163,7 +163,9 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
           {feed.length === 0 && <div className="text-sm text-secondary-text">Пока нет заказов</div>}
           {feed.map((order) => (
             <div key={order._id} className="bg-secondary rounded p-3 text-sm">
-              <div className="font-semibold">{order.from?.text} → {order.to?.text}</div>
+                <div className="font-semibold">
+                  {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
+                </div>
               <div className="text-secondary-text">
                 {order.when?.type === "scheduled" ? "К времени" : "Сейчас"} · {order.pax} пасс.
                 {order.notes ? ` · ${order.notes}` : ""}
@@ -192,7 +194,9 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
           {mine.map((order) => (
             <div key={order._id} className="bg-secondary rounded p-3 text-sm">
               <div className="flex items-center gap-2">
-                <div className="font-semibold">{order.from?.text} → {order.to?.text}</div>
+              <div className="font-semibold">
+                {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
+              </div>
                 {order.unreadCount > 0 && (
                   <span className="ml-auto bg-danger text-white rounded-full px-2 text-xs">
                     {order.unreadCount}

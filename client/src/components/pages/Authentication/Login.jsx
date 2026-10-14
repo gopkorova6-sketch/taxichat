@@ -24,7 +24,7 @@ function Login({ setUserWantsToLogin }) {
   );
 
   return (
-    <div className="basis-[35rem]">
+    <div className="w-full max-w-[36rem] mx-auto px-4">
       <h1 className="text-cta-icon font-semibold text-[2.4rem] uppercase mb-[2rem]">
         Бомбила
       </h1>
@@ -76,7 +76,7 @@ function Login({ setUserWantsToLogin }) {
       </Formik>
       <div
         onClick={() => setUserWantsToLogin(false)}
-        className="mt-[2rem] text-right  text-secondary-text underline cursor-pointer hover:text-cta-icon"
+        className="mt-[2rem] text-center text-secondary-text underline cursor-pointer hover:text-cta-icon"
       >
         Ещё не с нами?
       </div>

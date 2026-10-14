@@ -48,32 +48,36 @@ const TaxiApp = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <header className="flex items-center gap-3 p-2 border-b border-secondary-text/20 bg-secondary">
-        <span className="font-bold uppercase tracking-wide">Бомбила</span>
-        <select
-          className="bg-primary rounded p-1 text-sm"
-          value={cityId ?? ""}
-          onChange={(event) => setCityId(event.target.value)}
-        >
-          <option value="" disabled>Город</option>
-          {cities.map((item) => (
-            <option key={item._id} value={item._id}>
-              {item.name} ({cityStatusLabel(item.status)})
-            </option>
-          ))}
-        </select>
-        <div className="flex gap-1">
+      <header className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 border-b border-secondary-text/20 bg-secondary">
+        <div className="flex items-center gap-3">
+          <span className="font-bold uppercase tracking-wide text-cta-icon">Бомбила</span>
+          <select
+            className="bg-primary rounded-lg p-1.5 text-sm flex-1 sm:flex-none"
+            value={cityId ?? ""}
+            onChange={(event) => setCityId(event.target.value)}
+          >
+            <option value="" disabled>Город</option>
+            {cities.map((item) => (
+              <option key={item._id} value={item._id}>
+                {item.name} ({cityStatusLabel(item.status)})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex gap-1 flex-wrap">
           {availableRoles.map((r) => (
             <button
               key={r}
-              className={`px-2 py-1 rounded text-sm ${role === r ? "bg-accent text-black" : "bg-primary"}`}
+              className={`px-3 py-1.5 rounded-full text-sm ${
+                role === r ? "bg-accent text-black font-semibold" : "bg-primary text-secondary-text"
+              }`}
               onClick={() => setRole(r)}
             >
               {ROLE_LABELS[r]}
             </button>
           ))}
         </div>
-        <div className="ml-auto flex items-center gap-3 text-sm">
+        <div className="sm:ml-auto flex items-center justify-between sm:justify-end gap-3 text-sm">
           <span>{user?.name}</span>
           <button className="underline" onClick={() => setTab(tab === "taxi" ? "chats" : "taxi")}>
             {tab === "taxi" ? "Чаты" : "Заказы"}

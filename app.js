@@ -64,9 +64,10 @@ app.use(
   })
 );
 
-// Public routes (share links live outside the auth protector)
+// Public routes (share links and geo city list live outside the auth protector)
 app.use(shareRouter);
 app.use(globalLimiter);
+app.use("/api/geo", geoRouter);
 app.use("/api/user", authRouter);
 
 // Health check with the database connection state (for monitoring)
@@ -84,7 +85,6 @@ app.use("/api/contacts", contactsRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/chatRoom", chatRoomRouter);
 app.use("/api/upload", uploadRouter);
-app.use("/api/geo", geoRouter);
 app.use("/api/memberships", membershipRouter);
 app.use("/api/dispatch", dispatchRouter);
 app.use("/api/applications", applicationRouter);

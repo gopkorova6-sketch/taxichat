@@ -63,7 +63,7 @@ describe("Voice calls between order participants", () => {
 
   beforeEach(async () => {
     world = await setupPilotCity(app);
-    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+    const created = await createOrder(app, world.passenger, world.city, {
       matchMode: "first_take",
     });
     order = created.body.data.order;
@@ -190,7 +190,7 @@ describe("Voice calls between order participants", () => {
   });
 
   it("calls are rejected before the driver is assigned", async () => {
-    const second = await createOrder(app, world.passenger, world.city, world.zones);
+    const second = await createOrder(app, world.passenger, world.city);
     const publishedOrder = await Order.findById(second.body.data.order._id);
 
     await expect(callService.assertCallsAllowed(publishedOrder)).rejects.toThrow(

@@ -25,7 +25,7 @@ describe("Background job handlers", () => {
   });
 
   it("expires a published broadcast order and posts a retry hint", async () => {
-    const created = await createOrder(app, world.passenger, world.city, world.zones);
+    const created = await createOrder(app, world.passenger, world.city);
     const order = created.body.data.order;
 
     await handlers.runOrderExpire({ orderId: order._id });
@@ -44,7 +44,7 @@ describe("Background job handlers", () => {
       { shift: "online", lastSeen: new Date() }
     );
 
-    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+    const created = await createOrder(app, world.passenger, world.city, {
       targetDriverId: String(world.drivers[0].user._id),
     });
     const order = created.body.data.order;
@@ -67,7 +67,7 @@ describe("Background job handlers", () => {
   });
 
   it("cascade step ignores assigned and direct orders", async () => {
-    const broadcast = await createOrder(app, world.passenger, world.city, world.zones, {
+    const broadcast = await createOrder(app, world.passenger, world.city, {
       matchMode: "first_take",
     });
     await request(app)
@@ -85,7 +85,7 @@ describe("Background job handlers", () => {
   });
 
   it("preorder activation publishes the draft and idempotently skips later", async () => {
-    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+    const created = await createOrder(app, world.passenger, world.city, {
       whenType: "scheduled",
       whenAt: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
     });

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { notificationActions } from "../store/notificationSlice";
 import { apiGet, apiPost, apiDelete } from "./api";
@@ -7,75 +7,28 @@ import OrderChat from "./OrderChat";
 import DirectChat from "./DirectChat";
 import ChatList from "./ChatList";
 import { statusLabel } from "./statusLabels";
-// Passenger panel: order form, my orders, free drivers with direct calls
+
+// Passenger panel: one-line order form, my orders, free drivers with direct
+// calls (mobile-first)
 const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   const dispatch = useDispatch();
   const { socketListen, socket } = useSocket();
   const [view, setView] = useState(null); // { type: "order" | "direct", id }
   const [orders, setOrders] = useState([]);
   const [ordersFilter, setOrdersFilter] = useState("active");
-  const [zones, setZones] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [tab, setTab] = useState("new");
   const [error, setError] = useState(null);
   const [directTarget, setDirectTarget] = useState(null);
 
-  const [form, setForm] = useState({
-    fromZoneId: "",
-    toZoneId: "",
-    fromText: "",
-    toText: "",
-    exactFrom: "",
-    exactTo: "",
-    pax: 1,
-    notes: "",
-    whenType: "now",
-  });
-
-  // Landmark autocomplete: "от ЖД" resolves via the server text index
-  const [suggestFor, setSuggestFor] = useState(null); // "from" | "to"
-  const [suggestions, setSuggestions] = useState([]);
-  const suggestTimerRef = useRef();
-
-  const queryLandmarks = (value, field) => {
-    setForm((prev) => ({ ...prev, [`${field}Text`]: value, [`${field}LandmarkId`]: undefined }));
-    setSuggestFor(field);
-    clearTimeout(suggestTimerRef.current);
-    if (!value.trim()) {
-      setSuggestions([]);
-      return;
-    }
-    suggestTimerRef.current = setTimeout(async () => {
-      try {
-        const res = await apiGet(
-          `/api/geo/cities/${cityId}/landmarks?query=${encodeURIComponent(value)}`
-        );
-        setSuggestions(res.data.landmarks);
-      } catch {
-        setSuggestions([]);
-      }
-    }, 300);
-  };
-
-  const pickLandmark = (field, landmark) => {
-    setForm((prev) => ({
-      ...prev,
-      [`${field}Text`]: landmark.name,
-      [`${field}LandmarkId`]: landmark._id,
-    }));
-    setSuggestions([]);
-    setSuggestFor(null);
-  };
+  const [route, setRoute] = useState("");
+  const [notes, setNotes] = useState("");
 
   const load = async () => {
     try {
-      const [ordersRes, zonesRes] = await Promise.all([
-        apiGet(`/api/orders?cityId=${cityId}`),
-        apiGet(`/api/geo/cities/${cityId}/zones`),
-      ]);
+      const ordersRes = await apiGet(`/api/orders?cityId=${cityId}`);
       setOrders(ordersRes.data.orders);
-      setZones(zonesRes.data.zones);
       const driversRes = await apiGet(`/api/cities/${cityId}/free-drivers`);
       setDrivers(driversRes.data.drivers);
       const favoritesRes = await apiGet("/api/favorites");
@@ -106,6 +59,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
       socket.off("order:status", onStatusChanged);
       socket.off("membership:updated", onMembershipUpdated);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cityId]);
 
   if (view?.type === "order") {
@@ -119,31 +73,20 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
     event.preventDefault();
     setError(null);
     try {
-      const body = {
+      const res = await apiPost("/api/orders", {
         cityId,
-        fromZoneId: form.fromZoneId,
-        fromText: form.fromText,
-        toText: form.toText,
-        pax: Number(form.pax),
-        whenType: form.whenType,
-      };
-      if (form.toZoneId) body.toZoneId = form.toZoneId;
-      if (form.fromLandmarkId) body.fromLandmarkId = form.fromLandmarkId;
-      if (form.toLandmarkId) body.toLandmarkId = form.toLandmarkId;
-      if (form.exactFrom) body.exactFrom = form.exactFrom;
-      if (form.exactTo) body.exactTo = form.exactTo;
-      if (form.notes) body.notes = form.notes;
-      if (form.whenType === "scheduled") {
-        body.whenAt = new Date(form.whenAt ?? Date.now() + 3600000).toISOString();
-      }
-      if (directTarget) {
-        body.targetDriverId = directTarget.driverId;
-        body.chatId = directTarget.chatId;
-      }
-
-      const res = await apiPost("/api/orders", body);
+        route,
+        ...(notes && { notes }),
+        ...(directTarget && {
+          targetDriverId: directTarget.driverId,
+          chatId: directTarget.chatId,
+        }),
+      });
       setDirectTarget(null);
-      setView(res.data.order._id);
+      setRoute("");
+      setNotes("");
+      setTab("orders");
+      setView({ type: "order", id: res.data.order._id });
       load();
     } catch (err) {
       setError(err.message);
@@ -179,7 +122,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   };
 
   const driverCard = (driver, extra = {}) => (
-    <div key={driver.driverId} className="bg-secondary rounded p-3 text-sm">
+    <div key={driver.driverId} className="bg-secondary rounded-xl p-3 text-sm">
       <div className="font-semibold">{driver.displayName}</div>
       <div className="text-secondary-text">{driver.carCaption}</div>
       {driver.rating != null && <div>★ {driver.rating}</div>}
@@ -187,19 +130,24 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
     </div>
   );
 
+  const routeTitle = (order) =>
+    order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text;
+
   return (
-    <div className="p-4 space-y-4 overflow-y-auto h-full">
-      <div className="flex gap-3 text-sm flex-wrap">
+    <div className="p-4 space-y-4 overflow-y-auto h-full max-w-[42rem] mx-auto w-full">
+      <div className="flex gap-2 text-sm flex-wrap justify-center">
         {[
-          ["new", directTarget ? `Заказ ${directTarget.driverName ?? ""}` : "Новый заказ"],
+          ["new", "Заказ"],
           ["orders", "Мои заказы"],
-          ["drivers", "Свободные водители"],
+          ["drivers", "Водители"],
           ["favorites", "Избранные"],
           ["dialogs", "Диалоги"],
         ].map(([key, label]) => (
           <button
             key={key}
-            className={`px-2 py-1 rounded ${tab === key ? "bg-accent text-black" : "bg-secondary"}`}
+            className={`px-3 py-1.5 rounded-full ${
+              tab === key ? "bg-accent text-black font-semibold" : "bg-secondary text-secondary-text"
+            }`}
             onClick={() => setTab(key)}
           >
             {label}
@@ -207,137 +155,59 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
         ))}
       </div>
 
-      {error && <div className="text-danger text-sm">{error}</div>}
+      {error && <div className="text-danger text-sm text-center">{error}</div>}
 
       {tab === "new" && (
-        <form className="space-y-2 max-w-md bg-secondary p-4 rounded" onSubmit={submit}>
-          <select
-            className="w-full bg-primary p-2 rounded text-sm"
-            required
-            value={form.fromZoneId}
-            onChange={(event) => setForm({ ...form, fromZoneId: event.target.value })}
-          >
-            <option value="">Зона отправления</option>
-            {zones.map((zone) => (
-              <option key={zone._id} value={zone._id}>{zone.name}</option>
-            ))}
-          </select>
-          <input
-            className="w-full bg-primary p-2 rounded text-sm"
-            placeholder="Откуда (текст или ориентир)"
-            required
-            value={form.fromText}
-            onChange={(event) => queryLandmarks(event.target.value, "from")}
-          />
-          {suggestFor === "from" && suggestions.length > 0 && (
-            <div className="border border-secondary-text/30 rounded text-sm divide-y">
-              {suggestions.map((landmark) => (
-                <button
-                  type="button"
-                  key={landmark._id}
-                  className="w-full text-left px-2 py-1 hover:bg-secondary"
-                  onClick={() => pickLandmark("from", landmark)}
-                >
-                  📍 {landmark.name}
-                </button>
-              ))}
-            </div>
-          )}
-          <input
-            className="w-full bg-primary p-2 rounded text-sm"
-            placeholder="Точный адрес (виден водителю после назначения)"
-            value={form.exactFrom}
-            onChange={(event) => setForm({ ...form, exactFrom: event.target.value })}
-          />
-          <select
-            className="w-full bg-primary p-2 rounded text-sm"
-            value={form.toZoneId}
-            onChange={(event) => setForm({ ...form, toZoneId: event.target.value })}
-          >
-            <option value="">Зона назначения</option>
-            {zones.map((zone) => (
-              <option key={zone._id} value={zone._id}>{zone.name}</option>
-            ))}
-          </select>
-          <input
-            className="w-full bg-primary p-2 rounded text-sm"
-            placeholder="Куда (текст или ориентир)"
-            required
-            value={form.toText}
-            onChange={(event) => queryLandmarks(event.target.value, "to")}
-          />
-          {suggestFor === "to" && suggestions.length > 0 && (
-            <div className="border border-secondary-text/30 rounded text-sm divide-y">
-              {suggestions.map((landmark) => (
-                <button
-                  type="button"
-                  key={landmark._id}
-                  className="w-full text-left px-2 py-1 hover:bg-secondary"
-                  onClick={() => pickLandmark("to", landmark)}
-                >
-                  📍 {landmark.name}
-                </button>
-              ))}
-            </div>
-          )}
-          <input
-            className="w-full bg-primary p-2 rounded text-sm"
-            placeholder="Точный адрес назначения"
-            value={form.exactTo}
-            onChange={(event) => setForm({ ...form, exactTo: event.target.value })}
-          />
-          <div className="flex gap-2">
-            <input
-              className="w-24 bg-primary p-2 rounded text-sm"
-              type="number"
-              min="1"
-              max="8"
-              value={form.pax}
-              onChange={(event) => setForm({ ...form, pax: event.target.value })}
-            />
-            <select
-              className="flex-1 bg-primary p-2 rounded text-sm"
-              value={form.whenType}
-              onChange={(event) => setForm({ ...form, whenType: event.target.value })}
-            >
-              <option value="now">Сейчас</option>
-              <option value="scheduled">К определённому времени</option>
-            </select>
-          </div>
-          {form.whenType === "scheduled" && (
-            <input
-              className="w-full bg-primary p-2 rounded text-sm"
-              type="datetime-local"
-              onChange={(event) => setForm({ ...form, whenAt: event.target.value })}
-            />
-          )}
-          <textarea
-            className="w-full bg-primary p-2 rounded text-sm"
-            placeholder="Комментарий"
-            value={form.notes}
-            onChange={(event) => setForm({ ...form, notes: event.target.value })}
-          />
+        <form
+          className="space-y-3 bg-secondary p-4 rounded-2xl"
+          onSubmit={submit}
+        >
           {directTarget && (
-            <div className="text-xs text-secondary-text">
+            <div className="text-xs text-secondary-text text-center bg-primary rounded-lg p-2">
               Прямой заказ водителю {directTarget.driverName ?? directTarget.driverId}
             </div>
           )}
-          <button className="bg-accent text-black px-4 py-2 rounded w-full" type="submit">
-            {directTarget ? "Оформить заказ водителю" : "Опубликовать заказ"}
+          <label className="block text-sm text-secondary-text">Куда едем?</label>
+          <textarea
+            className="w-full bg-primary border border-secondary-text/40 rounded-xl p-3 text-[1.6rem] text-primary-text resize-none"
+            rows={2}
+            required
+            autoFocus
+            placeholder="Например: от ЖД вокзала до Центра"
+            value={route}
+            onChange={(event) => setRoute(event.target.value)}
+          />
+          <textarea
+            className="w-full bg-primary border border-secondary-text/40 rounded-xl p-3 text-[1.5rem] text-primary-text resize-none"
+            rows={2}
+            placeholder="Комментарий (необязательно)"
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+          />
+          <button
+            className="bg-accent text-black font-semibold p-[1.2rem] rounded-xl w-full"
+            type="submit"
+            disabled={!route.trim()}
+          >
+            {directTarget ? "Оформить заказ водителю" : "Заказать такси"}
           </button>
         </form>
       )}
 
       {tab === "orders" && (
         <div className="space-y-2">
-          <div className="flex gap-2 text-sm">
+          <div className="flex gap-2 text-sm justify-center">
             {[
               ["active", "Активные"],
               ["all", "Все"],
             ].map(([key, label]) => (
               <button
                 key={key}
-                className={`px-2 py-1 rounded ${ordersFilter === key ? "bg-accent text-black" : "bg-secondary"}`}
+                className={`px-3 py-1.5 rounded-full ${
+                  ordersFilter === key
+                    ? "bg-accent text-black font-semibold"
+                    : "bg-secondary text-secondary-text"
+                }`}
                 onClick={() => setOrdersFilter(key)}
               >
                 {label}
@@ -346,7 +216,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           </div>
           {orders.filter((order) => ordersFilter === "all" ||
             !["COMPLETED", "CANCELLED", "NO_SHOW", "EXPIRED"].includes(order.status)).length === 0 && (
-            <div className="text-secondary-text text-sm">Заказов пока нет</div>
+            <div className="text-secondary-text text-sm text-center">Заказов пока нет</div>
           )}
           {orders
             .filter((order) => ordersFilter === "all" ||
@@ -354,40 +224,45 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
             .map((order) => (
             <button
               key={order._id}
-              className="w-full text-left bg-secondary rounded p-3 text-sm"
+              className="w-full text-left bg-secondary rounded-xl p-3 text-sm"
               onClick={() => setView({ type: "order", id: order._id })}
             >
               <div className="flex items-center gap-2">
-                <div className="font-semibold">{order.from?.text} → {order.to?.text}</div>
+                <div className="font-semibold">{routeTitle(order)}</div>
                 {order.unreadCount > 0 && (
                   <span className="ml-auto bg-danger text-white rounded-full px-2 text-xs">
                     {order.unreadCount}
                   </span>
                 )}
               </div>
-              <div className="text-secondary-text">{statusLabel(order.status)} · {order.pax} пасс.</div>
+              <div className="text-secondary-text">{statusLabel(order.status)}</div>
             </button>
           ))}
         </div>
       )}
 
       {tab === "drivers" && (
-        <div className="space-y-2 max-w-md">
+        <div className="space-y-2 max-w-[42rem]">
           {drivers.length === 0 && (
-            <div className="text-secondary-text text-sm">Сейчас все водители заняты или не на линии</div>
+            <div className="text-secondary-text text-sm text-center">
+              Сейчас все водители заняты или не на линии
+            </div>
           )}
           {drivers.map((driver) =>
             driverCard(driver, {
               children: (
                 <div className="flex gap-2 mt-2">
                   <button
-                    className="bg-success text-white px-3 py-1 rounded"
+                    className="bg-success text-white px-3 py-1.5 rounded-lg flex-1"
                     onClick={() => callDriver(driver)}
                   >
                     Позвонить
                   </button>
-                  <button className="underline" onClick={() => toggleFavorite(driver)}>
-                    {driver.isFavorite ? "Убрать из избранных" : "В избранные"}
+                  <button
+                    className="border border-secondary-text/40 px-3 py-1.5 rounded-lg"
+                    onClick={() => toggleFavorite(driver)}
+                  >
+                    {driver.isFavorite ? "★ В избранных" : "☆ В избранные"}
                   </button>
                 </div>
               ),
@@ -397,13 +272,15 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
       )}
 
       {tab === "favorites" && (
-        <div className="space-y-2 max-w-md">
-          {favorites.length === 0 && <div className="text-secondary-text text-sm">Список пуст</div>}
+        <div className="space-y-2 max-w-[42rem]">
+          {favorites.length === 0 && (
+            <div className="text-secondary-text text-sm text-center">Список пуст</div>
+          )}
           {favorites.map((driver) =>
             driverCard(driver, {
               children: (
                 <button
-                  className="bg-success text-white px-3 py-1 rounded mt-2"
+                  className="bg-success text-white px-3 py-1.5 rounded-lg mt-2 w-full"
                   onClick={() => callDriver(driver)}
                 >
                   Позвонить
@@ -413,7 +290,10 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           )}
         </div>
       )}
-      {tab === "dialogs" && <ChatList onOpen={(chatId) => setView({ type: "direct", id: chatId })} />}
+
+      {tab === "dialogs" && (
+        <ChatList onOpen={(chatId) => setView({ type: "direct", id: chatId })} />
+      )}
     </div>
   );
 };

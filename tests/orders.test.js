@@ -24,15 +24,15 @@ describe("Orders and the state machine", () => {
   });
 
   const createBroadcastOrder = async (overrides = {}) =>
-    createOrder(app, world.passenger, world.city, world.zones, overrides);
+    createOrder(app, world.passenger, world.city, overrides);
 
-  it("passenger publishes an order: PUBLISHED, chat created, exact addresses visible to him", async () => {
+  it("passenger publishes an order: PUBLISHED, chat created, route visible to him", async () => {
     const res = await createBroadcastOrder();
 
     expect(res.status).toBe(201);
     const order = res.body.data.order;
     expect(order.status).toBe("PUBLISHED");
-    expect(order.exactFrom).toBe("ул. Привокзальная, 1");
+    expect(order.from?.text).toBe("От ЖД вокзала до Центра");
     expect(order.chatId).toBeTruthy();
     expect(order.statusLog.map((entry) => entry.status)).toContain("PUBLISHED");
 
@@ -65,7 +65,7 @@ describe("Orders and the state machine", () => {
   });
 
   it("scheduled broadcast orders do not fan out until preorder activation", async () => {
-    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+    const created = await createOrder(app, world.passenger, world.city, {
       whenType: "scheduled",
       whenAt: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
     });
@@ -239,11 +239,11 @@ describe("Orders and the state machine", () => {
     expect(accepted.body.data.order.priceAgreed).toBe("350 руб");
     expect(accepted.body.data.order.driver.phone).toBe("+79000000010");
 
-    // The assigned driver sees exact addresses, passenger identity and name
+    // The assigned driver sees the route, passenger identity and name
     const driverView = await request(app)
       .get(`/api/orders/${orderId}`)
       .set("Cookie", world.drivers[0].cookie);
-    expect(driverView.body.data.order.exactFrom).toBe("ул. Привокзальная, 1");
+    expect(driverView.body.data.order.from?.text).toBe("От ЖД вокзала до Центра");
     expect(driverView.body.data.order.passengerId).toBeDefined();
     expect(driverView.body.data.order.passenger.name).toBe("Тестовый Пользователь");
 
@@ -328,7 +328,7 @@ describe("Orders and the state machine", () => {
       .set("Cookie", world.dispatcher.cookie);
     expect(queue.status).toBe(200);
     const card = queue.body.data.orders.find((order) => order._id === orderId);
-    expect(card.exactFrom).toBe("ул. Привокзальная, 1");
+    expect(card.from?.text).toBe("От ЖД вокзала до Центра");
 
     const mine = await request(app)
       .get("/api/memberships/mine")

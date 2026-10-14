@@ -32,7 +32,7 @@ describe("Ratings", () => {
 
   beforeEach(async () => {
     world = await setupPilotCity(app);
-    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+    const created = await createOrder(app, world.passenger, world.city, {
       matchMode: "first_take",
     });
     order = created.body.data.order;
@@ -97,7 +97,7 @@ describe("Ratings", () => {
   });
 
   it("uncompleted orders cannot be rated", async () => {
-    const created = await createOrder(app, world.passenger, world.city, world.zones);
+    const created = await createOrder(app, world.passenger, world.city);
     const res = await request(app)
       .post(`/api/orders/${created.body.data.order._id}/rating`)
       .set("Cookie", world.passenger.cookie)
@@ -112,7 +112,7 @@ describe("Complaints and SOS", () => {
 
   beforeEach(async () => {
     world = await setupPilotCity(app);
-    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+    const created = await createOrder(app, world.passenger, world.city, {
       matchMode: "first_take",
     });
     order = created.body.data.order;
@@ -175,7 +175,7 @@ describe("Bans and share links", () => {
   });
 
   it("late cancel adds a penalty point and the threshold auto-bans", async () => {
-    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+    const created = await createOrder(app, world.passenger, world.city, {
       matchMode: "first_take",
     });
     const orderId = created.body.data.order._id;
@@ -195,7 +195,7 @@ describe("Bans and share links", () => {
     expect(meRes.body.data.user.banned).toBe(false);
 
     // Cancel before assignment does not add points
-    const early = await createOrder(app, world.passenger, world.city, world.zones);
+    const early = await createOrder(app, world.passenger, world.city);
     await request(app)
       .post(`/api/orders/${early.body.data.order._id}/cancel`)
       .set("Cookie", world.passenger.cookie)
@@ -223,8 +223,9 @@ describe("Bans and share links", () => {
     expect(login.body.message).toContain("заблокирован");
 
     const apiAccess = await request(app)
-      .get("/api/geo/regions")
+      .get("/api/user/me")
       .set("Cookie", victim.cookie);
+    // /api/user/me защищён route-level protect
     expect(apiAccess.status).toBe(403);
 
     // Unban restores access
@@ -239,7 +240,7 @@ describe("Bans and share links", () => {
   });
 
   it("share link exposes only route, status and car caption", async () => {
-    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+    const created = await createOrder(app, world.passenger, world.city, {
       matchMode: "first_take",
     });
     const orderId = created.body.data.order._id;
@@ -257,7 +258,7 @@ describe("Bans and share links", () => {
     const publicView = await request(app).get(`/api/share/${token}`);
     expect(publicView.status).toBe(200);
     expect(publicView.body.data.status).toBe("ASSIGNED");
-    expect(publicView.body.data.from).toBe("От ЖД вокзала");
+    expect(publicView.body.data.from).toBe("От ЖД вокзала до Центра");
     expect(publicView.body.data.driver.carCaption).toBeTruthy();
     // No phone numbers or exact addresses are exposed
     expect(publicView.body.data.driver.phone).toBeUndefined();
@@ -265,7 +266,7 @@ describe("Bans and share links", () => {
   });
 
   it("share link is participant-only and unknown tokens 404", async () => {
-    const created = await createOrder(app, world.passenger, world.city, world.zones);
+    const created = await createOrder(app, world.passenger, world.city);
     const outsider = await registerUser(app);
     const link = await request(app)
       .get(`/api/orders/${created.body.data.order._id}/share`)

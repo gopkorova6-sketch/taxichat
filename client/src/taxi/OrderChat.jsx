@@ -227,8 +227,8 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 p-3 border-b border-secondary-text/20">
         <button className="underline" onClick={onBack}>← Назад</button>
-        <div className="font-semibold">
-          Заказ {order.from?.text} → {order.to?.text}
+        <div className="font-semibold min-w-0 truncate">
+          {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
         </div>
         <div className="text-sm text-secondary-text">
           {order.passenger?.name ? `${order.passenger.name} · ` : ""}

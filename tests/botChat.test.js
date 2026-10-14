@@ -21,7 +21,7 @@ describe("Bot dispatcher: order card and action buttons", () => {
   });
 
   const createFirstTakeOrder = async () => {
-    const created = await createOrder(app, world.passenger, world.city, world.zones, {
+    const created = await createOrder(app, world.passenger, world.city, {
       matchMode: "first_take",
     });
     return created.body.data.order;
@@ -36,7 +36,7 @@ describe("Bot dispatcher: order card and action buttons", () => {
     });
     expect(cardAfterPublish).toBeTruthy();
     expect(cardAfterPublish.meta.status).toBe("PUBLISHED");
-    expect(cardAfterPublish.meta.from).toBe("От ЖД вокзала");
+    expect(cardAfterPublish.meta.from).toBe("От ЖД вокзала до Центра");
     expect(cardAfterPublish.meta.pax).toBe(2);
 
     const cardId = cardAfterPublish._id;
@@ -135,7 +135,7 @@ describe("Contact filter", () => {
   });
 
   const createSimpleOrder = async () => {
-    const created = await createOrder(app, world.passenger, world.city, world.zones);
+    const created = await createOrder(app, world.passenger, world.city);
     return created.body.data.order;
   };
 
@@ -191,7 +191,7 @@ describe("Contact filter", () => {
     await City.findByIdAndUpdate(world.city._id, {
       "settings.filterContacts": true,
     });
-    const created = await createOrder(app, world.passenger, world.city, world.zones);
+    const created = await createOrder(app, world.passenger, world.city);
     const orderId = created.body.data.order._id;
 
     const text = await request(app)

@@ -3,6 +3,8 @@ const User = require("../models/User");
 const ApiError = require("../utilities/errors");
 const catchAsyncError = require("../utilities/catchAsyncError");
 const { sendAuthCookie, clearAuthCookie } = require("../utilities/auth");
+const City = require("../models/City");
+const { recalcCityStatus } = require("../utilities/cityStatus");
 
 const registerSchema = z
   .object({
@@ -16,12 +18,19 @@ const registerSchema = z
       .transform((value) => value.toLowerCase()),
     password: z.string().min(8, "Пароль должен содержать минимум 8 символов"),
     confirmPassword: z.string().min(1, "Повторите пароль"),
+    // Город при регистрации: выбрать существующий или добавить свой
+    cityId: z.string().optional(),
+    newCityName: z.string().trim().min(1, "Укажите город").max(60).optional(),
     bio: z.string().max(100).optional(),
     avatar: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Пароли не совпадают",
     path: ["confirmPassword"],
+  })
+  .refine((data) => !(data.cityId && data.newCityName), {
+    message: "Выберите город из списка или введите свой",
+    path: ["newCityName"],
   });
 
 const loginSchema = z.object({
@@ -37,7 +46,7 @@ exports.registerSchema = registerSchema;
 exports.loginSchema = loginSchema;
 
 exports.register = catchAsyncError(async (req, res) => {
-  const { name, username, password, bio, avatar } = req.body;
+  const { name, username, password, bio, avatar, cityId, newCityName } = req.body;
 
   const existing = await User.findOne({ username });
   if (existing) throw new ApiError(409, "Логин уже занят");
@@ -50,6 +59,34 @@ exports.register = catchAsyncError(async (req, res) => {
     ...(bio !== undefined && { bio }),
     ...(avatar !== undefined && { avatar }),
   });
+
+  // Город при регистрации: готовый из справочника или добавленный вручную
+  let city = null;
+  if (cityId) {
+    city = await City.findById(cityId);
+  } else if (newCityName) {
+    const existingCity = await City.findOne({ name: newCityName });
+    city =
+      existingCity ??
+      (await City.create({
+        name: newCityName,
+        oktmo: `C${Date.now()}`,
+        custom: true,
+        status: "PILOT",
+      }));
+  }
+
+  if (city) {
+    await Membership.create({
+      userId: newUser._id,
+      cityId: city._id,
+      role: "passenger",
+      status: "ACTIVE",
+    });
+    newUser.homeCityId = city._id;
+    await User.findByIdAndUpdate(newUser._id, { homeCityId: city._id });
+    await recalcCityStatus(city._id);
+  }
 
   sendAuthCookie(newUser, res, 201);
 });

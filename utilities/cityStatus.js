@@ -13,8 +13,13 @@ const computeCityStatus = (city, counts = {}) => {
   const activeDrivers = thresholds.activeDrivers ?? 10;
   const activeDispatchers = thresholds.activeDispatchers ?? 2;
 
+  if (dispatchers >= activeDispatchers && drivers >= activeDrivers) return "ACTIVE";
+
+  // Города, добавленные пользователями вручную, не опускаются ниже PILOT —
+  // иначе первый пользователь не смог бы заказывать (упрощение для тестов)
+  if (city.custom) return "PILOT";
+
   if (dispatchers === 0 || drivers === 0) return "WAITLIST";
-  if (drivers >= activeDrivers && dispatchers >= activeDispatchers) return "ACTIVE";
   if (drivers >= pilotDrivers) return "PILOT";
   return "WAITLIST";
 };

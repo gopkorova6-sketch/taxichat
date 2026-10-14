@@ -124,7 +124,7 @@ describe("Free drivers list", () => {
     expect(ids).toHaveLength(2);
   });
 
-  it("sorts favorites first and supports zone filter and cursor pagination", async () => {
+  it("sorts favorites first and supports cursor pagination", async () => {
     await request(app)
       .post("/api/favorites")
       .set("Cookie", world.passenger.cookie)
@@ -135,15 +135,6 @@ describe("Free drivers list", () => {
       String(world.drivers[2].user._id)
     );
     expect(favorites.body.data.drivers[0].isFavorite).toBe(true);
-
-    const zone = await Membership.findOne({ userId: world.drivers[0].user._id });
-    const zoned = await list(`?zoneId=${zone.zones[0]}`);
-    // Favorites still outrank the zone match; drivers[0] must be flagged
-    const zonedEntry = zoned.body.data.drivers.find(
-      (driver) => String(driver.driverId) === String(world.drivers[0].user._id)
-    );
-    expect(zonedEntry).toBeDefined();
-    expect(zonedEntry.matchesZone).toBe(true);
 
     const paged = await list(`?cursor=${base64Cursor(2)}`);
     expect(paged.body.data.drivers).toHaveLength(1);
@@ -160,7 +151,7 @@ describe("Direct call to a free driver", () => {
     for (const driver of world.drivers) {
       await setDriverOnline(driver.user._id);
     }
-    const created = await createOrder(app, world.passenger, world.city, world.zones);
+    const created = await createOrder(app, world.passenger, world.city);
     order = created.body.data.order;
   });
 
@@ -284,11 +275,7 @@ describe("Direct call to a free driver", () => {
       .set("Cookie", world.passenger.cookie)
       .send({
         cityId: world.city._id,
-        fromZoneId: world.zones[0]._id,
-        fromText: "Аэропорт",
-        toText: "Центр",
-        exactFrom: "Аэропорт, выход 4",
-        exactTo: "ул. Ленина, 15",
+        route: "От Аэропорта до Центра",
         pax: 1,
         targetDriverId: String(world.drivers[0].user._id),
         chatId: ack.chatId,
@@ -323,7 +310,7 @@ describe("Direct call to a free driver", () => {
       .send({});
     expect(accepted.status).toBe(200);
     expect(accepted.body.data.order.status).toBe("ASSIGNED");
-    expect(accepted.body.data.order.exactFrom).toBe("Аэропорт, выход 4");
+    expect(accepted.body.data.order.from?.text).toBe("От Аэропорта до Центра");
 
     // The passenger gets the driver's phone after ASSIGNED
     const passengerView = await request(app)
@@ -344,9 +331,7 @@ describe("Direct call to a free driver", () => {
       .set("Cookie", world.passenger.cookie)
       .send({
         cityId: world.city._id,
-        fromZoneId: world.zones[0]._id,
-        fromText: "Вокзал",
-        toText: "Отель",
+        route: "От Вокзала до Отеля",
         targetDriverId: String(world.drivers[0].user._id),
       });
     expect(orderRes.status).toBe(201);
@@ -400,9 +385,7 @@ describe("Direct call to a free driver", () => {
       .set("Cookie", world.passenger.cookie)
       .send({
         cityId: world.city._id,
-        fromZoneId: world.zones[0]._id,
-        fromText: "Точка А",
-        toText: "Точка Б",
+        route: "От точки А до точки Б",
         targetDriverId: String(world.drivers[0].user._id),
       });
     const directOrder = orderRes.body.data.order;
@@ -511,9 +494,7 @@ describe("Direct call to a free driver", () => {
       .set("Cookie", world.passenger.cookie)
       .send({
         cityId: world.city._id,
-        fromZoneId: world.zones[0]._id,
-        fromText: "Точка А",
-        toText: "Точка Б",
+        route: "От точки А до точки Б",
         targetDriverId: String(world.drivers[0].user._id),
       });
     const directOrder = orderRes.body.data.order;
@@ -524,9 +505,7 @@ describe("Direct call to a free driver", () => {
       .set("Cookie", world.passenger.cookie)
       .send({
         cityId: world.city._id,
-        fromZoneId: world.zones[0]._id,
-        fromText: "Другая точка",
-        toText: "Другой конец",
+        route: "Другой маршрут",
         targetDriverId: String(world.drivers[0].user._id),
         chatId: directOrder.chatId,
       });
@@ -544,9 +523,7 @@ describe("Direct call to a free driver", () => {
       .set("Cookie", world.passenger.cookie)
       .send({
         cityId: world.city._id,
-        fromZoneId: world.zones[0]._id,
-        fromText: "Точка А",
-        toText: "Точка Б",
+        route: "От точки А до точки Б",
         targetDriverId: String(world.drivers[0].user._id),
         chatId: directOrder.chatId,
       });
@@ -562,9 +539,7 @@ describe("Direct call to a free driver", () => {
       .set("Cookie", world.passenger.cookie)
       .send({
         cityId: world.city._id,
-        fromZoneId: world.zones[0]._id,
-        fromText: "Дом",
-        toText: "Аэропорт",
+        route: "От Дома до Аэропорта",
         whenType: "scheduled",
         whenAt: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
         targetDriverId: String(world.drivers[0].user._id),

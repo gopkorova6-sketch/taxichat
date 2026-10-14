@@ -54,6 +54,9 @@ const citySchema = new mongoose.Schema(
       activeDispatchers: { type: Number, default: 2 },
     },
     settings: { type: settingsSchema, default: () => ({}) },
+    // Город, добавленный пользователем вручную (не из справочника):
+    // не опускается ниже PILOT, чтобы первый пользователь мог заказывать
+    custom: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
 );

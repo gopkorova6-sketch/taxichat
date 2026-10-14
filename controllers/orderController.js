@@ -24,35 +24,21 @@ const botDispatcher = require("../services/botDispatcher");
 const createOrderSchema = z
   .object({
     cityId: z.string().min(1, "Не указан город"),
-    fromZoneId: z.string().min(1, "Укажите зону отправления"),
-    toZoneId: z.string().optional(),
-    fromText: z.string().trim().max(200, "Адрес слишком длинный").optional(),
-    fromLandmarkId: z.string().optional(),
-    toText: z.string().trim().max(200).optional(),
-    toLandmarkId: z.string().optional(),
-    exactFrom: z.string().trim().max(300).optional(),
-    exactTo: z.string().trim().max(300).optional(),
-    whenType: z.enum(["now", "scheduled"]).default("now"),
-    whenAt: z.string().datetime({ offset: true }).optional(),
+    // Маршрут одной строкой произвольного ввода (упрощение концепции 1.6)
+    route: z
+      .string()
+      .trim()
+      .min(1, "Укажите маршрут")
+      .max(300, "Маршрут слишком длинный"),
     pax: z.number().int().min(1, "Минимум 1 пассажир").max(8).default(1),
     notes: z.string().trim().max(500).optional(),
+    whenType: z.enum(["now", "scheduled"]).default("now"),
+    whenAt: z.string().datetime({ offset: true }).optional(),
     matchMode: z.enum(["offers", "first_take", "dispatcher"]).optional(),
     targetDriverId: z.string().optional(),
     chatId: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    if (!data.fromText && !data.fromLandmarkId)
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Укажите место отправления",
-        path: ["fromText"],
-      });
-    if (!data.toText && !data.toLandmarkId)
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Укажите место назначения",
-        path: ["toText"],
-      });
     if (data.whenType === "scheduled" && !data.whenAt)
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -154,15 +140,6 @@ exports.createOrder = [
     if (!passengerMembership)
       throw new ApiError(403, "Вы не пассажир этого города");
 
-    const fromZone = await Zone.findOne({ _id: data.fromZoneId, cityId: data.cityId });
-    if (!fromZone) throw new ApiError(400, "Зона отправления не относится к городу");
-
-    let toZone = null;
-    if (data.toZoneId) {
-      toZone = await Zone.findOne({ _id: data.toZoneId, cityId: data.cityId });
-      if (!toZone) throw new ApiError(400, "Зона назначения не относится к городу");
-    }
-
     const matchMode = data.matchMode ?? city.settings?.matchMode ?? "offers";
 
     // Direct order placed after a call to a free driver (concept 1.6)
@@ -199,18 +176,8 @@ exports.createOrder = [
     const order = await Order.create({
       passengerId: req.user._id,
       cityId: data.cityId,
-      fromZone: fromZone._id,
-      ...(toZone && { toZone: toZone._id }),
-      from: {
-        ...(data.fromText && { text: data.fromText }),
-        ...(data.fromLandmarkId && { landmarkId: data.fromLandmarkId }),
-      },
-      to: {
-        ...(data.toText && { text: data.toText }),
-        ...(data.toLandmarkId && { landmarkId: data.toLandmarkId }),
-      },
-      ...(data.exactFrom && { exactFrom: data.exactFrom }),
-      ...(data.exactTo && { exactTo: data.exactTo }),
+      // Маршрут одной строкой; зоны не используются
+      from: { text: data.route },
       when: { type: data.whenType, ...(data.whenAt && { at: new Date(data.whenAt) }) },
       pax: data.pax,
       ...(data.notes && { notes: data.notes }),
@@ -279,11 +246,10 @@ exports.createOrder = [
     await scheduleOrderJobs(order);
 
     // Direct orders go to the target driver only; broadcast orders fan out
-    // to the zone of departure and the city (concept 1.6). Scheduled orders
-    // are activated by the preorder job before the ride instead.
+    // to the city (zones are no longer used). Scheduled orders are activated
+    // by the preorder job before the ride instead.
     if (order.mode !== "direct" && data.whenType !== "scheduled") {
       events.push(
-        { room: `zone:${fromZone._id}`, event: "order:new", payload: { orderId: order._id } },
         { room: `city:${data.cityId}`, event: "order:new", payload: { orderId: order._id } }
       );
     }
@@ -320,17 +286,22 @@ exports.listOrders = catchAsyncError(async (req, res) => {
   let orders;
 
   if (driverMembership) {
-    // Orders of the driver's zones (scheduled ones appear on activation),
-    // plus his own assigned and targeted orders
+    // City-wide feed: all broadcast orders of the city, plus the driver's
+    // own assigned and targeted orders. Zone-scoped feeds kept only for
+    // memberships that still define zones.
     const zoneIds = driverMembership.zones ?? [];
+    const feedClauses = [
+      { driverId: req.user._id },
+      { targetDriverId: req.user._id },
+      { fromZone: null, mode: "broadcast" },
+    ];
+    if (zoneIds.length > 0) {
+      feedClauses.push({ fromZone: { $in: zoneIds } });
+    }
     orders = await Order.find({
       cityId,
       ...statusFilter,
-      $or: [
-        { fromZone: { $in: zoneIds }, "when.type": { $ne: "scheduled" } },
-        { driverId: req.user._id },
-        { targetDriverId: req.user._id },
-      ],
+      $or: feedClauses,
     })
       .sort({ createdAt: -1 })
       .limit(100);
@@ -746,7 +717,6 @@ exports.acceptOrder = [
 
     // Remove the card from other drivers' feeds
     events.push(
-      { room: `zone:${order.fromZone}`, event: "order:taken", payload: { orderId: order._id } },
       { room: `city:${order.cityId}`, event: "order:taken", payload: { orderId: order._id } }
     );
     emitOrderEvents(events);
@@ -781,7 +751,6 @@ exports.assignByDispatcher = [
     );
 
     events.push(
-      { room: `zone:${order.fromZone}`, event: "order:taken", payload: { orderId: order._id } },
       { room: `city:${order.cityId}`, event: "order:taken", payload: { orderId: order._id } }
     );
     emitOrderEvents(events);
@@ -872,7 +841,6 @@ exports.republishOrder = catchAsyncError(async (req, res) => {
   // Republished scheduled orders are activated by the preorder job instead
   if (order.when?.type !== "scheduled") {
     events.push(
-      { room: `zone:${order.fromZone}`, event: "order:new", payload: { orderId: order._id } },
       { room: `city:${order.cityId}`, event: "order:new", payload: { orderId: order._id } }
     );
   }

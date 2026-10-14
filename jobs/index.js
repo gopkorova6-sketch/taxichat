@@ -40,12 +40,18 @@ const scheduleCascade = async (order) => {
   if (!agenda) return;
   const city = await require("../models/City").findById(order.cityId).select("settings");
   const timeouts = city?.settings?.cascadeTimeouts ?? {};
-  const steps = [
-    ["favorites", 0],
-    ["zone", timeouts.favorites ?? 20],
-    ["neighbors", timeouts.zone ?? 60],
-    ["city", timeouts.neighbors ?? 120],
-  ];
+  // Zone-less orders (route-as-text) go favorites -> city directly
+  const steps = order.fromZone
+    ? [
+        ["favorites", 0],
+        ["zone", timeouts.favorites ?? 20],
+        ["neighbors", timeouts.zone ?? 60],
+        ["city", timeouts.neighbors ?? 120],
+      ]
+    : [
+        ["favorites", 0],
+        ["city", timeouts.favorites ?? 20],
+      ];
   for (const [step, delaySec] of steps) {
     await agenda.schedule(
       new Date(Date.now() + delaySec * 1000),
