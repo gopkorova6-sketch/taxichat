@@ -85,7 +85,8 @@ const TaxiApp = () => {
               {tab === "taxi" ? "Чаты" : "Заказы"}
             </button>
             <button className="underline" onClick={() => setTab("roles")}>Роли</button>
-          <button className="underline text-danger" onClick={logout}>Выйти</button>
+            <button className="underline text-danger" onClick={logout}>Выйти</button>
+          </div>
         </div>
       </header>
 
