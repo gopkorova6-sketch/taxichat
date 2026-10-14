@@ -179,6 +179,27 @@ html.dark .chat-bg,
   );
 }
 
+/* Mobile UX: prevent iOS zoom on input focus, safe area for bottom nav */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Larger touch targets on mobile */
+@media (max-width: 40em) {
+  button,
+  select,
+  a {
+    touch-action: manipulation;
+    min-height: 40px;
+  }
+}
+
 /* Emoji Picker styles */
 /* Hide emoji search bar search bar */
 #emojiPicker .Flex.epr-header-overlay.FlexRow,

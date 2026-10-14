@@ -133,10 +133,10 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
   );
 
   return (
-    <div className="p-4 space-y-4 overflow-y-auto h-full">
+    <div className="p-4 space-y-4 overflow-y-auto h-full max-w-[42rem] mx-auto w-full">
       <div className="flex items-center gap-3">
         <button
-          className={`px-4 py-2 rounded text-white ${online ? "bg-success" : "bg-danger"}`}
+          className={`px-6 py-3 rounded-lg text-white font-semibold ${online ? "bg-success" : "bg-danger"}`}
           onClick={toggleShift}
         >
           {online ? "На линии" : "Не на линии"}
@@ -159,7 +159,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
 
       <div>
         <h3 className="font-semibold mb-2">Лента заказов</h3>
-        <div className="space-y-2 max-w-md">
+          <div className="space-y-2">
           {feed.length === 0 && <div className="text-sm text-secondary-text">Пока нет заказов</div>}
           {feed.map((order) => (
             <div key={order._id} className="bg-secondary rounded p-3 text-sm">
@@ -189,7 +189,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
 
       <div>
         <h3 className="font-semibold mb-2">Мои заказы</h3>
-        <div className="space-y-2 max-w-md">
+          <div className="space-y-2">
           {mine.length === 0 && <div className="text-sm text-secondary-text">Нет активных заказов</div>}
           {mine.map((order) => (
             <div key={order._id} className="bg-secondary rounded p-3 text-sm">

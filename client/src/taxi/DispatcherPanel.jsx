@@ -130,7 +130,7 @@ const DispatcherPanel = ({ cityId, role, me }) => {
   const OPEN = ["PUBLISHED", "ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE", "DISPUTE"];
 
   return (
-    <div className="p-4 space-y-4 overflow-y-auto h-full">
+    <div className="p-4 space-y-4 overflow-y-auto h-full max-w-[42rem] mx-auto w-full">
       {sos && (
         <div className="bg-danger text-white rounded p-3 text-sm flex items-center gap-3">
           <span>SOS в заказе! Подключитесь к чату.</span>

@@ -25,7 +25,7 @@ const ChatList = ({ onOpen, refreshKey = 0 }) => {
   }
 
   return (
-    <div className="space-y-2 max-w-md">
+    <div className="space-y-2 max-w-[42rem] mx-auto w-full">
       {chats.map((chat) => (
         <button
           key={chat._id}

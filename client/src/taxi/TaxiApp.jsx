@@ -65,7 +65,7 @@ const TaxiApp = () => {
           </select>
         </div>
         {/* Роли в шапке — только на десктопе; на мобильных нижняя навигация */}
-        <div className="hidden sm:flex gap-1 flex-wrap">
+        <div className="sm:hidden flex gap-1 flex-wrap">
           {availableRoles.map((r) => (
             <button
               key={r}
@@ -149,7 +149,7 @@ const TaxiApp = () => {
       </div>
 
       {/* Мобильная нижняя навигация по ролям — под большим пальцем */}
-      <nav className="sm:hidden flex border-t border-secondary-text/20 bg-secondary">
+      <nav className="hidden sm:flex border-t border-secondary-text/20 bg-secondary safe-area-bottom">
         {availableRoles.map((r) => (
           <button
             key={r}
