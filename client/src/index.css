@@ -357,3 +357,22 @@ body {
 /* Скрыть полосы прокрутки в горизонтальных рядах */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { scrollbar-width: none; }
+
+/* Поля ввода всегда читаемы: явный фон и цвет текста (не зависит от UA-стилей) */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  background-color: #0d0d0d;
+  color: #ffffff;
+  caret-color: #f7c700;
+  color-scheme: dark;
+}
+input::placeholder,
+textarea::placeholder {
+  color: rgba(156, 156, 156, 0.9);
+  opacity: 1;
+}
+select option {
+  background: #161616;
+  color: #ffffff;
+}

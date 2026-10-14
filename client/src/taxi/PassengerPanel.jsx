@@ -319,7 +319,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
             </div>
           )}
 
-          <div className="relative flex p-1 rounded-2xl bg-primary/70">
+          <div className="relative flex p-1 rounded-2xl bg-[#0d0d0d]">
             {[
               ["now", "⚡ Сейчас"],
               ["scheduled", "🕓 На время"],
@@ -339,7 +339,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
 
           {whenType === "scheduled" && (
             <input
-              className="w-full bg-primary/70 border border-secondary-text/20 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.6rem] text-primary-text"
+              className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.6rem] text-primary-text"
               type="datetime-local"
               required
               min={defaultScheduledAt()}
@@ -349,7 +349,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           )}
 
           <input
-            className="w-full bg-primary/70 border border-secondary-text/20 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.6rem] text-primary-text"
+            className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.6rem] text-primary-text"
             required
             autoFocus
             placeholder="Куда едем? Например: от ЖД до Центра"
@@ -361,7 +361,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           />
 
           <input
-            className="w-full bg-primary/70 border border-secondary-text/20 rounded-2xl p-2.5 focus:border-accent focus:outline-none transition-colors text-[1.5rem] text-primary-text"
+            className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl p-2.5 focus:border-accent focus:outline-none transition-colors text-[1.5rem] text-primary-text"
             placeholder="Комментарий (необязательно)"
             value={notes}
             onChange={(event) => setNotes(event.target.value)}

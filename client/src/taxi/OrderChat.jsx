@@ -19,6 +19,36 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
   const [stars, setStars] = useState(0);
   const [rated, setRated] = useState(false);
 
+  // Все хуки объявляются до ранних return, иначе число хуков меняется при загрузке заказа
+  const fileInputRef = useRef();
+  const [uploading, setUploading] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const recordTimerRef = useRef();
+
+  const { startRecording, stopRecording } = useReactMediaRecorder({
+    audio: true,
+    blobPropertyBag: { type: "audio/mp3" },
+    onStop: async (_, blob) => {
+      try {
+        setUploading(true);
+        const uploadData = await apiUpload(blob, "audio");
+        await apiPost(`/api/orders/${orderId}/messages`, {
+          kind: "voice",
+          voiceNoteUrl: uploadData.secure_url,
+          voiceNoteDuration: Math.max(1, recordSeconds),
+        });
+        load();
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setUploading(false);
+        setRecording(false);
+        setRecordSeconds(0);
+      }
+    },
+  });
+
   const isParticipant =
     String(order.passengerId) === String(me.user._id) ||
     (order.driverId && String(order.driverId) === String(me.user._id));
@@ -157,35 +187,6 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
       setError(err.message);
     }
   };
-
-  const fileInputRef = useRef();
-  const [uploading, setUploading] = useState(false);
-  const [recording, setRecording] = useState(false);
-  const [recordSeconds, setRecordSeconds] = useState(0);
-  const recordTimerRef = useRef();
-
-  const { startRecording, stopRecording } = useReactMediaRecorder({
-    audio: true,
-    blobPropertyBag: { type: "audio/mp3" },
-    onStop: async (_, blob) => {
-      try {
-        setUploading(true);
-        const uploadData = await apiUpload(blob, "audio");
-        await apiPost(`/api/orders/${orderId}/messages`, {
-          kind: "voice",
-          voiceNoteUrl: uploadData.secure_url,
-          voiceNoteDuration: Math.max(1, recordSeconds),
-        });
-        load();
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setUploading(false);
-        setRecording(false);
-        setRecordSeconds(0);
-      }
-    },
-  });
 
   const toggleRecording = () => {
     if (recording) {
@@ -495,7 +496,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           {recording ? `⏺ ${recordSeconds}с` : "🎤"}
         </button>
         <input
-          className="flex-1 bg-primary/70 border border-secondary-text/20 rounded-2xl px-4 py-2.5 text-[1.5rem] focus:border-accent focus:outline-none transition-colors"
+          className="flex-1 bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl px-4 py-2.5 text-[1.5rem] focus:border-accent focus:outline-none transition-colors"
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder={uploading ? "Загрузка..." : "Сообщение..."}

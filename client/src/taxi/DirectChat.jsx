@@ -202,7 +202,7 @@ const DirectChat = ({ chatId, me, onBack }) => {
           {recording ? `⏺ ${recordSeconds}с` : "🎤"}
         </button>
         <input
-          className="flex-1 bg-primary/70 border border-secondary-text/20 rounded-2xl px-4 py-2.5 text-[1.5rem] focus:border-accent focus:outline-none transition-colors"
+          className="flex-1 bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl px-4 py-2.5 text-[1.5rem] focus:border-accent focus:outline-none transition-colors"
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder={uploading ? "Загрузка..." : "Сообщение..."}
