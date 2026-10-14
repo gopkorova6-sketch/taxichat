@@ -26,3 +26,30 @@ export const CITY_STATUS_LABELS = {
 
 export const cityStatusLabel = (status) =>
   CITY_STATUS_LABELS[status] ?? status;
+
+// Человекочитаемое время заказа: «Сейчас», «К 14:30», «Завтра 09:15», «15 окт 18:00»
+export const formatWhen = (when) => {
+  if (!when?.at || when.type === "now") return "Сейчас";
+  const date = new Date(when.at);
+  if (Number.isNaN(date.getTime())) return "Сейчас";
+  const now = new Date();
+  const time = date.toLocaleTimeString("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  if (date.toDateString() === now.toDateString()) return `К ${time}`;
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  if (date.toDateString() === tomorrow.toDateString()) return `Завтра ${time}`;
+  return `${date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} ${time}`;
+};
+
+// Значение по умолчанию для datetime-local: через час, кратно 15 минутам
+export const defaultScheduledAt = () => {
+  const date = new Date(Date.now() + 60 * 60 * 1000);
+  date.setMinutes(Math.ceil(date.getMinutes() / 15) * 15, 0, 0);
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate()
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};

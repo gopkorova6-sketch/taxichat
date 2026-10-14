@@ -6,7 +6,7 @@ import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
 import DirectChat from "./DirectChat";
 import ChatList from "./ChatList";
-import { statusLabel } from "./statusLabels";
+import { statusLabel, formatWhen } from "./statusLabels";
 
 // Driver panel: shift toggle, live feed of published orders, assigned orders
 const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
@@ -167,7 +167,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                   {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
                 </div>
               <div className="text-secondary-text">
-                {order.when?.type === "scheduled" ? "К времени" : "Сейчас"} · {order.pax} пасс.
+                {formatWhen(order.when)} · {order.pax} пасс.
                 {order.notes ? ` · ${order.notes}` : ""}
               </div>
               <div className="flex gap-2 mt-2">

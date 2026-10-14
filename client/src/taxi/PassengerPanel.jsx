@@ -6,10 +6,12 @@ import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
 import DirectChat from "./DirectChat";
 import ChatList from "./ChatList";
-import { statusLabel } from "./statusLabels";
+import { statusLabel, formatWhen, defaultScheduledAt } from "./statusLabels";
 
-// Passenger panel: one-line order form, my orders, free drivers with direct
-// calls (mobile-first)
+// Passenger panel, mobile-first: the order composer sits at the BOTTOM of the
+// screen like a messenger input; recent orders fill the scrollable area above.
+const ACTIVE_STATUSES = ["DRAFT", "PUBLISHED", "ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE", "DISPUTE"];
+
 const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   const dispatch = useDispatch();
   const { socketListen, socket } = useSocket();
@@ -22,8 +24,12 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   const [error, setError] = useState(null);
   const [directTarget, setDirectTarget] = useState(null);
 
+  // Композер заказа: маршрут одной строкой, сейчас или на время
   const [route, setRoute] = useState("");
   const [notes, setNotes] = useState("");
+  const [whenType, setWhenType] = useState("now");
+  const [whenAt, setWhenAt] = useState(defaultScheduledAt());
+  const [sending, setSending] = useState(false);
 
   const load = async () => {
     try {
@@ -41,7 +47,6 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   useEffect(() => {
     load();
     const onStatusChanged = (payload) => {
-      // Toast for own orders even when the chat is closed
       if (orders.some((order) => order._id === payload.orderId)) {
         dispatch(
           notificationActions.addNotification({
@@ -71,12 +76,18 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (!route.trim() || sending) return;
     setError(null);
+    setSending(true);
     try {
       const res = await apiPost("/api/orders", {
         cityId,
-        route,
-        ...(notes && { notes }),
+        route: route.trim(),
+        ...(notes.trim() && { notes: notes.trim() }),
+        ...(whenType === "scheduled" && {
+          whenType: "scheduled",
+          whenAt: new Date(whenAt).toISOString(),
+        }),
         ...(directTarget && {
           targetDriverId: directTarget.driverId,
           chatId: directTarget.chatId,
@@ -85,11 +96,15 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
       setDirectTarget(null);
       setRoute("");
       setNotes("");
+      setWhenType("now");
+      setWhenAt(defaultScheduledAt());
       setTab("orders");
       setView({ type: "order", id: res.data.order._id });
       load();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -133,9 +148,33 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   const routeTitle = (order) =>
     order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text;
 
+  const orderCard = (order) => (
+    <button
+      key={order._id}
+      className="w-full text-left bg-secondary rounded-xl p-3 text-sm"
+      onClick={() => setView({ type: "order", id: order._id })}
+    >
+      <div className="flex items-center gap-2">
+        <div className="font-semibold min-w-0 truncate">{routeTitle(order)}</div>
+        {order.unreadCount > 0 && (
+          <span className="ml-auto bg-danger text-white rounded-full px-2 text-xs shrink-0">
+            {order.unreadCount}
+          </span>
+        )}
+      </div>
+      <div className="text-secondary-text">
+        {statusLabel(order.status)} · {formatWhen(order.when)}
+      </div>
+    </button>
+  );
+
+  const activeOrders = orders.filter((order) => ACTIVE_STATUSES.includes(order.status));
+  const shownOrders = ordersFilter === "all" ? orders : activeOrders;
+
   return (
-    <div className="p-4 space-y-4 overflow-y-auto h-full max-w-[42rem] mx-auto w-full">
-      <div className="flex gap-2 text-sm flex-wrap justify-center">
+    <div className="flex flex-col h-full max-w-[42rem] mx-auto w-full">
+      {/* Табы */}
+      <div className="shrink-0 px-4 pt-3 pb-2 flex gap-2 text-sm flex-wrap justify-center">
         {[
           ["new", "Заказ"],
           ["orders", "Мои заказы"],
@@ -155,11 +194,114 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
         ))}
       </div>
 
-      {error && <div className="text-danger text-sm text-center">{error}</div>}
+      {error && <div className="shrink-0 text-danger text-sm text-center px-4">{error}</div>}
 
+      {/* Прокручиваемая область */}
+      <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
+        {tab === "new" && (
+          <>
+            {activeOrders.length > 0 ? (
+              <>
+                <div className="text-xs text-secondary-text text-center">Ваши активные заказы</div>
+                {activeOrders.map(orderCard)}
+              </>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center gap-2 py-10">
+                <div className="text-[3rem]">🚕</div>
+                <div className="text-secondary-text text-sm">
+                  Напишите маршрут ниже — водители города получат заказ
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {tab === "orders" && (
+          <>
+            <div className="flex gap-2 text-sm justify-center">
+              {[
+                ["active", "Активные"],
+                ["all", "Все"],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  className={`px-3 py-1.5 rounded-full ${
+                    ordersFilter === key
+                      ? "bg-accent text-black font-semibold"
+                      : "bg-secondary text-secondary-text"
+                  }`}
+                  onClick={() => setOrdersFilter(key)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {shownOrders.length === 0 && (
+              <div className="text-secondary-text text-sm text-center">Заказов пока нет</div>
+            )}
+            {shownOrders.map(orderCard)}
+          </>
+        )}
+
+        {tab === "drivers" && (
+          <>
+            {drivers.length === 0 && (
+              <div className="text-secondary-text text-sm text-center">
+                Сейчас все водители заняты или не на линии
+              </div>
+            )}
+            {drivers.map((driver) =>
+              driverCard(driver, {
+                children: (
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      className="bg-success text-white px-3 py-2 rounded-lg flex-1"
+                      onClick={() => callDriver(driver)}
+                    >
+                      Позвонить
+                    </button>
+                    <button
+                      className="border border-secondary-text/40 px-3 py-2 rounded-lg"
+                      onClick={() => toggleFavorite(driver)}
+                    >
+                      {driver.isFavorite ? "★ В избранных" : "☆ В избранные"}
+                    </button>
+                  </div>
+                ),
+              })
+            )}
+          </>
+        )}
+
+        {tab === "favorites" && (
+          <>
+            {favorites.length === 0 && (
+              <div className="text-secondary-text text-sm text-center">Список пуст</div>
+            )}
+            {favorites.map((driver) =>
+              driverCard(driver, {
+                children: (
+                  <button
+                    className="bg-success text-white px-3 py-2 rounded-lg mt-2 w-full"
+                    onClick={() => callDriver(driver)}
+                  >
+                    Позвонить
+                  </button>
+                ),
+              })
+            )}
+          </>
+        )}
+
+        {tab === "dialogs" && (
+          <ChatList onOpen={(chatId) => setView({ type: "direct", id: chatId })} />
+        )}
+      </div>
+
+      {/* Нижний композер заказа */}
       {tab === "new" && (
         <form
-          className="space-y-3 bg-secondary p-4 rounded-2xl"
+          className="shrink-0 border-t border-secondary-text/20 bg-secondary p-3 space-y-2 safe-area-bottom"
           onSubmit={submit}
         >
           {directTarget && (
@@ -167,132 +309,71 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
               Прямой заказ водителю {directTarget.driverName ?? directTarget.driverId}
             </div>
           )}
-          <label className="block text-sm text-secondary-text">Куда едем?</label>
-          <textarea
-            className="w-full bg-primary border border-secondary-text/40 rounded-xl p-3 text-[1.6rem] text-primary-text resize-none"
-            rows={2}
-            required
-            autoFocus
-            placeholder="Например: от ЖД вокзала до Центра"
-            value={route}
-            onChange={(event) => setRoute(event.target.value)}
-          />
-          <textarea
-            className="w-full bg-primary border border-secondary-text/40 rounded-xl p-3 text-[1.5rem] text-primary-text resize-none"
-            rows={2}
-            placeholder="Комментарий (необязательно)"
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-          />
-          <button
-            className="bg-accent text-black font-semibold p-[1.2rem] rounded-xl w-full"
-            type="submit"
-            disabled={!route.trim()}
-          >
-            {directTarget ? "Оформить заказ водителю" : "Заказать такси"}
-          </button>
-        </form>
-      )}
 
-      {tab === "orders" && (
-        <div className="space-y-2">
-          <div className="flex gap-2 text-sm justify-center">
+          <div className="flex gap-2">
             {[
-              ["active", "Активные"],
-              ["all", "Все"],
+              ["now", "Сейчас"],
+              ["scheduled", "На время"],
             ].map(([key, label]) => (
               <button
                 key={key}
-                className={`px-3 py-1.5 rounded-full ${
-                  ordersFilter === key
-                    ? "bg-accent text-black font-semibold"
-                    : "bg-secondary text-secondary-text"
+                type="button"
+                className={`flex-1 py-2 rounded-lg text-sm ${
+                  whenType === key ? "bg-accent text-black font-semibold" : "bg-primary text-secondary-text"
                 }`}
-                onClick={() => setOrdersFilter(key)}
+                onClick={() => setWhenType(key)}
               >
                 {label}
               </button>
             ))}
           </div>
-          {orders.filter((order) => ordersFilter === "all" ||
-            !["COMPLETED", "CANCELLED", "NO_SHOW", "EXPIRED"].includes(order.status)).length === 0 && (
-            <div className="text-secondary-text text-sm text-center">Заказов пока нет</div>
-          )}
-          {orders
-            .filter((order) => ordersFilter === "all" ||
-              !["COMPLETED", "CANCELLED", "NO_SHOW", "EXPIRED"].includes(order.status))
-            .map((order) => (
-            <button
-              key={order._id}
-              className="w-full text-left bg-secondary rounded-xl p-3 text-sm"
-              onClick={() => setView({ type: "order", id: order._id })}
-            >
-              <div className="flex items-center gap-2">
-                <div className="font-semibold">{routeTitle(order)}</div>
-                {order.unreadCount > 0 && (
-                  <span className="ml-auto bg-danger text-white rounded-full px-2 text-xs">
-                    {order.unreadCount}
-                  </span>
-                )}
-              </div>
-              <div className="text-secondary-text">{statusLabel(order.status)}</div>
-            </button>
-          ))}
-        </div>
-      )}
 
-      {tab === "drivers" && (
-        <div className="space-y-2 max-w-[42rem]">
-          {drivers.length === 0 && (
-            <div className="text-secondary-text text-sm text-center">
-              Сейчас все водители заняты или не на линии
-            </div>
+          {whenType === "scheduled" && (
+            <input
+              className="w-full bg-primary border border-secondary-text/40 rounded-lg p-3 text-[1.6rem] text-primary-text"
+              type="datetime-local"
+              required
+              min={defaultScheduledAt()}
+              value={whenAt}
+              onChange={(event) => setWhenAt(event.target.value)}
+            />
           )}
-          {drivers.map((driver) =>
-            driverCard(driver, {
-              children: (
-                <div className="flex gap-2 mt-2">
-                  <button
-                    className="bg-success text-white px-3 py-1.5 rounded-lg flex-1"
-                    onClick={() => callDriver(driver)}
-                  >
-                    Позвонить
-                  </button>
-                  <button
-                    className="border border-secondary-text/40 px-3 py-1.5 rounded-lg"
-                    onClick={() => toggleFavorite(driver)}
-                  >
-                    {driver.isFavorite ? "★ В избранных" : "☆ В избранные"}
-                  </button>
-                </div>
-              ),
-            })
-          )}
-        </div>
-      )}
 
-      {tab === "favorites" && (
-        <div className="space-y-2 max-w-[42rem]">
-          {favorites.length === 0 && (
-            <div className="text-secondary-text text-sm text-center">Список пуст</div>
-          )}
-          {favorites.map((driver) =>
-            driverCard(driver, {
-              children: (
-                <button
-                  className="bg-success text-white px-3 py-1.5 rounded-lg mt-2 w-full"
-                  onClick={() => callDriver(driver)}
-                >
-                  Позвонить
-                </button>
-              ),
-            })
-          )}
-        </div>
-      )}
+          <input
+            className="w-full bg-primary border border-secondary-text/40 rounded-xl p-3 text-[1.6rem] text-primary-text"
+            required
+            autoFocus
+            placeholder="Куда едем? Например: от ЖД до Центра"
+            value={route}
+            onChange={(event) => setRoute(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") submit(event);
+            }}
+          />
 
-      {tab === "dialogs" && (
-        <ChatList onOpen={(chatId) => setView({ type: "direct", id: chatId })} />
+          <input
+            className="w-full bg-primary border border-secondary-text/40 rounded-lg p-2.5 text-[1.5rem] text-primary-text"
+            placeholder="Комментарий (необязательно)"
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+          />
+
+          <button
+            className={`bg-accent text-black font-semibold p-[1.2rem] rounded-xl w-full ${
+              !route.trim() || sending ? "opacity-50" : "opacity-100"
+            }`}
+            type="submit"
+            disabled={!route.trim() || sending}
+          >
+            {sending
+              ? "Отправляем..."
+              : whenType === "scheduled"
+                ? "Заказать на время"
+                : directTarget
+                  ? "Оформить заказ водителю"
+                  : "Заказать такси"}
+          </button>
+        </form>
       )}
     </div>
   );

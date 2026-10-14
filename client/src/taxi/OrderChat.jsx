@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useReactMediaRecorder } from "react-media-recorder";
 import { apiGet, apiPost, apiUpload } from "./api";
 import useSocket from "../hooks/useSocket";
-import { statusLabel } from "./statusLabels";
+import { statusLabel, formatWhen } from "./statusLabels";
 
 // Chat of a single order: bot card, system messages, quick action buttons,
 // offers, SOS and the trip rating (concept 1.7)
@@ -233,7 +233,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           </div>
           <div className="text-sm text-secondary-text shrink-0">
             {order.passenger?.name ? `${order.passenger.name} · ` : ""}
-            {statusLabel(order.status)}
+            {statusLabel(order.status)} · {formatWhen(order.when)}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -317,7 +317,8 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
               <div key={message._id} className="border border-secondary-text/30 rounded p-3 text-sm">
                 <div className="font-semibold">Заказ</div>
                 <div>Статус: {statusLabel(message.meta?.status)}</div>
-                <div>{message.meta?.from} → {message.meta?.to}</div>
+                <div>{message.meta?.to ? `${message.meta?.from} → ${message.meta?.to}` : message.meta?.from}</div>
+                <div>Когда: {formatWhen(message.meta?.when)}</div>
                 <div>Пассажиров: {message.meta?.pax}{message.meta?.priceAgreed ? `, цена: ${message.meta.priceAgreed}` : ""}</div>
               </div>
             );

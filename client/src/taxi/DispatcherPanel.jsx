@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiGet, apiPost, apiPatch } from "./api";
-import { statusLabel } from "./statusLabels";
+import { statusLabel, formatWhen } from "./statusLabels";
 import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
 
@@ -165,7 +165,7 @@ const DispatcherPanel = ({ cityId, role, me }) => {
                   )}
                 </div>
                 <div className="text-secondary-text">
-                  {statusLabel(order.status)} · {order.exactFrom ?? "адрес скрыт"} · {order.pax} пасс.
+                  {statusLabel(order.status)} · {formatWhen(order.when)} · {order.pax} пасс.
                 </div>
                 <div className="flex gap-2 mt-2">
                   {order.status === "PUBLISHED" && (
