@@ -50,11 +50,11 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
   });
 
   const isParticipant =
-    String(order.passengerId) === String(me.user._id) ||
-    (order.driverId && String(order.driverId) === String(me.user._id));
+    String(order?.passengerId) === String(me?.user?._id) ||
+    (order?.driverId && String(order.driverId) === String(me?.user?._id));
   const myRole = !isParticipant
     ? "dispatcher"
-    : String(order.driverId) === String(me.user._id)
+    : String(order?.driverId) === String(me?.user?._id)
       ? "driver"
       : "passenger";
   const otherId =
