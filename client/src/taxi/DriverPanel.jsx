@@ -204,16 +204,16 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
 
       {!online && (
         <div className="text-sm text-secondary-text">
-          Выйдите на линию, чтобы получать заказы
+          😴 Выйдите на линию, чтобы получать заказы
         </div>
       )}
 
       <div>
-        <h3 className="font-display font-bold mb-2 text-center tracking-wide">Лента заказов</h3>
+        <h3 className="font-display font-bold mb-2 text-center tracking-wide">📢 Лента заказов</h3>
           <div className="space-y-2">
-          {feed.length === 0 && <div className="text-sm text-secondary-text">Пока нет заказов</div>}
+          {feed.length === 0 && <div className="text-sm text-secondary-text">📭 Пока нет заказов</div>}
           {feed.map((order) => (
-            <div key={order._id} className="anim-rise glass rounded-2xl p-3 text-sm text-center">
+            <div key={order._id} className="anim-rise glass rounded-2xl p-4 text-[1.8rem] text-center">
                 <div className="font-semibold text-center">
                   {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
                 </div>
@@ -247,11 +247,11 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
       </div>
 
       <div>
-        <h3 className="font-display font-bold mb-2 text-center tracking-wide">Мои заказы</h3>
+        <h3 className="font-display font-bold mb-2 text-center tracking-wide">📋 Мои заказы</h3>
           <div className="space-y-2">
-          {mine.length === 0 && <div className="text-sm text-secondary-text">Нет активных заказов</div>}
+          {mine.length === 0 && <div className="text-sm text-secondary-text">📭 Нет активных заказов</div>}
           {mine.map((order) => (
-            <div key={order._id} className="anim-rise glass rounded-2xl p-3 text-sm text-center">
+            <div key={order._id} className="anim-rise glass rounded-2xl p-4 text-[1.8rem] text-center">
               <div className="flex items-center gap-2 justify-center">
               <div className="font-semibold text-center">
                 {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
@@ -298,7 +298,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
       </div>
 
       <div>
-        <h3 className="font-display font-bold mb-2 text-center tracking-wide">Диалоги</h3>
+        <h3 className="font-display font-bold mb-2 text-center tracking-wide">💬 Диалоги</h3>
         <ChatList onOpen={(chatId) => setView({ type: "direct", id: chatId })} />
       </div>
     </div>

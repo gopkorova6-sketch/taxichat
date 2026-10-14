@@ -376,3 +376,50 @@ select option {
   background: #161616;
   color: #ffffff;
 }
+
+/* ==== Крупный текст и большие касания (пенсионеры и мобильные) ==== */
+@media (max-width: 40em) {
+  body {
+    font-size: 1.8rem;
+    line-height: 1.45;
+  }
+  .text-xs { font-size: 1.4rem !important; }
+  .text-sm { font-size: 1.7rem !important; }
+  .text-base { font-size: 1.9rem !important; }
+  .text-lg { font-size: 2.2rem !important; }
+  button, select, a {
+    min-height: 48px;
+  }
+  input, select, textarea {
+    font-size: 18px;
+    min-height: 48px;
+  }
+}
+
+/* Кнопка «Назад»: крупная, с фоном и касанием */
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 48px;
+  padding: 0.8rem 1.4rem;
+  border-radius: 1.4rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.btn-back:active { transform: scale(0.96); }
+
+/* Карточка заказа: крупный заголовок и статус */
+.order-card-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1.25;
+}
+.order-card-meta {
+  font-size: 1.7rem;
+  color: var(--text-secondary);
+}

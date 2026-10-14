@@ -288,12 +288,12 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
   return (
     <div className="flex flex-col h-full">
       <div className="relative p-3 border-b border-secondary-text/20">
-          <button className="underline absolute left-3 top-3 text-sm" onClick={onBack}>← Назад</button>
+          <button className="btn-back absolute left-3 top-3" onClick={onBack}>⬅️ Назад</button>
           <div className="text-center px-16 min-w-0">
-            <div className="font-semibold truncate">
+            <div className="order-card-title truncate">
               {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
             </div>
-            <div className="text-sm text-secondary-text truncate">
+            <div className="order-card-meta truncate">
               {order.passenger?.name ? `${order.passenger.name} · ` : ""}
               {statusBadge(order.status)} · {formatWhen(order.when)}
             </div>

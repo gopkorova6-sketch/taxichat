@@ -160,11 +160,11 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   const orderCard = (order) => (
     <button
       key={order._id}
-      className="press anim-rise w-full text-center glass rounded-2xl p-3 text-sm"
+      className="press anim-rise w-full text-center glass rounded-2xl p-4 text-[1.8rem]"
       onClick={() => setView({ type: "order", id: order._id })}
     >
       <div className="flex items-center gap-2 justify-center">
-        <div className="font-semibold min-w-0 text-center">{routeTitle(order)}</div>
+        <div className="order-card-title min-w-0 text-center">{routeTitle(order)}</div>
         {order.unreadCount > 0 && (
           <span className="ml-auto bg-danger text-white rounded-full px-2 text-xs shrink-0">
             {order.unreadCount}
@@ -185,11 +185,11 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
       {/* Табы */}
       <div className="shrink-0 px-4 pt-3 pb-2 flex gap-2 text-sm flex-wrap justify-center">
         {[
-          ["new", "Заказ"],
-          ["orders", "Мои заказы"],
-          ["drivers", "Водители"],
-          ["favorites", "Избранные"],
-          ["dialogs", "Диалоги"],
+          ["new", "🚕 Заказ"],
+          ["orders", "📋 Мои заказы"],
+          ["drivers", "🧑‍✈️ Водители"],
+          ["favorites", "⭐ Избранные"],
+          ["dialogs", "💬 Диалоги"],
         ].map(([key, label]) => (
           <button
             key={key}

@@ -13,14 +13,15 @@ import RolesSection from "./RolesSection";
 import { apiPost } from "./api";
 import { cityStatusEmoji } from "./statusLabels";
 import ErrorBoundary from "./ErrorBoundary";
+import CityPicker from "./CityPicker";
 
 // Main Бомбила workspace: city and role switcher, role panels, order chats
 // and voice calls. The legacy contact chats stay available in the "Чаты" tab.
 const ROLE_LABELS = {
-  passenger: "Пассажир",
-  driver: "Водитель",
-  dispatcher: "Диспетчер",
-  region_admin: "Админ региона",
+  passenger: "🧍 Пассажир",
+  driver: "🚕 Водитель",
+  dispatcher: "🎧 Диспетчер",
+  region_admin: "🗺️ Админ региона",
 };
 
 const TaxiApp = () => {
@@ -54,28 +55,7 @@ const TaxiApp = () => {
           <span className="brand-title brand-gradient">Бомбила</span>
           <span className="text-[1.1rem] text-secondary-text tracking-wide">такси без посредников</span>
         </div>
-        {/* Слайдер городов: выбранный город крупно, в стиле бренда */}
-        <div className="relative">
-          <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory hide-scrollbar py-1 px-[25%]">
-            {cities.map((item) => {
-              const selected = String(item._id) === String(cityId);
-              return (
-                <button
-                  key={item._id}
-                  onClick={() => setCityId(String(item._id))}
-                  className={`press snap-center shrink-0 rounded-2xl px-4 py-2 transition-all duration-300 ${
-                    selected
-                      ? "btn-accent font-display font-extrabold text-[1.8rem] scale-100"
-                      : "glass text-secondary-text text-[1.3rem] scale-90 opacity-70"
-                  }`}
-                >
-                  <span className="mr-1">{cityStatusEmoji(item.status)}</span>
-                  {item.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <CityPicker cities={cities} cityId={cityId} onSelect={setCityId} />
         {/* Роли в шапке — только на десктопе; на мобильных нижняя навигация */}
         <div className="sm:hidden flex gap-1 flex-wrap justify-center">
           {availableRoles.map((r) => (
@@ -108,10 +88,10 @@ const TaxiApp = () => {
           <span className="truncate">{user?.name}</span>
           <div className="flex items-center justify-center gap-3 shrink-0">
             <button className="underline" onClick={() => setTab(tab === "taxi" ? "chats" : "taxi")}>
-              {tab === "taxi" ? "Чаты" : "Заказы"}
+              {tab === "taxi" ? "💬 Чаты" : "🚕 Заказы"}
             </button>
-            <button className="underline" onClick={() => setTab("roles")}>Роли</button>
-            <button className="underline text-danger" onClick={logout}>Выйти</button>
+            <button className="underline" onClick={() => setTab("roles")}>👥 Роли</button>
+            <button className="underline text-danger" onClick={logout}>🚪 Выйти</button>
           </div>
         </div>
       </header>
