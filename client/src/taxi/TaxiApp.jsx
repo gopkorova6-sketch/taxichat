@@ -12,6 +12,7 @@ import DispatcherPanel from "./DispatcherPanel";
 import RolesSection from "./RolesSection";
 import { apiPost } from "./api";
 import { cityStatusEmoji } from "./statusLabels";
+import ErrorBoundary from "./ErrorBoundary";
 
 // Main Бомбила workspace: city and role switcher, role panels, order chats
 // and voice calls. The legacy contact chats stay available in the "Чаты" tab.
@@ -118,6 +119,7 @@ const TaxiApp = () => {
       {error && <div className="text-danger text-sm px-4 py-1">{error}</div>}
 
       <div className="flex-1 overflow-hidden pb-[7.5rem] sm:pb-0 anim-rise">
+        <ErrorBoundary>
         {tab === "chats" ? (
           <div className="flex w-full h-full">
             <Sidebar />
@@ -164,13 +166,16 @@ const TaxiApp = () => {
         ) : role === "dispatcher" || role === "region_admin" ? (
           <DispatcherPanel cityId={cityId} role={role} me={me} />
         ) : (
-          <PassengerPanel
-            me={me}
-            cityId={cityId}
-            refreshMe={refreshMe}
-            startCall={startCall}
-          />
+          <ErrorBoundary key={cityId + role}>
+            <PassengerPanel
+              me={me}
+              cityId={cityId}
+              refreshMe={refreshMe}
+              startCall={startCall}
+            />
+          </ErrorBoundary>
         )}
+        </ErrorBoundary>
       </div>
 
       {/* Мобильная нижняя навигация по ролям — под большим пальцем */}
