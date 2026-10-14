@@ -28,8 +28,8 @@ describe("Geo import", () => {
 
     const cities = await City.countDocuments();
     const zones = await Zone.countDocuments();
-    expect(cities).toBe(5);
-    expect(zones).toBe(18);
+    expect(cities).toBe(12);
+    expect(zones).toBe(21);
   });
 
   it("links zone neighbors within the same city", async () => {

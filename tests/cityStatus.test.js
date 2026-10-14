@@ -6,6 +6,29 @@ const city = (overrides = {}) => ({
   ...overrides,
 });
 
+describe("alwaysActive cities", () => {
+  const always = {
+    status: "ACTIVE",
+    alwaysActive: true,
+    thresholds: { pilotDrivers: 3, activeDrivers: 10, activeDispatchers: 2 },
+  };
+
+  it("stay ACTIVE regardless of thresholds", () => {
+    expect(computeCityStatus(always, { members: 1 })).toBe("ACTIVE");
+    expect(computeCityStatus(always, { members: 3, drivers: 0, dispatchers: 0 })).toBe("ACTIVE");
+  });
+
+  it("SUSPENDED still overrides alwaysActive", () => {
+    expect(
+      computeCityStatus({ ...always, status: "SUSPENDED" }, {
+        members: 5,
+        drivers: 3,
+        dispatchers: 1,
+      })
+    ).toBe("SUSPENDED");
+  });
+});
+
 describe("computeCityStatus", () => {
   it("stays DORMANT when nobody registered", () => {
     expect(computeCityStatus(city(), { members: 0 })).toBe("DORMANT");
@@ -40,5 +63,18 @@ describe("computeCityStatus", () => {
   it("keeps SUSPENDED sticky regardless of counts", () => {
     const suspended = city({ status: "SUSPENDED" });
     expect(computeCityStatus(suspended, { members: 50, drivers: 20, dispatchers: 5 })).toBe("SUSPENDED");
+  });
+});
+
+describe("alwaysActive cities", () => {
+  const always = { status: "ACTIVE", alwaysActive: true, thresholds: { pilotDrivers: 3, activeDrivers: 10, activeDispatchers: 2 } };
+
+  it("stay ACTIVE regardless of thresholds", () => {
+    expect(computeCityStatus(always, { members: 1 })).toBe("ACTIVE");
+    expect(computeCityStatus(always, { members: 3, drivers: 0, dispatchers: 0 })).toBe("ACTIVE");
+  });
+
+  it("SUSPENDED still overrides alwaysActive", () => {
+    expect(computeCityStatus({ ...always, status: "SUSPENDED" }, { members: 5, drivers: 3, dispatchers: 1 })).toBe("SUSPENDED");
   });
 });

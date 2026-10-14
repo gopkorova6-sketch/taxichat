@@ -37,6 +37,8 @@ const importGeoData = async (data) => {
           oktmo: cityData.oktmo,
           regionId,
           tz: cityData.tz ?? "Europe/Moscow",
+          ...(cityData.status && { status: cityData.status }),
+          ...(cityData.alwaysActive && { alwaysActive: true }),
         },
       },
       { upsert: true, new: true }

@@ -57,6 +57,9 @@ const citySchema = new mongoose.Schema(
     // Город, добавленный пользователем вручную (не из справочника):
     // не опускается ниже PILOT, чтобы первый пользователь мог заказывать
     custom: { type: Boolean, default: false, index: true },
+    // Город, принудительно активный (например, города Слюдянского района):
+    // всегда ACTIVE независимо от порогов
+    alwaysActive: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
 );

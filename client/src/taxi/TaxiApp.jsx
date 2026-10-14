@@ -48,11 +48,11 @@ const TaxiApp = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <header className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 border-b border-secondary-text/20 bg-secondary">
+      <header className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 pb-2 border-b border-secondary-text/20 bg-secondary">
         <div className="flex items-center gap-3">
           <span className="font-bold uppercase tracking-wide text-cta-icon">Бомбила</span>
           <select
-            className="bg-primary rounded-lg p-1.5 text-sm flex-1 sm:flex-none"
+            className="bg-primary rounded-lg p-2 text-sm flex-1 sm:flex-none"
             value={cityId ?? ""}
             onChange={(event) => setCityId(event.target.value)}
           >
@@ -64,7 +64,8 @@ const TaxiApp = () => {
             ))}
           </select>
         </div>
-        <div className="flex gap-1 flex-wrap">
+        {/* Роли в шапке — только на десктопе; на мобильных нижняя навигация */}
+        <div className="hidden sm:flex gap-1 flex-wrap">
           {availableRoles.map((r) => (
             <button
               key={r}
@@ -78,7 +79,7 @@ const TaxiApp = () => {
           ))}
         </div>
         <div className="sm:ml-auto flex items-center justify-between sm:justify-end gap-3 text-sm">
-          <span>{user?.name}</span>
+          <span className="truncate">{user?.name}</span>
           <button className="underline" onClick={() => setTab(tab === "taxi" ? "chats" : "taxi")}>
             {tab === "taxi" ? "Чаты" : "Заказы"}
           </button>
@@ -89,7 +90,7 @@ const TaxiApp = () => {
 
       {error && <div className="text-danger text-sm px-4 py-1">{error}</div>}
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden pb-[6rem] sm:pb-0">
         {tab === "chats" ? (
           <div className="flex w-full h-full">
             <Sidebar />
@@ -144,6 +145,25 @@ const TaxiApp = () => {
           />
         )}
       </div>
+
+      {/* Мобильная нижняя навигация по ролям — под большим пальцем */}
+      <nav className="sm:hidden flex border-t border-secondary-text/20 bg-secondary">
+        {availableRoles.map((r) => (
+          <button
+            key={r}
+            className={`flex-1 py-3 text-sm flex flex-col items-center gap-0.5 ${
+              role === r ? "text-cta-icon font-semibold" : "text-secondary-text"
+            }`}
+            onClick={() => setRole(r)}
+          >
+            <span className="text-[2rem] leading-none">
+              {r === "driver" ? "🚕" : r === "dispatcher" || r === "region_admin" ? "🎧" : "🧍"}
+            </span>
+            {ROLE_LABELS[r]}
+          </button>
+        ))}
+      </nav>
+
 
       <CallModal call={call} acceptCall={acceptCall} endCall={endCall} />
     </div>

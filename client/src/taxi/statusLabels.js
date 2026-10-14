@@ -19,8 +19,8 @@ export const statusLabel = (status) => STATUS_LABELS[status] ?? status;
 export const CITY_STATUS_LABELS = {
   DORMANT: "Не запущен",
   WAITLIST: "Список ожидания",
-  PILOT: "Пилот",
-  ACTIVE: "Работает",
+  PILOT: "Активен",
+  ACTIVE: "Полностью активен",
   SUSPENDED: "Приостановлен",
 };
 
