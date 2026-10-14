@@ -48,11 +48,11 @@ const TaxiApp = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <header className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 pb-2 border-b border-secondary-text/20 bg-secondary">
-        <div className="flex items-center gap-3">
-          <span className="font-bold uppercase tracking-wide text-cta-icon">Бомбила</span>
+      <header className="flex flex-col gap-2 p-2 border-b border-secondary-text/20 bg-secondary">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-bold uppercase tracking-wide text-cta-icon shrink-0">Бомбила</span>
           <select
-            className="bg-primary rounded-lg p-2 text-sm flex-1 sm:flex-none"
+            className="bg-primary rounded-lg p-2 text-sm flex-1 min-w-0 truncate"
             value={cityId ?? ""}
             onChange={(event) => setCityId(event.target.value)}
           >
@@ -78,12 +78,13 @@ const TaxiApp = () => {
             </button>
           ))}
         </div>
-        <div className="sm:ml-auto flex items-center justify-between sm:justify-end gap-3 text-sm">
+        <div className="flex items-center justify-between gap-2 text-sm min-w-0">
           <span className="truncate">{user?.name}</span>
-          <button className="underline" onClick={() => setTab(tab === "taxi" ? "chats" : "taxi")}>
-            {tab === "taxi" ? "Чаты" : "Заказы"}
-          </button>
-          <button className="underline" onClick={() => setTab("roles")}>Роли</button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button className="underline" onClick={() => setTab(tab === "taxi" ? "chats" : "taxi")}>
+              {tab === "taxi" ? "Чаты" : "Заказы"}
+            </button>
+            <button className="underline" onClick={() => setTab("roles")}>Роли</button>
           <button className="underline text-danger" onClick={logout}>Выйти</button>
         </div>
       </header>
