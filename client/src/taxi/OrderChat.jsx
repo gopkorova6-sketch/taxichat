@@ -225,19 +225,21 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 p-3 border-b border-secondary-text/20">
-        <button className="underline" onClick={onBack}>← Назад</button>
-        <div className="font-semibold min-w-0 truncate">
-          {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
+      <div className="p-3 border-b border-secondary-text/20">
+        <div className="flex items-center gap-3 min-w-0">
+          <button className="underline shrink-0" onClick={onBack}>← Назад</button>
+          <div className="font-semibold min-w-0 truncate">
+            {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
+          </div>
+          <div className="text-sm text-secondary-text shrink-0">
+            {order.passenger?.name ? `${order.passenger.name} · ` : ""}
+            {statusLabel(order.status)}
+          </div>
         </div>
-        <div className="text-sm text-secondary-text">
-          {order.passenger?.name ? `${order.passenger.name} · ` : ""}
-          {statusLabel(order.status)}
-        </div>
-        <div className="ml-auto flex gap-2">
+        <div className="flex flex-wrap items-center gap-2 mt-2">
           {isParticipant && CALLABLE.includes(order.status) && otherId && (
             <button
-              className="bg-success text-white px-3 py-1 rounded"
+              className="bg-success text-white px-3 py-1.5 rounded-lg text-sm"
               onClick={() =>
                 startCall({
                   kind: "order",
@@ -247,18 +249,22 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
                 })
               }
             >
-              Позвонить
+              📞 Позвонить
             </button>
           )}
           {isParticipant && (
-            <button className="underline" onClick={share}>Поделиться</button>
+            <button className="border border-secondary-text/40 px-3 py-1.5 rounded-lg text-sm" onClick={share}>
+              🔗 Поделиться
+            </button>
           )}
           {isParticipant &&
             ["ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE", "PUBLISHED"].includes(order.status) && (
-              <button className="text-danger underline" onClick={sos}>SOS</button>
+              <button className="bg-danger text-white px-3 py-1.5 rounded-lg text-sm" onClick={sos}>
+                SOS
+              </button>
             )}
           {isParticipant && otherId && (
-            <button className="underline text-secondary-text" onClick={blockPeer}>
+            <button className="underline text-secondary-text text-sm" onClick={blockPeer}>
               Блок
             </button>
           )}
