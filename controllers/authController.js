@@ -4,6 +4,7 @@ const ApiError = require("../utilities/errors");
 const catchAsyncError = require("../utilities/catchAsyncError");
 const { sendAuthCookie, clearAuthCookie } = require("../utilities/auth");
 const City = require("../models/City");
+const Membership = require("../models/Membership");
 const { recalcCityStatus } = require("../utilities/cityStatus");
 
 const registerSchema = z
