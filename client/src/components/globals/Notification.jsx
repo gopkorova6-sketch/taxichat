@@ -94,10 +94,10 @@ function Notification() {
   const dismiss = (id) => dispatch(notificationActions.removeNotification(id));
 
   return (
-    <div className="fixed top-[6rem] left-2 right-2 sm:left-auto sm:right-3 sm:w-[34rem] max-w-[calc(100vw-1rem)] z-[10000] flex flex-col gap-2 pointer-events-none">
+    <div className="fixed top-[6rem] left-2 right-2 z-[10000] flex flex-col gap-2 pointer-events-none max-w-[calc(100vw-1rem)] overflow-hidden">
       <AnimatePresence>
         {notifications.map((item) => (
-          <div key={item.id} className="pointer-events-auto w-full min-w-0">
+          <div key={item.id} className="pointer-events-auto w-full min-w-0 max-w-full">
             <NotificationItem item={item} onDismiss={dismiss} />
           </div>
         ))}
