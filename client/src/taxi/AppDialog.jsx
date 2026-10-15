@@ -10,6 +10,8 @@ export const DialogProvider = ({ children }) => {
   const [dialog, setDialog] = useState(null);
   const [value, setValue] = useState("");
   const resolver = useRef(null);
+  const boxRef = useRef(null);
+
 
   const open = useCallback((config) => {
     return new Promise((resolve) => {
@@ -33,7 +35,7 @@ export const DialogProvider = ({ children }) => {
       {children}
       {dialog && (
         <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 anim-fade">
-          <div className="glass-strong w-full max-w-[32rem] rounded-3xl p-4 space-y-3 anim-rise">
+          <div ref={boxRef} className="glass-strong w-full max-w-[32rem] rounded-3xl p-4 space-y-3 anim-rise max-h-[90dvh] overflow-y-auto">
             <div className="font-display font-bold text-[1.5rem] text-center">{dialog.title}</div>
             {dialog.text && <div className="text-[1.3rem] text-secondary-text text-center">{dialog.text}</div>}
             {dialog.kind === "ask" && (
@@ -45,6 +47,7 @@ export const DialogProvider = ({ children }) => {
                 placeholder={dialog.placeholder}
                 value={value}
                 onChange={(event) => setValue(event.target.value)}
+                onFocus={() => setTimeout(() => boxRef.current?.scrollIntoView({ block: "center" }), 300)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") finish(value.trim() || null);
                   if (event.key === "Escape") finish(null);
