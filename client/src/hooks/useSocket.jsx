@@ -8,7 +8,12 @@ const socket = io();
 // user:online the phone silently stops receiving order:new / order:status.
 socket.on("connect", () => {
   socket.emit("user:online");
-  window.__bombilaSocket = { ...(window.__bombilaSocket || {}), online: (window.__bombilaSocket?.online || 0) + 1, id: socket.id };
+  const transport = socket.io?.engine?.transport?.name ?? "?";
+  window.__bombilaSocket = { ...(window.__bombilaSocket || {}), online: (window.__bombilaSocket?.online || 0) + 1, id: socket.id, transport };
+  // Upgrade from polling to websocket happens after connect; record the final transport
+  socket.io.engine.on("upgrade", (t) => {
+    window.__bombilaSocket = { ...(window.__bombilaSocket || {}), transport: t.name };
+  });
 });
 
 // Debug trace of every order event received by this device
