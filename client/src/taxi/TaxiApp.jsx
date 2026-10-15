@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { authActions } from "../store/authSlice";
 import TripsList from "./TripsList";
@@ -32,6 +32,15 @@ const TaxiApp = () => {
   // Sections: "taxi" (role panel), "trips" (Поездки), "cabinet" (Кабинет)
   const [tab, setTab] = useState("taxi");
   const [openTrip, setOpenTrip] = useState(null);
+  // Accepting an offer in a notice opens the assigned order right away
+  useEffect(() => {
+    const onOpen = (event) => {
+      setTab("trips");
+      setOpenTrip(event.detail?.orderId ?? null);
+    };
+    window.addEventListener("bombila:open-order", onOpen);
+    return () => window.removeEventListener("bombila:open-order", onOpen);
+  }, []);
   // Live voice/on-screen notices for order changes, for every role
   useOrderNotices({ role, userId: user?._id });
 

@@ -35,6 +35,8 @@ function NotificationItem({ item, onDismiss }) {
       try {
         await apiPost(`/api/orders/${orderId}/accept`, { offerId });
         onDismiss(item.id);
+        // After assignment go straight to this order's page
+        window.dispatchEvent(new CustomEvent("bombila:open-order", { detail: { orderId } }));
         dispatch(notificationActions.addNotification({ message: "✅ Водитель назначен", type: "info", speak: true, speakText: "Водитель назначен" }));
       } catch (err) {
         dispatch(notificationActions.addNotification({ message: `⚠️ ${err.message}`, type: "error" }));
