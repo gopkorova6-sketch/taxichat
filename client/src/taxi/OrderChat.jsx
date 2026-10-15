@@ -86,10 +86,17 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
     socketListen("chat:message", onChanged);
     socketListen("order:status", onChanged);
     socketListen("order:offer", onChanged);
+
+    // Join the live order room; repeat after every reconnect (rooms are per connection)
+    const joinRoom = () => socket.emit("order:join", { orderId });
+    joinRoom();
+    socket.on("connect", joinRoom);
     return () => {
       socket.off("chat:message", onChanged);
       socket.off("order:status", onChanged);
       socket.off("order:offer", onChanged);
+      socket.off("connect", joinRoom);
+      socket.emit("order:leave", { orderId });
     };
   }, [orderId]);
 

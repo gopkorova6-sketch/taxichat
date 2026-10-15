@@ -32,6 +32,7 @@ const {
   disconnectingController,
   joinRoomController,
 } = require("./socketControllers/connectionController");
+const { orderRoomController } = require("./socketControllers/orderRoomController");
 const {
   messagingController,
   markMessageReadController,
@@ -76,6 +77,9 @@ const initSocket = (httpServer) => {
     // -------------Connection controls -------------- //
     // socket come online
     onlineController(io, socket);
+
+    // live order rooms (order:<id>) for participants only
+    orderRoomController(io, socket);
 
     // socket goes offline
     offlineController(io, socket);
