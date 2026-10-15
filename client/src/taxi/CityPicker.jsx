@@ -62,7 +62,6 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
               placeholder="🔍 Поиск города"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              autoFocus
             />
 
             <div className="overflow-y-auto flex-1 min-h-0 space-y-3 pr-1">

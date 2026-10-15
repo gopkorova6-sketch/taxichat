@@ -22,6 +22,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
 
   // Все хуки объявляются до ранних return, иначе число хуков меняется при загрузке заказа
   const fileInputRef = useRef();
+  const [armed, setArmed] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -313,15 +314,17 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
               className="flex-1 min-w-0 text-[1.3rem] font-semibold"
             />
           </div>
-          <div className="mt-1 flex items-center justify-between gap-2 text-[1.1rem] text-secondary-text min-w-0">
-            <span className="truncate">{statusBadge(order.status)} · {formatWhen(order.when)}</span>
-            <span className="shrink-0 truncate max-w-[45%]">
-              {myRole === "passenger" && order.driver
-                ? `🧑‍✈️ ${order.driver.displayName}${order.driver.carCaption ? ` · ${order.driver.carCaption}` : ""}`
-                : myRole === "driver" && order.passenger?.name
-                ? `🧍 ${order.passenger.name}`
-                : ""}
-            </span>
+          <div className="mt-1 text-[1.2rem] text-secondary-text">
+            <div>{statusBadge(order.status)} · {formatWhen(order.when)}</div>
+            {myRole === "passenger" && order.driver && (
+              <div className="break-words text-primary-text">
+                🧑‍✈️ {order.driver.displayName}
+                {order.driver.carCaption ? ` · 🚗 ${order.driver.carCaption}` : ""}
+              </div>
+            )}
+            {myRole === "driver" && order.passenger?.name && (
+              <div className="break-words text-primary-text">🧍 {order.passenger.name}</div>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-2 justify-center">
@@ -402,11 +405,11 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           if (message.kind === "order_card") {
             return (
               <div key={message._id} className="border border-secondary-text/30 rounded p-3 text-sm">
-                <div className="font-semibold text-center">Заказ</div>
-                <div>Статус: {statusBadge(message.meta?.status)}</div>
-                <div>{message.meta?.to ? `${message.meta?.from} → ${message.meta?.to}` : message.meta?.from}</div>
-                <div>Когда: {formatWhen(message.meta?.when)}</div>
-                <div>Пассажиров: {message.meta?.pax}{message.meta?.priceAgreed ? `, цена: ${message.meta.priceAgreed}` : ""}</div>
+                <div className="font-semibold text-center">📋 Заказ</div>
+                <div>🚦 Статус: {statusBadge(message.meta?.status)}</div>
+                <div className="break-words">📍 {message.meta?.to ? `${message.meta?.from} → ${message.meta?.to}` : message.meta?.from}</div>
+                <div>🕒 Когда: {formatWhen(message.meta?.when)}</div>
+                {message.meta?.priceAgreed ? <div>💰 Цена: {message.meta.priceAgreed}</div> : null}
               </div>
             );
           }
@@ -523,6 +526,9 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
         <input
           className="flex-1 bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl px-4 py-2.5 text-[1.5rem] focus:border-accent focus:outline-none transition-colors"
           value={text}
+          // Keyboard opens only after an explicit tap on the field
+          readOnly={!armed}
+          onPointerDown={() => setArmed(true)}
           onChange={(event) => setText(event.target.value)}
           placeholder={uploading ? "Загрузка..." : "Сообщение..."}
           disabled={uploading || recording}

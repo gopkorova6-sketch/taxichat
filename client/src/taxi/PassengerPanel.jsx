@@ -344,7 +344,6 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           <input
             className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.4rem] text-primary-text"
             required
-            autoFocus
             placeholder="Куда едем? Например: от ЖД до Центра"
             value={route}
             onChange={(event) => setRoute(event.target.value)}
