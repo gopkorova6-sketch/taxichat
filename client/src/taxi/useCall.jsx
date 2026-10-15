@@ -50,11 +50,23 @@ const useCall = () => {
     return peer;
   };
 
+// Speaker routing: when the browser exposes audio output devices, switch the
+// remote audio element between the earpiece and the loudspeaker.
+const setSpeakerOutput = async (on) => {
+  try {
+    const el = document.querySelector("audio[data-call-audio]") ?? document.querySelector("audio");
+    if (!el || typeof el.setSinkId !== "function") return;
+    const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+    const outputs = devices.filter((d) => d.kind === "audiooutput");
+    const pick = outputs.find((d) => /speaker|громк/i.test(d.label)) ?? outputs[0];
+    if (pick) await el.setSinkId(pick.deviceId);
+  } catch {}
+};
   const startCall = useCallback(async (options) => {
-    const { kind, target, orderId, cityId, chatId, name, onAck } = options;
+    const { kind, target, orderId, cityId, chatId, name, fromRole, onAck } = options;
     onAckRef.current = onAck;
     try {
-      setCall({ status: "calling", peerName: name, kind });
+      setCall({ status: "calling", peerName: name, peerRoleLabel: name, peerEmoji: "🧑‍✈️", kind });
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
@@ -63,7 +75,7 @@ const useCall = () => {
       peer.on("signal", (signalData) => {
         socketEmit(
           "call:invite",
-          { kind, target, orderId, cityId, chatId, signalData },
+          { kind, target, orderId, cityId, chatId, fromRole, signalData },
           (ack) => {
             if (ack?.error) {
               setCall({ status: "failed", error: ack.error });
@@ -76,6 +88,8 @@ const useCall = () => {
                 callId: ack.callId,
                 chatId: ack.chatId,
                 orderId: ack.orderId,
+                audioTracks: streamRef.current?.getAudioTracks?.() ?? [],
+                speakerSink: setSpeakerOutput,
               }));
               onAckRef.current?.({ callId: ack.callId, chatId: ack.chatId });
             }
@@ -93,7 +107,7 @@ const useCall = () => {
   }, [socketEmit]);
 
   useEffect(() => {
-    const onInvite = async ({ callId, orderId, chatId, kind, from, fromName, signalData }) => {
+    const onInvite = async ({ callId, orderId, chatId, kind, from, fromName, fromRole, signalData }) => {
       if (callRef.current.status !== "idle") {
         socketEmit("call:end", { callId, reason: "decline" });
         return;
@@ -106,6 +120,9 @@ const useCall = () => {
         kind,
         peerId: from,
         peerName: fromName,
+        peerRoleLabel: fromRole === "driver" ? "водитель" : fromRole === "passenger" ? "пассажир" : "участник заказа",
+        peerEmoji: fromRole === "driver" ? "🧑‍✈️" : "🧍",
+        whoLabel: fromRole === "driver" ? "driver" : "passenger",
         signalData,
       });
     };
@@ -163,7 +180,13 @@ const useCall = () => {
     });
 
     peer.signal(current.signalData);
-    setCall((prev) => ({ ...prev, status: "active", accepted: true }));
+    setCall((prev) => ({
+      ...prev,
+      status: "active",
+      accepted: true,
+      audioTracks: streamRef.current?.getAudioTracks?.() ?? [],
+      speakerSink: setSpeakerOutput,
+    }));
   };
 
   const endCall = (reason = "hangup") => {

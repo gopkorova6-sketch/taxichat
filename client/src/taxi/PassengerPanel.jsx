@@ -116,6 +116,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
       target: String(driver.driverId),
       cityId,
       name: driver.displayName,
+      fromRole: "passenger",
       onAck: ({ chatId }) =>
         setDirectTarget({
           driverId: String(driver.driverId),

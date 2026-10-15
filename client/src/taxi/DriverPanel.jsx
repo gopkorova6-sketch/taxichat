@@ -261,7 +261,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                 {["ASSIGNED","ARRIVING","WAITING","IN_RIDE"].includes(order.status) && order.passengerId && (
                   <button
                     className="bg-success text-white px-3 py-1.5 rounded-xl text-sm font-semibold"
-                    onClick={() => startCall({ kind: "order", orderId: order._id, target: String(order.passengerId), name: "Пассажир" })}
+                    onClick={() => startCall({ kind: "order", orderId: order._id, target: String(order.passengerId), name: "Пассажир", fromRole: "driver" })}
                   >
                     📞 Позвонить
                   </button>
@@ -328,7 +328,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                 {["ASSIGNED","ARRIVING","WAITING","IN_RIDE"].includes(order.status) && order.passengerId && (
                   <button
                     className="bg-success text-white px-3 py-1.5 rounded-xl text-sm font-semibold"
-                    onClick={() => startCall({ kind: "order", orderId: order._id, target: String(order.passengerId), name: "Пассажир" })}
+                    onClick={() => startCall({ kind: "order", orderId: order._id, target: String(order.passengerId), name: "Пассажир", fromRole: "driver" })}
                   >
                     📞 Позвонить
                   </button>

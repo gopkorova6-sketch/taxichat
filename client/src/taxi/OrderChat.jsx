@@ -339,6 +339,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
                   orderId,
                   target: String(otherId),
                   name: myRole === "driver" ? "Пассажир" : "Водитель",
+                  fromRole: myRole,
                 })
               }
             >
