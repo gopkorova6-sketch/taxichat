@@ -49,7 +49,7 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
       {open && (
         <div className="fixed inset-0 z-50 bg-black/70" onClick={() => setOpen(false)}>
           <div
-            className="fixed left-2 right-2 bottom-[6.5rem] mx-auto max-w-[42rem] glass-strong rounded-3xl p-4 h-[56dvh] flex flex-col gap-3 anim-sheet"
+            className="fixed left-2 right-2 top-[18dvh] bottom-[7rem] mx-auto max-w-[42rem] glass-strong rounded-3xl p-4 flex flex-col gap-3 anim-sheet"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2">
