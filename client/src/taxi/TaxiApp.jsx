@@ -102,6 +102,12 @@ const TaxiApp = () => {
           <span className="truncate">{user?.name}</span>
           <div className="flex items-center justify-center gap-3 shrink-0">
             <button
+              className={`underline ${tab === "taxi" ? "font-bold" : ""}`}
+              onClick={() => { setOpenTrip(null); setTab("taxi"); }}
+            >
+              🚕 Заказы
+            </button>
+            <button
               className={`underline ${tab === "trips" ? "font-bold" : ""}`}
               onClick={() => { setOpenTrip(null); setTab(tab === "trips" ? "taxi" : "trips"); }}
             >
