@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 // Выбор времени «на время»: слайдеры часов (0–23) и минут (0–59) и полоса дат
 // на две недели вперёд. Крупное табло, всё в стиле проекта.
@@ -72,7 +73,7 @@ const TimePicker = ({ value, onChange, open, onClose, title }) => {
     onClose();
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[12000] flex items-center justify-center bg-black/70 px-3 py-4 anim-fade"
       onClick={onClose}
@@ -157,7 +158,8 @@ const TimePicker = ({ value, onChange, open, onClose, title }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
