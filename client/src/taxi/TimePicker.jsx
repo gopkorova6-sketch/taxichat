@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-// Выбор времени «на время» вместо системного поля: стеклянная панель в стиле
-// Бомбилы с прокруткой часов и минут, быстрыми вариантами и суммой «через N».
+// Простой выбор времени «на время»: без сеток цифр. День — «Сегодня/Завтра»,
+// время — крупное табло с шаговыми кнопками «−/+» для часа и минуты.
 // Значение отдаётся в формате datetime-local (YYYY-MM-DDTHH:mm).
 const pad = (v) => String(v).padStart(2, "0");
 
@@ -18,41 +18,36 @@ const parseValue = (value) => {
 const relativeLabel = (date) => {
   const diff = Math.round((date.getTime() - Date.now()) / 60000);
   if (diff <= 0) return "сейчас";
-  if (diff < 60) return `через ${diff} ${diff === 1 ? "минуту" : diff < 5 ? "минуты" : "минут"}`;
+  if (diff < 60) return `через ${diff} мин`;
   const hours = Math.floor(diff / 60);
   const minutes = diff % 60;
   return `через ${hours} ч${minutes ? ` ${minutes} мин` : ""}`;
 };
 
-const addressDate = (date) =>
-  date.toLocaleDateString("ru-RU", { day: "numeric", month: "long", weekday: "short" });
+const isSameDay = (a, b) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
 const TimePicker = ({ value, onChange, open, onClose, title }) => {
   const [cursor, setCursor] = useState(() => parseValue(value));
-  const [unit, setUnit] = useState("hours");
 
   useEffect(() => {
     if (open) setCursor(parseValue(value));
   }, [open, value]);
 
-  const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
-  const minutes = useMemo(() => Array.from({ length: 60 }, (_, i) => i), []);
-  const quick = useMemo(
-    () => [
-      ["+15 мин", 15],
-      ["+30 мин", 30],
-      ["+1 час", 60],
-      ["+2 часа", 120],
-      ["Утро 8:00", null],
-      ["Вечер 19:00", null],
-    ],
-    []
-  );
-
   if (!open) return null;
 
-  const apply = (date) => {
-    setCursor(date);
+  const step = (part, delta) => {
+    const next = new Date(cursor);
+    if (part === "hour") next.setHours(next.getHours() + delta);
+    else next.setMinutes(next.getMinutes() + delta * 5);
+    setCursor(next);
+  };
+
+  const setDay = (offset) => {
+    const next = new Date(cursor);
+    const today = new Date();
+    next.setFullYear(today.getFullYear(), today.getMonth(), today.getDate() + offset);
+    setCursor(next);
   };
 
   const commit = () => {
@@ -60,94 +55,85 @@ const TimePicker = ({ value, onChange, open, onClose, title }) => {
     onClose();
   };
 
-  const setPart = (part, amount) => {
-    const next = new Date(cursor);
-    if (part === "hour") next.setHours(amount);
-    else next.setMinutes(amount);
-    setCursor(next);
-  };
-
-  const shift = (minutes) => {
-    const next = new Date(Date.now() + minutes * 60000);
-    next.setMinutes(Math.ceil(next.getMinutes() / 5) * 5, 0, 0);
-    setCursor(next);
-  };
-
-  const setQuick = (label) => {
-    const next = new Date(cursor);
-    if (label.startsWith("Утро")) next.setHours(8, 0, 0, 0);
-    else if (label.startsWith("Вечер")) next.setHours(19, 0, 0, 0);
-    setCursor(next);
-  };
+  const today = new Date();
+  const tomorrow = new Date(Date.now() + 86400000);
 
   return (
-    <div className="fixed inset-0 z-[12000] flex items-center justify-center bg-black/70 px-2 py-3 anim-fade" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[12000] flex items-center justify-center bg-black/70 px-3 py-4 anim-fade"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-[36rem] max-h-[92dvh] overflow-y-auto glass-strong rounded-3xl p-4 space-y-3 anim-sheet"
+        className="w-full max-w-[32rem] glass-strong rounded-3xl p-4 space-y-4 anim-sheet"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-2">
-          <div className="font-display font-extrabold text-[1.7rem]">🕓 {title ?? "Когда подать машину"}</div>
+          <div className="font-display font-extrabold text-[1.7rem]">🕓 {title ?? "Когда подать"}</div>
           <button className="btn-back" onClick={onClose} aria-label="Закрыть">✖️</button>
-        </div>
-
-        <div className="text-center text-[1.3rem] text-secondary-text">
-          {addressDate(cursor)} · <span className="text-cta-icon font-semibold">{relativeLabel(cursor)}</span>
-        </div>
-
-        <div className="flex flex-wrap gap-1.5 justify-center">
-          {quick.map(([label, minutes]) => (
-            <button
-              key={label}
-              className="press px-3 py-1.5 rounded-xl text-[1.2rem] glass text-cta-icon font-semibold"
-              onClick={() => {
-                if (minutes == null) setQuick(label);
-                else if (typeof minutes === "number") shift(minutes);
-              }}
-            >
-              {label}
-            </button>
-          ))}
         </div>
 
         <div className="flex rounded-2xl overflow-hidden">
           {[
-            ["hours", "Часы"],
-            ["minutes", "Минуты"],
-          ].map(([key, label]) => (
-            <button
-              key={key}
-              className={`press flex-1 py-2 text-[1.3rem] ${unit === key ? "btn-accent font-bold" : "glass text-secondary-text"}`}
-              onClick={() => setUnit(key)}
-            >
-              {label}
-            </button>
-          ))}
+            ["Сегодня", today],
+            ["Завтра", tomorrow],
+          ].map(([label, day]) => {
+            const selected = isSameDay(cursor, day);
+            return (
+              <button
+                key={label}
+                className={`press flex-1 py-2.5 text-[1.4rem] ${selected ? "btn-accent font-bold" : "glass text-secondary-text"}`}
+                onClick={() => setDay(label === "Завтра" ? 1 : 0)}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="rounded-2xl bg-[#0d0d0d] border border-secondary-text/25 p-3">
-          <div className="text-center font-display font-extrabold text-[3rem] leading-none tracking-wide">
-            <span className={unit === "hours" ? "text-cta-icon" : ""}>{pad(cursor.getHours())}</span>
+        <div className="rounded-2xl bg-[#0d0d0d] border border-secondary-text/25 py-4 text-center">
+          <div className="font-display font-extrabold text-[4.5rem] leading-none tracking-wide">
+            {pad(cursor.getHours())}
             <span className="text-secondary-text">:</span>
-            <span className={unit === "minutes" ? "text-cta-icon" : ""}>{pad(cursor.getMinutes())}</span>
+            {pad(cursor.getMinutes())}
+          </div>
+          <div className="mt-2 text-[1.3rem] text-cta-icon font-semibold">{relativeLabel(cursor)}</div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl glass p-2 flex items-center justify-between">
+            <button
+              className="press w-[3.6rem] h-[3.6rem] rounded-full bg-white/10 text-[2rem] font-bold"
+              onClick={() => step("hour", -1)}
+              aria-label="Минус час"
+            >
+              −
+            </button>
+            <span className="text-[1.3rem] text-secondary-text">час</span>
+            <button
+              className="press w-[3.6rem] h-[3.6rem] rounded-full btn-accent text-[2rem] font-bold"
+              onClick={() => step("hour", 1)}
+              aria-label="Плюс час"
+            >
+              +
+            </button>
           </div>
 
-          <div className="mt-2 grid grid-cols-6 gap-1.5 max-h-[26dvh] overflow-y-auto">
-            {(unit === "hours" ? hours : minutes).map((n) => {
-              const selected =
-                unit === "hours" ? cursor.getHours() === n : cursor.getMinutes() === n;
-              return (
-                <button
-                  key={n}
-                  className={`press py-2 rounded-xl text-[1.3rem] ${
-                    selected ? "btn-accent font-bold" : "glass text-primary-text"
-                  }`}
-                  onClick={() => setPart(unit === "hours" ? "hour" : "minute", n)}
-                >
-                  {pad(n)}
-                </button>
-              );
-            })}
+          <div className="rounded-2xl glass p-2 flex items-center justify-between">
+            <button
+              className="press w-[3.6rem] h-[3.6rem] rounded-full bg-white/10 text-[2rem] font-bold"
+              onClick={() => step("minute", -1)}
+              aria-label="Минус пять минут"
+            >
+              −
+            </button>
+            <span className="text-[1.3rem] text-secondary-text">5 мин</span>
+            <button
+              className="press w-[3.6rem] h-[3.6rem] rounded-full btn-accent text-[2rem] font-bold"
+              onClick={() => step("minute", 1)}
+              aria-label="Плюс пять минут"
+            >
+              +
+            </button>
           </div>
         </div>
 
