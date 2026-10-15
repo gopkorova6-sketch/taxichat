@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { apiGet, apiPost, apiPatch, apiDelete } from "./api";
-import useSocket from "../hooks/useSocket";
+import useSocket, { reconnectSocket } from "../hooks/useSocket";
 
 const LAST_CITY_KEY = "bombila.lastCityId";
 
@@ -40,6 +40,10 @@ const useTaxi = () => {
     refreshMe()
       .then((data) => {
         if (data.user._id) {
+          // The socket may have connected before the cookie was available
+          // (anonymous handshake). Reconnect so the server binds the user and
+          // joins the membership rooms, then announce online.
+          reconnectSocket();
           socketEmit("user:online", data.user._id);
         }
       })

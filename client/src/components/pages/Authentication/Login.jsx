@@ -5,6 +5,7 @@ import FormField from "../../globals/FormField";
 import useFetch from "../../../hooks/useFetch";
 import { useDispatch } from "react-redux";
 import { authActions } from "../../../store/authSlice";
+import { reconnectSocket } from "../../../hooks/useSocket";
 import Spinner from "../../globals/Spinner";
 
 const schema = Yup.object().shape({
@@ -20,6 +21,8 @@ function Login({ setUserWantsToLogin }) {
     // Success
     () => {
       dispatch(authActions.login());
+      // The socket must reconnect with the fresh auth cookie to join city rooms
+      reconnectSocket();
     }
   );
 

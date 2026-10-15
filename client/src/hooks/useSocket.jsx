@@ -30,6 +30,14 @@ socket.onAny((event) => {
   }
 });
 
+// After a successful login the cookie exists, but the socket may have connected
+// anonymously before it. Reconnect so the handshake carries the cookie and the
+// server binds the user and joins the membership rooms.
+export const reconnectSocket = () => {
+  if (socket.connected) socket.disconnect();
+  socket.connect();
+};
+
 const useSocket = () => {
   const userId = useSelector((state) => state.userReducer.user._id);
 
