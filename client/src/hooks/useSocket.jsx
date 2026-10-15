@@ -8,6 +8,14 @@ const socket = io();
 // user:online the phone silently stops receiving order:new / order:status.
 socket.on("connect", () => {
   socket.emit("user:online");
+  window.__bombilaSocket = { ...(window.__bombilaSocket || {}), online: (window.__bombilaSocket?.online || 0) + 1, id: socket.id };
+});
+
+// Debug trace of every order event received by this device
+socket.onAny((event) => {
+  if (event.startsWith("order")) {
+    window.__bombilaSocket = { ...(window.__bombilaSocket || {}), lastOrderEvent: event, lastOrderAt: new Date().toLocaleTimeString("ru-RU") };
+  }
 });
 
 const useSocket = () => {
