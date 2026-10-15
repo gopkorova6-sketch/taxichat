@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useReactMediaRecorder } from "react-media-recorder";
 import { apiGet, apiPost, apiUpload } from "./api";
 import useSocket from "../hooks/useSocket";
+import { useDialog } from "./AppDialog";
 
 // Direct dialog between a passenger and a driver after a call (concept 1.6)
 const DirectChat = ({ chatId, me, onBack }) => {
+  const { confirm } = useDialog();
   const { socketListen, socket } = useSocket();
   const [chat, setChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -51,7 +53,7 @@ const DirectChat = ({ chatId, me, onBack }) => {
 
   const blockPeer = async () => {
     if (!chat?.peer?._id) return;
-    if (!window.confirm("Заблокировать собеседника? Звонки и диалоги станут недоступны.")) return;
+    if (!(await confirm({ title: "🚫 Заблокировать собеседника?", text: "Звонки и диалоги станут недоступны.", okText: "Заблокировать", danger: true }))) return;
     try {
       await apiPost("/api/blocks", { userId: String(chat.peer._id) });
       setError("Собеседник заблокирован");

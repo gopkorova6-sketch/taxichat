@@ -6,10 +6,12 @@ import { apiGet, apiPost, apiUpload } from "./api";
 import useSocket from "../hooks/useSocket";
 import { statusBadge, formatWhen } from "./statusLabels";
 import Marquee from "./Marquee";
+import { useDialog } from "./AppDialog";
 
 // Chat of a single order: bot card, system messages, quick action buttons,
 // offers, SOS and the trip rating (concept 1.7)
 const OrderChat = ({ orderId, me, onBack, startCall }) => {
+  const { ask, confirm } = useDialog();
   const dispatch = useDispatch();
   const { socketListen, socketEmit, socket } = useSocket();
   const [order, setOrder] = useState(null);
@@ -136,9 +138,9 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
     const action = typeof button === "string" ? button : button.action;
     try {
       if (action === "offer") {
-        const priceText = window.prompt("Цена поездки:");
+        const priceText = await ask({ title: "💰 Цена поездки", placeholder: "Например: 350", okText: "Отправить" });
         if (!priceText) return;
-        const etaMin = parseInt(window.prompt("Время подачи, минут:") ?? "10", 10);
+        const etaMin = parseInt((await ask({ title: "⏱ Время подачи, минут", placeholder: "Например: 5", inputMode: "numeric", okText: "Отправить" })) ?? "10", 10);
         await apiPost(`/api/orders/${orderId}/offers`, { priceText, etaMin });
         dispatch(
           notificationActions.addNotification({
@@ -147,7 +149,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           })
         );
       } else if (action === "cancel") {
-        const reason = window.prompt("Причина отмены:");
+        const reason = await ask({ title: "❌ Причина отмены", placeholder: "Коротко, что случилось", okText: "Отменить заказ" });
         if (!reason) return;
         await apiPost(`/api/orders/${orderId}/cancel`, { reason });
         dispatch(
@@ -157,7 +159,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           })
         );
       } else if (action === "dispute") {
-        const reason = window.prompt("Опишите проблему:");
+        const reason = await ask({ title: "⚠️ Опишите проблему", placeholder: "Что пошло не так", okText: "Открыть спор" });
         if (!reason) return;
         await apiPost(`/api/orders/${orderId}/dispute`, { reason });
         dispatch(
@@ -263,14 +265,14 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
   const share = async () => {
     try {
       const res = await apiGet(`/api/orders/${orderId}/share`);
-      window.prompt("Ссылка для близких:", res.data.url);
+      await confirm({ title: "🔗 Ссылка для близких", text: res.data.url, okText: "Готово" });
     } catch (err) {
       setError(err.message);
     }
   };
 
   const blockPeer = async () => {
-    if (!window.confirm("Заблокировать участника? Звонки и диалоги станут недоступны.")) return;
+    if (!(await confirm({ title: "🚫 Заблокировать участника?", text: "Звонки и диалоги станут недоступны.", okText: "Заблокировать", danger: true }))) return;
     try {
       await apiPost("/api/blocks", { userId: String(otherId) });
       dispatch(
@@ -494,7 +496,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
       )}
 
       <form
-        className="flex gap-2 p-3 glass-strong rounded-t-3xl safe-area-bottom"
+        className="flex items-center gap-1 p-1.5 pl-2 rounded-full bg-[#141414]/90 border border-secondary-text/25 safe-area-bottom"
         onSubmit={(event) => {
           event.preventDefault();
           send(text);
@@ -509,7 +511,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
         />
         <button
           type="button"
-          className="px-2 text-lg"
+          className="shrink-0 w-[3.2rem] h-[3.2rem] rounded-full flex items-center justify-center text-[1.4rem] hover:bg-white/10"
           title="Фото"
           onClick={() => fileInputRef.current?.click()}
         >
@@ -517,23 +519,23 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
         </button>
         <button
           type="button"
-          className={`px-2 text-lg ${recording ? "text-danger animate-pulse" : ""}`}
+          className={`shrink-0 w-[3.2rem] h-[3.2rem] rounded-full flex items-center justify-center text-[1.4rem] hover:bg-white/10 ${recording ? "text-danger animate-pulse" : ""}`}
           title="Голосовое сообщение"
           onClick={toggleRecording}
         >
           {recording ? `⏺ ${recordSeconds}с` : "🎤"}
         </button>
         <input
-          className="flex-1 bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl px-4 py-2.5 text-[1.5rem] focus:border-accent focus:outline-none transition-colors"
+          className="flex-1 min-w-0 bg-transparent text-white placeholder:text-secondary-text px-2 py-1.5 text-[1.4rem] focus:outline-none"
           value={text}
           // Keyboard opens only after an explicit tap on the field
           readOnly={!armed}
           onPointerDown={() => setArmed(true)}
           onChange={(event) => setText(event.target.value)}
-          placeholder={uploading ? "Загрузка..." : "Сообщение..."}
+          placeholder={uploading ? "Загрузка..." : "Введите сообщение"}
           disabled={uploading || recording}
         />
-        <button className="press btn-accent px-4 rounded-2xl font-display font-bold" type="submit">➤</button>
+        <button className="press btn-accent shrink-0 w-[3.6rem] h-[3.6rem] rounded-full flex items-center justify-center text-[1.4rem] font-bold disabled:opacity-40" type="submit" disabled={!text.trim() || uploading || recording} aria-label="Отправить">➤</button>
       </form>
     </div>
   );

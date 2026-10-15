@@ -6,10 +6,12 @@ import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
 import DirectChat from "./DirectChat";
 import ChatList from "./ChatList";
+import { useDialog } from "./AppDialog";
 import { statusBadge, formatWhen } from "./statusLabels";
 
 // Driver panel: shift toggle, live feed of published orders, assigned orders
 const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
+  const { ask, confirm } = useDialog();
   const dispatch = useDispatch();
   const { socketListen, socketEmit, socket } = useSocket();
   const [view, setView] = useState(null); // { type, id }
@@ -146,9 +148,9 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
 
   const sendOffer = async (order) => {
     try {
-      const priceText = window.prompt("Цена поездки:");
+      const priceText = await ask({ title: "💰 Цена поездки", placeholder: "Например: 350", okText: "Отправить" });
       if (!priceText) return;
-      const etaMin = parseInt(window.prompt("Время подачи, минут:") ?? "10", 10);
+      const etaMin = parseInt((await ask({ title: "⏱ Время подачи, минут", placeholder: "Например: 5", inputMode: "numeric", okText: "Отправить" })) ?? "10", 10);
       await apiPost(`/api/orders/${order._id}/offers`, { priceText, etaMin });
       dispatch(
         notificationActions.addNotification({

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiGet, apiPost, apiPatch } from "./api";
+import { useDialog } from "./AppDialog";
 import { statusBadge, formatWhen } from "./statusLabels";
 import { useDispatch } from "react-redux";
 import { notificationActions } from "../store/notificationSlice";
@@ -9,6 +10,7 @@ import OrderChat from "./OrderChat";
 // Dispatcher panel: city order queue, manual assignment, driver applications
 // review and the region admin sections (concept 1.3 / 1.9)
 const DispatcherPanel = ({ cityId, role, me }) => {
+  const { ask, confirm } = useDialog();
   const dispatch = useDispatch();
   const { socketListen, socket } = useSocket();
   const [orders, setOrders] = useState([]);
@@ -102,7 +104,7 @@ const DispatcherPanel = ({ cityId, role, me }) => {
     try {
       let reason;
       if (decision === "reject") {
-        reason = window.prompt("Причина отказа:");
+        reason = await ask({ title: "❌ Причина отказа", placeholder: "Коротко, почему", okText: "Отклонить", danger: true });
         if (!reason) return;
       }
 await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
@@ -125,7 +127,7 @@ await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
     try {
       let reason;
       if (decision === "reject") {
-        reason = window.prompt("Причина отказа:");
+        reason = await ask({ title: "❌ Причина отказа", placeholder: "Коротко, почему", okText: "Отклонить", danger: true });
         if (!reason) return;
       }
       await apiPatch(`/api/admin/applications/${applicationId}`, { decision, reason });
@@ -137,7 +139,7 @@ await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
 
   const resolveComplaint = async (complaintId, status) => {
     try {
-      const resolution = window.prompt("Решение:");
+      const resolution = await ask({ title: "📝 Решение по жалобе", placeholder: "Что сделано", okText: "Сохранить" });
       await apiPatch(`/api/admin/complaints/${complaintId}`, { status, resolution });
       loadAdmin("complaints");
     } catch (err) {
