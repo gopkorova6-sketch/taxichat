@@ -255,7 +255,14 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                     🔖 Забронировать
                   </button>
                 )}
-                <button className="underline" onClick={() => setView({ type: "order", id: order._id })}>Чат</button>
+                                {["ASSIGNED","ARRIVING","WAITING","IN_RIDE"].includes(order.status) && order.passengerId && (
+                  <button
+                    className="bg-success text-white px-3 py-1.5 rounded-xl text-sm font-semibold"
+                    onClick={() => startCall({ kind: "order", orderId: order._id, target: String(order.passengerId), name: "Пассажир" })}
+                  >
+                    📞 Позвонить
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -266,19 +273,25 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
         <h3 className="font-display font-bold mb-2 text-center tracking-wide">📋 Мои заказы</h3>
           <div className="space-y-2">
           {mine.length === 0 && <div className="text-sm text-secondary-text">📭 Нет активных заказов</div>}
-          {mine.map((order) => (
-            <div key={order._id} className="anim-rise glass rounded-2xl p-4 text-[1.5rem] text-center">
-              <div className="flex items-center gap-2 justify-center">
-              <div className="font-semibold text-center">
-                {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
-              </div>
-                {order.unreadCount > 0 && (
-                  <span className="ml-auto bg-danger text-white rounded-full px-2 text-xs">
-                    {order.unreadCount}
-                  </span>
-                )}
-              </div>
-              <div className="text-secondary-text text-center">{statusBadge(order.status)} · {formatWhen(order.when)}</div>
+{mine.map((order) => (
+            <div key={order._id} className="anim-rise glass rounded-2xl p-4 text-[1.5rem]">
+              {/* Tapping the card opens the order chat, same as for the passenger */}
+              <button className="press w-full text-left" onClick={() => setView({ type: "order", id: order._id })}>
+                <div className="flex items-center gap-2">
+                  <div className="order-card-title min-w-0">
+                    {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
+                  </div>
+                  {order.unreadCount > 0 && (
+                    <span className="ml-auto bg-danger text-white rounded-full px-2 text-xs shrink-0">
+                      {order.unreadCount}
+                    </span>
+                  )}
+                </div>
+                <div className="text-secondary-text">
+                  {order.passenger?.name ? `🧍 ${order.passenger.name} · ` : ""}
+                  {statusBadge(order.status)} · {formatWhen(order.when)}
+                </div>
+              </button>
               <div className="flex gap-2 mt-2 justify-center flex-wrap">
                 {order.status === "BOOKED" && (
                   <button
@@ -306,7 +319,14 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                     <button className="underline" onClick={() => myAction(order, "undo_start")}>Отменить начало</button>
                   </>
                 )}
-                <button className="underline" onClick={() => setView({ type: "order", id: order._id })}>Чат</button>
+                                {["ASSIGNED","ARRIVING","WAITING","IN_RIDE"].includes(order.status) && order.passengerId && (
+                  <button
+                    className="bg-success text-white px-3 py-1.5 rounded-xl text-sm font-semibold"
+                    onClick={() => startCall({ kind: "order", orderId: order._id, target: String(order.passengerId), name: "Пассажир" })}
+                  >
+                    📞 Позвонить
+                  </button>
+                )}
               </div>
             </div>
           ))}
