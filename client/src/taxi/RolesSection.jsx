@@ -4,22 +4,22 @@ import { cityStatusEmoji } from "./statusLabels";
 import useSocket from "../hooks/useSocket";
 
 const ROLE_LABELS = {
-  passenger: "Пассажир",
-  driver: "Водитель",
-  dispatcher: "Диспетчер",
-  region_admin: "Админ региона",
+  passenger: "🧍 Пассажир",
+  driver: "🚕 Водитель",
+  dispatcher: "🎧 Диспетчер",
+  region_admin: "🗺️ Админ региона",
 };
 
 const STATUS_LABELS = {
-  WAITLIST: "список ожидания",
-  PENDING: "на проверке",
-  ACTIVE: "активна",
-  REJECTED: "отклонена",
-  SUSPENDED: "приостановлена",
+  WAITLIST: "⏳ в очереди",
+  PENDING: "🕓 на проверке",
+  ACTIVE: "✅ работает",
+  REJECTED: "❌ отклонено",
+  SUSPENDED: "⛔ приостановлено",
 };
 
-// Role management: current memberships, driver questionnaire and dispatcher
-// application (concept 1.5)
+// "Кабинет": the taxi profile — who the user is in the city, how to become a
+// driver or a dispatcher (concept 1.5)
 const RolesSection = ({ me, cityId, cities, refreshMe }) => {
   const { socketEmit } = useSocket();
   const [zones, setZones] = useState([]);
@@ -83,7 +83,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
         },
         zones: driverForm.zones,
       });
-      setNotice("Анкета водителя отправлена на проверку диспетчеру.");
+      setNotice("📨 Анкета отправлена. Диспетчер проверит её и даст ответ.");
       await refreshMe();
     } catch (err) {
       setError(err.message);
@@ -99,7 +99,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
         type: "dispatcher",
         ...(dispatcherNote && { note: dispatcherNote }),
       });
-      setNotice("Заявка на диспетчера подана. Её рассмотрит админ региона.");
+      setNotice("📨 Заявка отправлена. Её рассмотрит админ региона.");
       setDispatcherNote("");
     } catch (err) {
       setError(err.message);
@@ -122,17 +122,17 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
 
       <div className="glass rounded-2xl p-3">
         <div className="font-semibold mb-1 text-center">
-          Город: {city?.name ?? "—"} · статус: {cityStatusEmoji(city?.status)}
+          📍 {city?.name ?? "—"} {cityStatusEmoji(city?.status)}
         </div>
         <div className="text-sm text-secondary-text">
-          Пассажиры могут создавать заказы в городах PILOT и ACTIVE.
+          Заказать такси можно в городах со статусом ✅ или 🟢.
         </div>
       </div>
 
       <div className="glass rounded-2xl p-3">
-        <h3 className="font-display font-bold mb-2 text-center tracking-wide">Мои роли в этом городе</h3>
+        <h3 className="font-display font-bold mb-2 text-center tracking-wide">🪪 Мой кабинет</h3>
         {memberships.length === 0 && (
-          <div className="text-sm text-secondary-text mb-2">Ролей пока нет</div>
+          <div className="text-sm text-secondary-text mb-2">Пока вы не в такси этого города</div>
         )}
         {memberships.map((membership) => (
           <div key={membership._id} className="text-sm py-1">
@@ -147,29 +147,29 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
             className="btn-accent press px-3 py-1 rounded-xl text-sm font-semibold mt-2"
             onClick={becomePassenger}
           >
-            Стать пассажиром
+            🧍 Заказывать такси
           </button>
         )}
         {driverProfile && (
           <div className="text-sm text-secondary-text mt-2">
-            Анкета: {driverProfile.carCaption}, {driverProfile.phone}
+            🚗 {driverProfile.carCaption} · 📞 {driverProfile.phone}
           </div>
         )}
       </div>
 
       {!memberships.some((membership) => membership.role === "driver") && (
         <form className="glass rounded-2xl p-3 space-y-2" onSubmit={submitDriver}>
-          <h3 className="font-display font-bold text-center tracking-wide">Анкета водителя</h3>
+          <h3 className="font-display font-bold text-center tracking-wide">🚕 Стать водителем</h3>
           <input
             className="w-full bg-primary p-2 rounded text-sm"
-            placeholder="Имя для пассажиров"
+            placeholder="👤 Имя для пассажиров"
             required
             value={driverForm.displayName}
             onChange={(event) => setDriverForm({ ...driverForm, displayName: event.target.value })}
           />
           <input
             className="w-full bg-primary p-2 rounded text-sm"
-            placeholder="Телефон +7XXXXXXXXXX"
+            placeholder="📞 Телефон +7XXXXXXXXXX"
             required
             value={driverForm.phone}
             onChange={(event) => setDriverForm({ ...driverForm, phone: event.target.value })}
@@ -177,26 +177,26 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
           <div className="flex gap-2">
             <input
               className="flex-1 bg-primary p-2 rounded text-sm"
-              placeholder="Цвет"
+              placeholder="🎨 Цвет"
               required
               value={driverForm.color}
               onChange={(event) => setDriverForm({ ...driverForm, color: event.target.value })}
             />
             <input
               className="w-28 bg-primary p-2 rounded text-sm"
-              placeholder="Номер"
+              placeholder="🔢 Номер"
               required
               value={driverForm.plate}
               onChange={(event) => setDriverForm({ ...driverForm, plate: event.target.value })}
             />
             <input
               className="w-28 bg-primary p-2 rounded text-sm"
-              placeholder="Марка"
+              placeholder="🚗 Марка"
               value={driverForm.brand}
               onChange={(event) => setDriverForm({ ...driverForm, brand: event.target.value })}
             />
           </div>
-          <div className="text-sm">Рабочие зоны (1–5):</div>
+          
           <div className="flex flex-wrap gap-1">
             {zones.map((zone) => (
               <button
@@ -212,22 +212,22 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
             ))}
           </div>
           <button className="btn-accent press px-4 py-2.5 rounded-2xl text-sm font-bold w-full" type="submit">
-            Отправить анкету
+            📨 Отправить анкету
           </button>
         </form>
       )}
 
       {!memberships.some((membership) => membership.role === "dispatcher") && (
         <form className="glass rounded-2xl p-3 space-y-2" onSubmit={submitDispatcher}>
-          <h3 className="font-display font-bold text-center tracking-wide">Заявка на диспетчера</h3>
+          <h3 className="font-display font-bold text-center tracking-wide">🎧 Стать диспетчером</h3>
           <textarea
             className="w-full bg-primary p-2 rounded text-sm"
-            placeholder="Коротко о себе (необязательно)"
+            placeholder="💬 Коротко о себе (необязательно)"
             value={dispatcherNote}
             onChange={(event) => setDispatcherNote(event.target.value)}
           />
           <button className="btn-accent press px-4 py-2.5 rounded-2xl text-sm font-bold w-full" type="submit">
-            Подать заявку
+            📨 Подать заявку
           </button>
         </form>
       )}

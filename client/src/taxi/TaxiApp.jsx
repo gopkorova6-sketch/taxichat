@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { authActions } from "../store/authSlice";
-import Sidebar from "../components/globals/Sidebar";
-import Chat from "../pages/Chat";
+import TripsList from "./TripsList";
+import OrderChat from "./OrderChat";
 import useTaxi from "./useTaxi";
 import useOrderNotices from "../hooks/useOrderNotices";
 import useCall from "./useCall";
@@ -17,7 +17,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import CityPicker from "./CityPicker";
 
 // Main Бомбила workspace: city and role switcher, role panels, order chats
-// and voice calls. The legacy contact chats stay available in the "Чаты" tab.
+// and voice calls.
 const ROLE_LABELS = {
   passenger: "🧍 Пассажир",
   driver: "🚕 Водитель",
@@ -29,7 +29,9 @@ const TaxiApp = () => {
   const dispatch = useDispatch();
   const { me, user, memberships, cities, cityId, setCityId, role, setRole, driverProfile, error, refreshMe } = useTaxi();
   const { call, startCall, acceptCall, endCall } = useCall();
+  // Sections: "taxi" (role panel), "trips" (Поездки), "cabinet" (Кабинет)
   const [tab, setTab] = useState("taxi");
+  const [openTrip, setOpenTrip] = useState(null);
   // Live voice/on-screen notices for order changes, for every role
   useOrderNotices({ role, userId: user?._id });
 
@@ -90,10 +92,18 @@ const TaxiApp = () => {
         <div className="flex flex-wrap items-center justify-center gap-2 text-sm min-w-0 text-center">
           <span className="truncate">{user?.name}</span>
           <div className="flex items-center justify-center gap-3 shrink-0">
-            <button className="underline" onClick={() => setTab(tab === "taxi" ? "chats" : "taxi")}>
-              {tab === "taxi" ? "💬 Чаты" : "🚕 Заказы"}
+            <button
+              className={`underline ${tab === "trips" ? "font-bold" : ""}`}
+              onClick={() => { setOpenTrip(null); setTab(tab === "trips" ? "taxi" : "trips"); }}
+            >
+              🧾 Поездки
             </button>
-            <button className="underline" onClick={() => setTab("roles")}>👥 Роли</button>
+            <button
+              className={`underline ${tab === "cabinet" ? "font-bold" : ""}`}
+              onClick={() => { setOpenTrip(null); setTab(tab === "cabinet" ? "taxi" : "cabinet"); }}
+            >
+              🪪 Кабинет
+            </button>
             <button className="underline text-danger" onClick={logout}>🚪 Выйти</button>
           </div>
         </div>
@@ -103,19 +113,18 @@ const TaxiApp = () => {
 
       <div className="flex-1 overflow-hidden pb-[5rem] sm:pb-0 anim-rise">
         <ErrorBoundary>
-        {tab === "chats" ? (
-          <div className="flex w-full h-full">
-            <Sidebar />
-            <Chat />
-          </div>
-        ) : tab === "roles" ? (
+        {tab === "trips" && openTrip ? (
+          <OrderChat orderId={openTrip} me={me} onBack={() => setOpenTrip(null)} startCall={startCall} />
+        ) : tab === "trips" ? (
+          <TripsList cityId={cityId} me={me} onOpen={(id) => setOpenTrip(id)} />
+        ) : tab === "cabinet" ? (
           <RolesSection me={me} cityId={cityId} cities={cities} refreshMe={refreshMe} />
         ) : !cityId ? (
           <div className="p-6 text-secondary-text">Выберите город</div>
         ) : availableRoles.length === 0 ? (
           <div className="p-6 space-y-2">
             <div className="text-secondary-text">
-              В городе {city?.name ?? ""} у вас пока нет активной роли.
+              В городе {city?.name ?? ""} вы пока не в такси.
               Статус города: {cityStatusEmoji(city?.status)}.
             </div>
             <button
