@@ -49,7 +49,7 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
       {open && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black/70 backdrop-blur-sm anim-fade" onClick={() => setOpen(false)}>
           <div
-            className="mt-auto glass-strong rounded-t-3xl p-4 pb-6 max-h-[88vh] flex flex-col gap-3 anim-sheet"
+            className="mt-auto glass-strong rounded-t-3xl p-4 pb-6 h-[80vh] max-h-[80vh] flex flex-col gap-3 anim-sheet"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2">
@@ -65,7 +65,7 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
               autoFocus
             />
 
-            <div className="overflow-y-auto flex-1 space-y-3 pr-1">
+            <div className="overflow-y-auto flex-1 min-h-0 space-y-3 pr-1">
               {groups.length === 0 && (
                 <div className="text-center text-[1.8rem] text-secondary-text py-6">😕 Ничего не найдено</div>
               )}
@@ -81,7 +81,7 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
                         <button
                           key={item._id}
                           onClick={() => choose(item)}
-                          className={`press w-full flex items-center justify-between gap-3 rounded-2xl px-4 py-4 text-[1.9rem] text-left ${
+                          className={`press w-full min-h-[5.6rem] flex items-center justify-between gap-3 rounded-2xl px-4 py-4 text-[1.9rem] text-left ${
                             selected ? "btn-accent font-extrabold" : "glass"
                           }`}
                         >
