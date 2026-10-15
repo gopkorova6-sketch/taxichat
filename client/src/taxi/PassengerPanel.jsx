@@ -164,9 +164,10 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           </span>
         )}
       </div>
-      <div className="text-secondary-text">
+<div className="text-secondary-text">
         {statusBadge(order.status)} · {formatWhen(order.when)}
       </div>
+      <div className="mt-1 text-cta-icon text-[1.2rem] font-semibold">Открыть заказ →</div>
     </button>
   );
 

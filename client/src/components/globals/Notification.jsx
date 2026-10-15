@@ -18,6 +18,11 @@ const speak = (text) => {
 
 function NotificationItem({ item, onDismiss }) {
   const dispatch = useDispatch();
+  const openOrder = () => {
+    if (item.orderId) window.dispatchEvent(new CustomEvent("bombila:open-order", { detail: { orderId: item.orderId } }));
+    onDismiss(item.id);
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => onDismiss(item.id), LIFETIME_MS);
     return () => clearTimeout(timer);
@@ -79,6 +84,11 @@ function NotificationItem({ item, onDismiss }) {
       }`}
     >
       <span className="flex-1 min-w-0 break-words">{item.message}</span>
+      {item.orderId && (
+        <button className="shrink-0 rounded-xl px-2 py-1 btn-accent text-[1.3rem] font-bold" onClick={openOrder}>
+          Открыть
+        </button>
+      )}
       <button
         onClick={() => onDismiss(item.id)}
         className="shrink-0 w-[3rem] h-[3rem] flex items-center justify-center rounded-full text-secondary-text"

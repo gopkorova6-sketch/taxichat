@@ -255,7 +255,10 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                     🔖 Забронировать
                   </button>
                 )}
-                                {["ASSIGNED","ARRIVING","WAITING","IN_RIDE"].includes(order.status) && order.passengerId && (
+                                <button className="underline" onClick={() => setView({ type: "order", id: order._id })}>
+                  Открыть заказ
+                </button>
+                {["ASSIGNED","ARRIVING","WAITING","IN_RIDE"].includes(order.status) && order.passengerId && (
                   <button
                     className="bg-success text-white px-3 py-1.5 rounded-xl text-sm font-semibold"
                     onClick={() => startCall({ kind: "order", orderId: order._id, target: String(order.passengerId), name: "Пассажир" })}
@@ -319,7 +322,10 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
                     <button className="underline" onClick={() => myAction(order, "undo_start")}>Отменить начало</button>
                   </>
                 )}
-                                {["ASSIGNED","ARRIVING","WAITING","IN_RIDE"].includes(order.status) && order.passengerId && (
+                                <button className="underline" onClick={() => setView({ type: "order", id: order._id })}>
+                  Открыть заказ
+                </button>
+                {["ASSIGNED","ARRIVING","WAITING","IN_RIDE"].includes(order.status) && order.passengerId && (
                   <button
                     className="bg-success text-white px-3 py-1.5 rounded-xl text-sm font-semibold"
                     onClick={() => startCall({ kind: "order", orderId: order._id, target: String(order.passengerId), name: "Пассажир" })}

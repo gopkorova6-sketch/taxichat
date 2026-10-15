@@ -2,9 +2,11 @@ import { statusLabel } from "./statusLabels";
 
 // Voice and on-screen notices for order changes, shared by all roles.
 // Each notice is spoken (speak: true) and disappears after 60 seconds.
+// Notices that carry an orderId also get an "open order" button.
 export const orderStatusNotice = (payload) => {
   const label = statusLabel(payload?.status);
   return {
+    orderId: payload?.orderId,
     message: `Заказ: ${label}`,
     speakText: `Заказ. ${label}`,
     type: payload?.status === "DISPUTE" ? "error" : "info",
@@ -12,7 +14,8 @@ export const orderStatusNotice = (payload) => {
   };
 };
 
-export const newOrderNotice = () => ({
+export const newOrderNotice = (order = {}) => ({
+  orderId: order.orderId ?? order._id,
   message: "Новый заказ в городе",
   speakText: "Новый заказ в городе",
   type: "info",

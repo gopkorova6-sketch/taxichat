@@ -204,8 +204,8 @@ await apiPatch(`/api/dispatch/drivers/${membershipId}`, { decision, reason });
                       ))}
                     </select>
                   )}
-                  <button className="underline" onClick={() => setView(order._id)}>
-                    Чат заказа
+<button className="underline" onClick={() => setView(order._id)}>
+                    Открыть заказ
                   </button>
                 </div>
               </div>
