@@ -43,13 +43,16 @@ function Register({ setUserWantsToLogin }) {
   );
 
   return (
-    <div className="w-full max-w-[36rem] mx-auto px-4">
-      <h1 className="text-cta-icon font-semibold text-[2.4rem] uppercase mb-[1rem] text-center">
-        Бомбила
-      </h1>
-      <p className="text-secondary-text text-center mb-[2rem]">
-        Заказ такси через чат. Выберите свой город — он понадобится для заказов.
-      </p>
+    <div className="w-full max-w-[34rem] mx-auto px-4 anim-rise">
+      <div className="flex flex-col items-center gap-1 mb-6">
+        <span className="brand-title brand-gradient">Бомбила</span>
+        <span className="text-[1.2rem] text-secondary-text tracking-wide text-center">
+          Заказ такси через чат. Выберите свой город — он понадобится для заказов.
+        </span>
+      </div>
+
+      <div className="glass-strong rounded-3xl p-5 space-y-4">
+        <div className="text-center font-display font-bold text-[1.6rem]">🪪 Регистрация</div>
       <Formik
         initialValues={{
           name: "",
@@ -124,8 +127,8 @@ function Register({ setUserWantsToLogin }) {
             <div className="flex gap-2 justify-center text-sm">
               <button
                 type="button"
-                className={`px-3 py-1 rounded ${
-                  cityMode === "pick" ? "bg-accent text-black" : "bg-secondary text-secondary-text"
+                className={`press px-3 py-1.5 rounded-xl ${
+                  cityMode === "pick" ? "btn-accent font-semibold" : "glass text-secondary-text"
                 }`}
                 onClick={() => setCityMode("pick")}
               >
@@ -133,8 +136,8 @@ function Register({ setUserWantsToLogin }) {
               </button>
               <button
                 type="button"
-                className={`px-3 py-1 rounded ${
-                  cityMode === "custom" ? "bg-accent text-black" : "bg-secondary text-secondary-text"
+                className={`press px-3 py-1.5 rounded-xl ${
+                  cityMode === "custom" ? "btn-accent font-semibold" : "glass text-secondary-text"
                 }`}
                 onClick={() => setCityMode("custom")}
               >
@@ -144,7 +147,7 @@ function Register({ setUserWantsToLogin }) {
 
             {cityMode === "pick" ? (
               <select
-                className="w-full bg-secondary border border-secondary-text rounded-xl p-[1.2rem] text-primary-text text-[1.6rem]"
+                className="w-full bg-[#0d0d0d] text-white border border-secondary-text/30 rounded-2xl p-3 text-[1.5rem] focus:border-accent focus:outline-none"
                 name="cityId"
                 value={values.cityId}
                 onChange={(event) => setFieldValue("cityId", event.target.value)}
@@ -169,7 +172,7 @@ function Register({ setUserWantsToLogin }) {
             )}
 
             <button
-              className={`bg-cta-icon p-[1.2rem] rounded-xl uppercase text-black font-semibold flex items-center justify-center w-full ${
+              className={`press btn-accent p-[1.2rem] rounded-2xl font-display font-extrabold text-[1.5rem] flex items-center justify-center w-full tracking-wide ${
                 reqState === "loading" ||
                 (cityMode === "pick" ? !values.cityId : !values.newCityName)
                   ? "opacity-50"
@@ -185,12 +188,14 @@ function Register({ setUserWantsToLogin }) {
           </Form>
         )}
       </Formik>
-      <div
-        onClick={() => setUserWantsToLogin(true)}
-        className="mt-[2rem] text-center text-secondary-text underline cursor-pointer hover:text-cta-icon"
-      >
-        Уже есть аккаунт
       </div>
+
+      <button
+        onClick={() => setUserWantsToLogin(true)}
+        className="mt-[2rem] w-full text-center text-secondary-text underline hover:text-cta-icon text-[1.4rem]"
+      >
+        Уже есть аккаунт? Войти
+      </button>
     </div>
   );
 }

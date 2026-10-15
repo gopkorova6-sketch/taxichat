@@ -7,7 +7,7 @@ function Authentication() {
   const [userWantToLogin, setUserWantsToLogin] = useState(true);
 
   return (
-    <div className="chat-bg w-full h-full flex items-center justify-center px-[1rem]">
+    <div className="w-full h-full flex items-center justify-center px-[1rem] py-6 overflow-y-auto">
       {userWantToLogin && <Login setUserWantsToLogin={setUserWantsToLogin} />}
 
       {!userWantToLogin && (
