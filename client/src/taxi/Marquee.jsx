@@ -1,17 +1,17 @@
 // Live scrolling line for text that does not fit the width.
-// Short text stays still; long text scrolls in a loop.
+// Fits -> static. Too long -> the text scrolls in a loop inside a clipped box.
 const Marquee = ({ text, className = "" }) => {
   const value = text ?? "";
-  const long = value.length > 26;
+  const long = value.length > 22;
   return (
-    <div className={`overflow-hidden whitespace-nowrap ${className}`}>
+    <div className={`min-w-0 overflow-hidden ${className}`}>
       {long ? (
-        <div className="inline-block animate-marquee">
-          <span className="pr-10">{value}</span>
-          <span className="pr-10" aria-hidden>{value}</span>
+        <div className="flex w-max animate-marquee whitespace-nowrap">
+          <span className="pr-12">{value}</span>
+          <span className="pr-12" aria-hidden>{value}</span>
         </div>
       ) : (
-        <span>{value}</span>
+        <span className="block truncate">{value}</span>
       )}
     </div>
   );
