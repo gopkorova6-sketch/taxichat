@@ -289,17 +289,19 @@ const transition = async (order, event, actor, { reason } = {}) => {
   // Penalty points for late cancels (concept 1.9)
   await applyPenalty(order, event, actor, previousStatus);
 
-  const statusPayload = {
+  const base = {
     orderId: order._id,
     status: order.status,
     previousStatus,
     by: actor.userId,
+    passengerId: String(order.passengerId),
+    driverId: order.driverId ? String(order.driverId) : null,
   };
-  // Participants in the order room and the city feed (drivers, dispatchers)
-  // both learn about the change live
+  // Participants get the change in the order room; the city feed carries the
+  // same change so drivers see assignments. Clients filter by participation.
   const events = [
-    { room: `order:${order._id}`, event: "order:status", payload: statusPayload },
-    { room: `city:${order.cityId}`, event: "order:status", payload: statusPayload },
+    { room: `order:${order._id}`, event: "order:status", payload: { ...base, scope: "order" } },
+    { room: `city:${order.cityId}`, event: "order:status", payload: { ...base, scope: "city" } },
   ];
 
   return { order, events, previousStatus };
@@ -331,15 +333,17 @@ const assignAtomically = async (orderId, driverId, actor, { priceAgreed } = {}) 
 
   await setDriverShift(driverId, "busy");
 
-  const assignedPayload = {
+  const assigned = {
     orderId: order._id,
     status: "ASSIGNED",
     previousStatus: "PUBLISHED",
     by: actor.userId,
+    passengerId: String(order.passengerId),
+    driverId: String(driverId),
   };
   const events = [
-    { room: `order:${order._id}`, event: "order:status", payload: assignedPayload },
-    { room: `city:${order.cityId}`, event: "order:status", payload: assignedPayload },
+    { room: `order:${order._id}`, event: "order:status", payload: { ...assigned, scope: "order" } },
+    { room: `city:${order.cityId}`, event: "order:status", payload: { ...assigned, scope: "city" } },
   ];
 
   return { order, events };

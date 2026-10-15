@@ -31,7 +31,7 @@ const TaxiApp = () => {
   const { call, startCall, acceptCall, endCall } = useCall();
   const [tab, setTab] = useState("taxi");
   // Live voice/on-screen notices for order changes, for every role
-  useOrderNotices();
+  useOrderNotices({ role, userId: user?._id });
 
   const city = cities.find((item) => String(item._id) === String(cityId));
   const availableRoles = ["passenger", "driver", "dispatcher", "region_admin"].filter(

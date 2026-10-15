@@ -5,6 +5,7 @@ import { useReactMediaRecorder } from "react-media-recorder";
 import { apiGet, apiPost, apiUpload } from "./api";
 import useSocket from "../hooks/useSocket";
 import { statusBadge, formatWhen } from "./statusLabels";
+import Marquee from "./Marquee";
 
 // Chat of a single order: bot card, system messages, quick action buttons,
 // offers, SOS and the trip rating (concept 1.7)
@@ -298,16 +299,29 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="relative p-3 border-b border-secondary-text/20">
-          <button className="btn-back absolute left-3 top-3" onClick={onBack}>⬅️ Назад</button>
-          <div className="text-center px-16 min-w-0">
-            <div className="order-card-title truncate">
-              {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
-            </div>
-            <div className="order-card-meta truncate">
-              {order.passenger?.name ? `${order.passenger.name} · ` : ""}
-              {statusBadge(order.status)} · {formatWhen(order.when)}
-            </div>
+      <div className="p-2 border-b border-secondary-text/20">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              className="shrink-0 px-2 py-1 rounded-lg text-[1.2rem] bg-white/10 border border-white/10"
+              onClick={onBack}
+              aria-label="Назад"
+            >
+              ⬅️
+            </button>
+            <Marquee
+              text={order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
+              className="flex-1 min-w-0 text-[1.3rem] font-semibold"
+            />
+          </div>
+          <div className="mt-1 flex items-center justify-between gap-2 text-[1.1rem] text-secondary-text min-w-0">
+            <span className="truncate">{statusBadge(order.status)} · {formatWhen(order.when)}</span>
+            <span className="shrink-0 truncate max-w-[45%]">
+              {myRole === "passenger" && order.driver
+                ? `🧑‍✈️ ${order.driver.displayName}${order.driver.carCaption ? ` · ${order.driver.carCaption}` : ""}`
+                : myRole === "driver" && order.passenger?.name
+                ? `🧍 ${order.passenger.name}`
+                : ""}
+            </span>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-2 justify-center">
