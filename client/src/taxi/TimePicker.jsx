@@ -81,9 +81,9 @@ const TimePicker = ({ value, onChange, open, onClose, title }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[12000] flex items-end sm:items-center justify-center bg-black/70 px-2 pb-2 sm:pb-0 anim-fade" onClick={onClose}>
+    <div className="fixed inset-0 z-[12000] flex items-center justify-center bg-black/70 px-2 py-3 anim-fade" onClick={onClose}>
       <div
-        className="w-full max-w-[36rem] glass-strong rounded-3xl p-4 space-y-3 anim-sheet"
+        className="w-full max-w-[36rem] max-h-[92dvh] overflow-y-auto glass-strong rounded-3xl p-4 space-y-3 anim-sheet"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-2">
@@ -132,7 +132,7 @@ const TimePicker = ({ value, onChange, open, onClose, title }) => {
             <span className={unit === "minutes" ? "text-cta-icon" : ""}>{pad(cursor.getMinutes())}</span>
           </div>
 
-          <div className="mt-2 grid grid-cols-6 gap-1.5 max-h-[30dvh] overflow-y-auto">
+          <div className="mt-2 grid grid-cols-6 gap-1.5 max-h-[26dvh] overflow-y-auto">
             {(unit === "hours" ? hours : minutes).map((n) => {
               const selected =
                 unit === "hours" ? cursor.getHours() === n : cursor.getMinutes() === n;
