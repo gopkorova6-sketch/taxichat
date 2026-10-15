@@ -74,7 +74,7 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName }) => {
     const el = inputRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setRect({ left: r.left, width: r.width, bottom: r.bottom });
+    setRect({ left: r.left, width: r.width, top: r.top });
   };
 
   useLayoutEffect(() => {
@@ -96,7 +96,8 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName }) => {
 
   useEffect(() => {
     const onOutside = (event) => {
-      if (wrapRef.current && !wrapRef.current.contains(event.target)) setOpen(false);
+      const inside = (wrapRef.current && wrapRef.current.contains(event.target)) || (panelRef.current && panelRef.current.contains(event.target));
+      if (!inside) setOpen(false);
     };
     document.addEventListener("click", onOutside);
     return () => document.removeEventListener("click", onOutside);
@@ -181,7 +182,7 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName }) => {
             position: "fixed",
             left: rect.left,
             width: rect.width,
-            bottom: Math.max(window.innerHeight - rect.bottom + 4, 4),
+            bottom: Math.max(window.innerHeight - rect.top + 4, 4),
             maxHeight: "46dvh",
           }}
           className="z-[100000] glass-strong rounded-2xl overflow-hidden flex flex-col shadow-2xl"
