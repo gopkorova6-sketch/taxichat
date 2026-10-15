@@ -416,6 +416,8 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
             );
           }
           if (message.kind === "action") {
+            // Finished orders keep no actions, even if an old button message is left
+            if (["COMPLETED", "CANCELLED", "NO_SHOW", "EXPIRED"].includes(order.status)) return null;
             return (
               <div key={message._id} className="flex flex-wrap gap-2">
                 {(message.meta?.buttons ?? [])

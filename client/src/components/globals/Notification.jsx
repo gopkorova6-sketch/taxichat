@@ -30,11 +30,11 @@ function NotificationItem({ item, onDismiss }) {
       initial={{ translateX: "100%", opacity: 0 }}
       animate={{ translateX: 0, opacity: 1 }}
       exit={{ translateX: "100%", opacity: 0 }}
-      className={`glass-strong flex items-center gap-2 rounded-2xl px-3 py-2 text-[1.4rem] border-l-[3px] ${
+      className={`glass-strong w-full min-w-0 flex items-center gap-2 rounded-2xl px-3 py-2 text-[1.4rem] border-l-[3px] ${
         item.type === "error" ? "border-l-danger" : "border-l-cta-icon"
       }`}
     >
-      <span className="flex-1 min-w-0">{item.message}</span>
+      <span className="flex-1 min-w-0 break-words">{item.message}</span>
       <button
         onClick={() => onDismiss(item.id)}
         className="shrink-0 w-[3rem] h-[3rem] flex items-center justify-center rounded-full text-secondary-text"
@@ -52,10 +52,10 @@ function Notification() {
   const dismiss = (id) => dispatch(notificationActions.removeNotification(id));
 
   return (
-    <div className="fixed top-[6rem] right-2 left-2 sm:left-auto sm:w-[34rem] z-[10000] flex flex-col gap-2 pointer-events-none">
+    <div className="fixed top-[6rem] left-2 right-2 sm:left-auto sm:right-3 sm:w-[34rem] max-w-[calc(100vw-1rem)] z-[10000] flex flex-col gap-2 pointer-events-none">
       <AnimatePresence>
         {notifications.map((item) => (
-          <div key={item.id} className="pointer-events-auto">
+          <div key={item.id} className="pointer-events-auto w-full min-w-0">
             <NotificationItem item={item} onDismiss={dismiss} />
           </div>
         ))}

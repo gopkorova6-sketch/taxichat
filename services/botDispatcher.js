@@ -88,8 +88,15 @@ const upsertOrderCard = async (order) => {
   });
 };
 
-// Posts the quick action buttons for the current status
+const TERMINAL_STATUSES = ["COMPLETED", "CANCELLED", "NO_SHOW", "EXPIRED"];
+
+// Posts the quick action buttons for the current status. The previous button
+// message is removed, so an old "Отменить заказ" never survives a transition,
+// and a finished order gets no actions at all.
 const postActionButtons = async (chatId, status) => {
+  await Message.deleteMany({ chatId, kind: "action" });
+  if (TERMINAL_STATUSES.includes(status)) return null;
+
   const buttons = actionsForStatus(status);
   if (buttons.length === 0) return null;
 
