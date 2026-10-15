@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiGet } from "./api";
+import useSocket from "../hooks/useSocket";
 import { statusBadge, formatWhen } from "./statusLabels";
 
 // "Поездки": the journal of the user's orders in the chosen city. Tapping a
@@ -11,11 +12,25 @@ const TripsList = ({ cityId, me, onOpen }) => {
   const [filter, setFilter] = useState("active");
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const { socketListen, socket } = useSocket();
+  const load = () => {
     if (!cityId) return;
     apiGet(`/api/orders?cityId=${cityId}`)
       .then((res) => setTrips(res.data.orders))
       .catch((err) => setError(err.message));
+  };
+
+  // Live journal: refresh on any order change in the city or for own trips
+  useEffect(() => {
+    load();
+    socketListen("order:new", load);
+    socketListen("order:status", load);
+    socketListen("order:offer", load);
+    return () => {
+      socket.off("order:new", load);
+      socket.off("order:status", load);
+      socket.off("order:offer", load);
+    };
   }, [cityId]);
 
   const userId = String(me?.user?._id ?? "");
