@@ -27,11 +27,13 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
   // Close when tapping outside the picker
   useEffect(() => {
     if (!open) return undefined;
-    const onDown = (event) => {
+    // Close on a click outside the picker. A click (not pointerdown) so that
+    // touch-scroll gestures inside the list are never treated as outside taps.
+    const onClick = (event) => {
       if (rootRef.current && !rootRef.current.contains(event.target)) setOpen(false);
     };
-    document.addEventListener("pointerdown", onDown);
-    return () => document.removeEventListener("pointerdown", onDown);
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
   }, [open]);
 
   const choose = (item) => {
@@ -67,21 +69,21 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <div className="max-h-[40dvh] overflow-y-auto pr-1 space-y-2">
+          <div className="h-[44vh] overflow-y-auto overscroll-contain touch-pan-y pr-1 space-y-2">
             {groups.length === 0 && (
               <div className="text-center text-[1.4rem] text-secondary-text py-4">😕 Ничего не найдено</div>
             )}
             {groups.map(([letter, items]) => (
               <div key={letter}>
                 <div className="font-display font-bold text-cta-icon text-[1.3rem] px-2 py-0.5">{letter}</div>
-                <div className="space-y-1.5">
+                <div className="flex flex-col gap-1.5">
                   {items.map((item) => {
                     const selected = String(item._id) === String(cityId);
                     return (
                       <button
                         key={item._id}
                         onClick={() => choose(item)}
-                        className={`press w-full min-h-[3.8rem] flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-[1.4rem] text-left ${
+                        className={`press shrink-0 w-full h-[4.4rem] flex items-center justify-between gap-3 rounded-xl px-3 text-[1.4rem] text-left ${
                           selected ? "btn-accent font-extrabold" : "glass"
                         }`}
                       >
