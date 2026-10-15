@@ -4,6 +4,7 @@ import { authActions } from "../store/authSlice";
 import Sidebar from "../components/globals/Sidebar";
 import Chat from "../pages/Chat";
 import useTaxi from "./useTaxi";
+import useOrderNotices from "../hooks/useOrderNotices";
 import useCall from "./useCall";
 import CallModal from "./CallModal";
 import PassengerPanel from "./PassengerPanel";
@@ -29,6 +30,8 @@ const TaxiApp = () => {
   const { me, user, memberships, cities, cityId, setCityId, role, setRole, driverProfile, error, refreshMe } = useTaxi();
   const { call, startCall, acceptCall, endCall } = useCall();
   const [tab, setTab] = useState("taxi");
+  // Live voice/on-screen notices for order changes, for every role
+  useOrderNotices();
 
   const city = cities.find((item) => String(item._id) === String(cityId));
   const availableRoles = ["passenger", "driver", "dispatcher", "region_admin"].filter(
@@ -98,7 +101,7 @@ const TaxiApp = () => {
 
       {error && <div className="text-danger text-sm px-4 py-1">{error}</div>}
 
-      <div className="flex-1 overflow-hidden pb-[7.5rem] sm:pb-0 anim-rise">
+      <div className="flex-1 overflow-hidden pb-[5rem] sm:pb-0 anim-rise">
         <ErrorBoundary>
         {tab === "chats" ? (
           <div className="flex w-full h-full">
@@ -159,18 +162,18 @@ const TaxiApp = () => {
       </div>
 
       {/* Мобильная нижняя навигация по ролям — под большим пальцем */}
-      <nav className="fixed bottom-3 left-3 right-3 z-30 flex sm:hidden glass-strong rounded-3xl p-1.5 safe-area-bottom">
+      <nav className="fixed bottom-2 left-2 right-2 z-30 flex sm:hidden glass-strong rounded-2xl p-1 safe-area-bottom">
         {availableRoles.map((r) => {
           const active = role === r;
           return (
             <button
               key={r}
-              className={`press relative flex-1 py-2.5 rounded-2xl text-[1.2rem] flex flex-col items-center gap-0.5 transition-all duration-300 ${
+              className={`press relative flex-1 py-1.5 rounded-xl text-[1.1rem] flex flex-row items-center justify-center gap-1 transition-all duration-300 ${
                 active ? "btn-accent font-bold" : "text-secondary-text"
               }`}
               onClick={() => setRole(r)}
             >
-              <span className={`text-[2rem] leading-none ${active ? "anim-float" : ""}`}>
+              <span className={`text-[1.6rem] leading-none ${active ? "anim-float" : ""}`}>
                 {r === "driver" ? "🚕" : r === "dispatcher" || r === "region_admin" ? "🎧" : "🧍"}
               </span>
               {ROLE_LABELS[r]}

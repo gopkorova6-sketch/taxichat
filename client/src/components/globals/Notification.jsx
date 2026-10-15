@@ -1,55 +1,63 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { notificationActions } from "../../store/notificationSlice";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Auto-dismiss: every notification leaves on its own after this delay
+const LIFETIME_MS = 60 * 1000;
+
+// Voice: notifications marked speak=true are read aloud (Russian)
+const speak = (text) => {
+  if (typeof window === "undefined" || !window.speechSynthesis || !text) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "ru-RU";
+  utterance.rate = 1;
+  window.speechSynthesis.speak(utterance);
+};
+
+function NotificationItem({ item, onDismiss }) {
+  useEffect(() => {
+    const timer = setTimeout(() => onDismiss(item.id), LIFETIME_MS);
+    return () => clearTimeout(timer);
+  }, [item.id]);
+
+  useEffect(() => {
+    if (item.speak) speak(item.speakText || item.message);
+  }, [item.id]);
+
+  return (
+    <motion.div
+      initial={{ translateX: "100%", opacity: 0 }}
+      animate={{ translateX: 0, opacity: 1 }}
+      exit={{ translateX: "100%", opacity: 0 }}
+      className={`glass-strong flex items-center gap-2 rounded-2xl px-3 py-2 text-[1.4rem] border-l-[3px] ${
+        item.type === "error" ? "border-l-danger" : "border-l-cta-icon"
+      }`}
+    >
+      <span className="flex-1 min-w-0">{item.message}</span>
+      <button
+        onClick={() => onDismiss(item.id)}
+        className="shrink-0 w-[3rem] h-[3rem] flex items-center justify-center rounded-full text-secondary-text"
+        aria-label="Закрыть"
+      >
+        ✖️
+      </button>
+    </motion.div>
+  );
+}
+
 function Notification() {
   const notifications = useSelector((state) => state.notificationReducer);
   const dispatch = useDispatch();
+  const dismiss = (id) => dispatch(notificationActions.removeNotification(id));
 
   return (
-    <div className="absolute right-0 z-[10000] space-y-[.5rem]">
+    <div className="fixed top-[6rem] right-2 left-2 sm:left-auto sm:w-[34rem] z-[10000] flex flex-col gap-2 pointer-events-none">
       <AnimatePresence>
-        {notifications.map(({ message, type, id }) => (
-          <motion.div
-            initial={{
-              translateX: "32rem",
-              opacity: 0.5,
-            }}
-            animate={{
-              translateX: 0,
-              opacity: 1,
-            }}
-            exit={{
-              translateX: "32rem",
-              opacity: 0.5,
-            }}
-            key={id}
-            className={`bg-primary border-l-[3px] flex justify-between pl-[2rem] w-[30rem] rounded-l-[.5rem] ${
-              type === "error" && "border-l-danger"
-            }`}
-          >
-            <span className="my-[3rem] mr-[.5rem]">{message}</span>
-            <span
-              onClick={() =>
-                dispatch(notificationActions.removeNotification(id))
-              }
-              className="flex items-center justify-center w-[4.5rem] hover:bg-secondary-light-text"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="1em"
-                height="1em"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-              >
-                <path
-                  fill="currentColor"
-                  d="M24 9.4L22.6 8L16 14.6L9.4 8L8 9.4l6.6 6.6L8 22.6L9.4 24l6.6-6.6l6.6 6.6l1.4-1.4l-6.6-6.6L24 9.4z"
-                />
-              </svg>
-            </span>
-          </motion.div>
+        {notifications.map((item) => (
+          <div key={item.id} className="pointer-events-auto">
+            <NotificationItem item={item} onDismiss={dismiss} />
+          </div>
         ))}
       </AnimatePresence>
     </div>

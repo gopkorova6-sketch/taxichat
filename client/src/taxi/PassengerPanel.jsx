@@ -47,14 +47,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   useEffect(() => {
     load();
     const onStatusChanged = (payload) => {
-      if (orders.some((order) => order._id === payload.orderId)) {
-        dispatch(
-          notificationActions.addNotification({
-            message: `Заказ: ${statusBadge(payload.status)}`,
-            type: payload.status === "DISPUTE" ? "error" : "info",
-          })
-        );
-      }
+      // Voice and the on-screen notice come from useOrderNotices; refresh data only
       load();
     };
     const onMembershipUpdated = () => refreshMe();
@@ -160,7 +153,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
   const orderCard = (order) => (
     <button
       key={order._id}
-      className="press anim-rise w-full text-center glass rounded-2xl p-4 text-[1.8rem]"
+      className="press anim-rise w-full text-center glass rounded-2xl p-4 text-[1.5rem]"
       onClick={() => setView({ type: "order", id: order._id })}
     >
       <div className="flex items-center gap-2 justify-center">
@@ -339,7 +332,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
 
           {whenType === "scheduled" && (
             <input
-              className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.6rem] text-primary-text"
+              className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.4rem] text-primary-text"
               type="datetime-local"
               required
               min={defaultScheduledAt()}
@@ -349,7 +342,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           )}
 
           <input
-            className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.6rem] text-primary-text"
+            className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.4rem] text-primary-text"
             required
             autoFocus
             placeholder="Куда едем? Например: от ЖД до Центра"
@@ -368,7 +361,7 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
           />
 
           <button
-            className={`press btn-accent font-display font-extrabold tracking-wide p-[1.3rem] rounded-2xl w-full text-[1.6rem] ${
+            className={`press btn-accent font-display font-extrabold tracking-wide p-[1rem] rounded-2xl w-full text-[1.4rem] ${
               !route.trim() || sending ? "opacity-50" : "opacity-100 anim-pulse-ring"
             }`}
             type="submit"

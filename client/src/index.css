@@ -377,25 +377,20 @@ select option {
   color: #ffffff;
 }
 
-/* ==== Крупный текст и большие касания (пенсионеры и мобильные) ==== */
+/* ==== Баланс размеров на телефоне: читаемо, но без лишней крупности ==== */
 @media (max-width: 40em) {
   body {
-    font-size: 1.8rem;
-    line-height: 1.45;
+    font-size: 1.5rem;
+    line-height: 1.4;
   }
-  .text-xs { font-size: 1.4rem !important; }
-  .text-sm { font-size: 1.7rem !important; }
-  .text-base { font-size: 1.9rem !important; }
-  .text-lg { font-size: 2.2rem !important; }
   button, select, a {
-    min-height: 48px;
+    min-height: 34px;
   }
   input, select, textarea {
-    font-size: 18px;
-    min-height: 48px;
+    font-size: 16px;
+    min-height: 40px;
   }
 }
-
 /* Кнопка «Назад»: крупная, с фоном и касанием */
 .btn-back {
   display: inline-flex;

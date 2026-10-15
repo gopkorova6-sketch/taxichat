@@ -44,12 +44,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
     load();
     const onNew = () => {
       setLastEvent(`order:new ${new Date().toLocaleTimeString("ru-RU")}`);
-      dispatch(
-        notificationActions.addNotification({
-          message: "Новый заказ в ленте",
-          type: "info",
-        })
-      );
+      // Voice and notice come from useOrderNotices
       load();
     };
     const onTaken = () => {
@@ -232,7 +227,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
           <div className="space-y-2">
           {feed.length === 0 && <div className="text-sm text-secondary-text">📭 Пока нет заказов</div>}
           {feed.map((order) => (
-            <div key={order._id} className="anim-rise glass rounded-2xl p-4 text-[1.8rem] text-center">
+            <div key={order._id} className="anim-rise glass rounded-2xl p-4 text-[1.5rem] text-center">
                 <div className="font-semibold text-center">
                   {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
                 </div>
@@ -270,7 +265,7 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
           <div className="space-y-2">
           {mine.length === 0 && <div className="text-sm text-secondary-text">📭 Нет активных заказов</div>}
           {mine.map((order) => (
-            <div key={order._id} className="anim-rise glass rounded-2xl p-4 text-[1.8rem] text-center">
+            <div key={order._id} className="anim-rise glass rounded-2xl p-4 text-[1.5rem] text-center">
               <div className="flex items-center gap-2 justify-center">
               <div className="font-semibold text-center">
                 {order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}

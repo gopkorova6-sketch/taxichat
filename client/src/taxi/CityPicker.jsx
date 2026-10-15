@@ -31,7 +31,7 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
   return (
     <>
       <button
-        className="press w-full flex items-center justify-between gap-3 glass rounded-2xl px-4 py-3 text-[2rem]"
+        className="press w-full flex items-center justify-between gap-3 glass rounded-2xl px-4 py-3 text-[1.4rem]"
         onClick={() => setOpen(true)}
       >
         <span className="flex items-center gap-2 min-w-0">
@@ -40,7 +40,7 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
             {current ? current.name : "Выберите город"}
           </span>
         </span>
-        <span className="flex items-center gap-1 shrink-0 text-secondary-text text-[1.6rem]">
+        <span className="flex items-center gap-1 shrink-0 text-secondary-text text-[1.4rem]">
           {current && <span aria-hidden>{cityStatusEmoji(current.status)}</span>}
           <span aria-hidden>🔽</span>
         </span>
@@ -53,12 +53,12 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2">
-              <div className="font-display font-extrabold text-[2.2rem]">🏙️ Город</div>
+              <div className="font-display font-extrabold text-[1.7rem]">🏙️ Город</div>
               <button className="btn-back" onClick={() => setOpen(false)}>✖️ Закрыть</button>
             </div>
 
             <input
-              className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl px-4 py-3 text-[1.8rem] focus:border-accent focus:outline-none"
+              className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl px-4 py-3 text-[1.5rem] focus:border-accent focus:outline-none"
               placeholder="🔍 Поиск города"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -67,11 +67,11 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
 
             <div className="overflow-y-auto flex-1 min-h-0 space-y-3 pr-1">
               {groups.length === 0 && (
-                <div className="text-center text-[1.8rem] text-secondary-text py-6">😕 Ничего не найдено</div>
+                <div className="text-center text-[1.5rem] text-secondary-text py-6">😕 Ничего не найдено</div>
               )}
               {groups.map(([letter, items]) => (
                 <div key={letter}>
-                  <div className="sticky top-0 font-display font-bold text-cta-icon text-[1.8rem] px-2 py-1 bg-[#161616]/90 rounded-lg">
+                  <div className="sticky top-0 font-display font-bold text-cta-icon text-[1.5rem] px-2 py-1 bg-[#161616]/90 rounded-lg">
                     {letter}
                   </div>
                   <div className="mt-1 space-y-2">
@@ -81,7 +81,7 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
                         <button
                           key={item._id}
                           onClick={() => choose(item)}
-                          className={`press w-full min-h-[5.6rem] flex items-center justify-between gap-3 rounded-2xl px-4 py-4 text-[1.9rem] text-left ${
+                          className={`press w-full min-h-[4.2rem] flex items-center justify-between gap-3 rounded-2xl px-4 py-2.5 text-[1.5rem] text-left ${
                             selected ? "btn-accent font-extrabold" : "glass"
                           }`}
                         >
