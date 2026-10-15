@@ -7,7 +7,10 @@ import { orderStatusNotice, newOrderNotice, newOfferNotice } from "../taxi/order
 // Live notices for the current role only:
 //  - driver/dispatcher: new orders in the city
 //  - passenger: offers and status of own orders
-//  - everyone who is a participant (passenger or assigned driver): status
+//  - participant (passenger or assigned driver): status of own order
+// The server sends each status change twice: to the order room (scope "order")
+// and to the city feed (scope "city"). Only the order-room copy shows a notice;
+// the city copy just refreshes lists, so nothing is shown twice.
 const useOrderNotices = ({ role, userId }) => {
   const dispatch = useDispatch();
   const { socketListen, socket } = useSocket();
@@ -26,15 +29,11 @@ const useOrderNotices = ({ role, userId }) => {
       if (roleRef.current === "passenger") show(newOfferNotice(payload));
     };
     const onStatus = (payload) => {
+      if (payload?.scope !== "order") return;
       const me = String(userRef.current ?? "");
       const isParticipant =
         String(payload?.passengerId) === me || String(payload?.driverId) === me;
-      // Room-scoped copy: only participants receive it. City-scoped copy is for
-      // drivers/dispatchers watching the feed, and never for the passenger.
-      if (payload?.scope === "order" && isParticipant) show(orderStatusNotice(payload));
-      if (payload?.scope === "city" && roleRef.current !== "passenger" && String(payload?.driverId) === me) {
-        show(orderStatusNotice(payload));
-      }
+      if (isParticipant) show(orderStatusNotice(payload));
     };
 
     socketListen("order:new", onNew);
