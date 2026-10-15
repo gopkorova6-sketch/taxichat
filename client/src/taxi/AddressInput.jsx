@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import STREETS from "./streetsData";
-import { cityStatusEmoji } from "./statusLabels";
 
-// Поле адреса с текстовыми подсказками улиц: чисто по названию, без координат
-// и геокодинга. Подсказки фильтруются по последнему слову ввода, поэтому
-// работают и внутри строки вида «от ЖД до Центра».
+// Поле адреса с текстовыми подсказками: чисто по названию, без координат и
+// геокодинга. Список раскрывается ВВЕРХ и прокручивается, чтобы оставаться
+// видимым над клавиатурой. Кроме улиц подсказываются слова-связки маршрута:
+// от/с в начале, заезд на/с заездом на в середине, до/на в конце и туда-обратно.
 const normalize = (text) => String(text ?? "").toLowerCase().replace(/ё/g, "е").trim();
 
-// Совпадения по последнему слову (или по всей строке, если слово одно)
-const matchStreets = (query, limit = 6) => {
+const matchStreets = (query, limit = 8) => {
   const q = normalize(query);
   if (!q) return [];
   const words = q.split(/[\s,]+/).filter(Boolean);
@@ -23,13 +22,42 @@ const matchStreets = (query, limit = 6) => {
   return [...starts, ...contains].slice(0, limit);
 };
 
-const AddressInput = ({ value, onChange, onEnter, placeholder, cityName, listId }) => {
+// Слова-связки по положению в строке маршрута
+const routeChips = (text) => {
+  const t = String(text ?? "");
+  const hasOrigin = /^\s*(от|с)\s/i.test(t);
+  const hasDestination = /\s(до|на)\s/i.test(t);
+  const chips = [];
+  if (!hasOrigin) {
+    // Начало маршрута: от/с
+    chips.push("от", "с");
+  } else if (!hasDestination) {
+    // Есть начало, нужен конец: до/на
+    chips.push("до", "на");
+  } else {
+    // Маршрут задан: можно добавить заезд по пути
+    chips.push("заезд на", "с заездом на");
+  }
+  chips.push("туда-обратно");
+  return chips;
+};
+
+const chipText = (chip) => {
+  if (chip === "от" || chip === "с") return `${chip} `;
+  if (chip === "до" || chip === "на") return ` ${chip} `;
+  if (chip === "заезд на" || chip === "с заездом на") return `, ${chip} `;
+  if (chip === "туда-обратно") return ", туда-обратно";
+  return `${chip} `;
+};
+
+const AddressInput = ({ value, onChange, onEnter, placeholder, cityName }) => {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
-  const boxRef = useRef(null);
+  const inputRef = useRef(null);
   const wrapRef = useRef(null);
 
   const suggestions = useMemo(() => matchStreets(value), [value]);
+  const chips = useMemo(() => routeChips(value), [value]);
 
   useEffect(() => {
     const onOutside = (event) => {
@@ -39,15 +67,32 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName, listId 
     return () => document.removeEventListener("click", onOutside);
   }, []);
 
-  const apply = (street) => {
-    // Дописываем выбранную улицу вместо последнего слова и ставим запятую
-    const text = String(value ?? "");
-    const words = text.split(/(\s|,)/);
-    let cut = text.length;
-    const trailing = text.match(/[^\s,]*$/);
-    if (trailing) cut = text.length - trailing[0].length;
-    const head = text.slice(0, cut);
-    onChange(`${head}${street.n}, `);
+  // Вставка текста в позицию курсора
+  const insert = (text) => {
+    const el = inputRef.current;
+    const start = el?.selectionStart ?? String(value ?? "").length;
+    const end = el?.selectionEnd ?? start;
+    const current = String(value ?? "");
+    const next = current.slice(0, start) + text + current.slice(end);
+    onChange(next);
+    requestAnimationFrame(() => {
+      if (!el) return;
+      const pos = start + text.length;
+      el.setSelectionRange(pos, pos);
+      el.focus();
+    });
+  };
+
+  const applyStreet = (street) => {
+    // Заменяем недописанное последнее слово названием улицы
+    const current = String(value ?? "");
+    const trailing = current.match(/[^\s,]*$/);
+    if (trailing && trailing[0]) {
+      const head = current.slice(0, current.length - trailing[0].length);
+      onChange(`${head}${street.n}, `);
+    } else {
+      insert(`${street.n}, `);
+    }
     setOpen(false);
     setActive(0);
   };
@@ -66,7 +111,7 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName, listId 
       }
       if (event.key === "Enter" && suggestions[active]) {
         event.preventDefault();
-        apply(suggestions[active]);
+        applyStreet(suggestions[active]);
         return;
       }
       if (event.key === "Escape") {
@@ -77,9 +122,12 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName, listId 
     if (event.key === "Enter") onEnter?.(event);
   };
 
+  const showPanel = open;
+
   return (
     <div ref={wrapRef} className="relative">
       <input
+        ref={inputRef}
         className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.4rem] text-primary-text"
         required
         placeholder={placeholder}
@@ -94,33 +142,47 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName, listId 
         autoComplete="off"
       />
 
-      {open && suggestions.length > 0 && (
-        <div
-          ref={boxRef}
-          id={listId}
-          className="absolute left-0 right-0 top-full mt-1 z-50 glass-strong rounded-2xl overflow-hidden max-h-[40dvh] overflow-y-auto"
-        >
-          {cityName && (
-            <div className="px-3 py-1.5 text-[1.1rem] text-secondary-text border-b border-white/10">
-              🛣 Улицы · {cityName} и район
-            </div>
-          )}
-          {suggestions.map((street, index) => (
-            <button
-              key={`${street.l}-${street.n}-${index}`}
-              type="button"
-              onMouseEnter={() => setActive(index)}
-              onClick={() => apply(street)}
-              className={`w-full text-left px-3 py-2 text-[1.4rem] flex items-center justify-between gap-2 ${
-                index === active ? "bg-white/15" : ""
-              }`}
-            >
-              <span className="truncate">{street.n}</span>
-              <span className="shrink-0 text-[1.1rem] text-secondary-text">
-                {street.l}
-              </span>
-            </button>
-          ))}
+      {showPanel && (
+        <div className="absolute left-0 right-0 bottom-full mb-1 z-50 glass-strong rounded-2xl overflow-hidden flex flex-col max-h-[46dvh]">
+          <div className="flex flex-wrap gap-1.5 p-2 border-b border-white/10 shrink-0">
+            {chips.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => insert(chipText(chip))}
+                className="press px-2.5 py-1 rounded-xl text-[1.2rem] glass text-cta-icon font-semibold"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+
+          <div className="overflow-y-auto overscroll-contain">
+            {cityName && (
+              <div className="px-3 py-1.5 text-[1.1rem] text-secondary-text">
+                🛣 Улицы · {cityName} и район
+              </div>
+            )}
+            {suggestions.length === 0 && (
+              <div className="px-3 py-2 text-[1.2rem] text-secondary-text">
+                Продолжайте вводить название улицы
+              </div>
+            )}
+            {suggestions.map((street, index) => (
+              <button
+                key={`${street.l}-${street.n}-${index}`}
+                type="button"
+                onMouseEnter={() => setActive(index)}
+                onClick={() => applyStreet(street)}
+                className={`w-full text-left px-3 py-2 text-[1.4rem] flex items-center justify-between gap-2 ${
+                  index === active ? "bg-white/15" : ""
+                }`}
+              >
+                <span className="truncate">{street.n}</span>
+                <span className="shrink-0 text-[1.1rem] text-secondary-text">{street.l}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
