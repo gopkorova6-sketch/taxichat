@@ -22,8 +22,7 @@ const STATUS_LABELS = {
 // driver or a dispatcher (concept 1.5)
 const RolesSection = ({ me, cityId, cities, refreshMe }) => {
   const { socketEmit } = useSocket();
-  const [zones, setZones] = useState([]);
-  const [zonesLoaded, setZonesLoaded] = useState(false);
+
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
 
@@ -33,7 +32,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
     color: "",
     plate: "",
     brand: "",
-    zones: [],
+
   });
   const [dispatcherNote, setDispatcherNote] = useState("");
 
@@ -43,19 +42,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
   );
   const driverProfile = me?.driverProfiles?.[0];
 
-  const loadZones = async () => {
-    try {
-      const res = await apiGet(`/api/geo/cities/${cityId}/zones`);
-      setZones(res.data.zones);
-      setZonesLoaded(true);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
 
-  if (!zonesLoaded && zones.length === 0) {
-    loadZones();
-  }
 
   const becomePassenger = async () => {
     try {
@@ -81,7 +68,7 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
           plate: driverForm.plate,
           ...(driverForm.brand && { brand: driverForm.brand }),
         },
-        zones: driverForm.zones,
+  
       });
       setNotice("📨 Анкета отправлена. Диспетчер проверит её и даст ответ.");
       await refreshMe();
@@ -106,14 +93,6 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
     }
   };
 
-  const toggleZone = (zoneId) => {
-    setDriverForm((prev) => ({
-      ...prev,
-      zones: prev.zones.includes(zoneId)
-        ? prev.zones.filter((id) => id !== zoneId)
-        : [...prev.zones, zoneId],
-    }));
-  };
 
   return (
     <div className="p-4 space-y-4 overflow-y-auto h-full max-w-lg">
@@ -195,21 +174,6 @@ const RolesSection = ({ me, cityId, cities, refreshMe }) => {
               value={driverForm.brand}
               onChange={(event) => setDriverForm({ ...driverForm, brand: event.target.value })}
             />
-          </div>
-          
-          <div className="flex flex-wrap gap-1">
-            {zones.map((zone) => (
-              <button
-                type="button"
-                key={zone._id}
-                className={`px-2 py-1 rounded text-xs ${
-                  driverForm.zones.includes(zone._id) ? "bg-accent text-black" : "bg-primary"
-                }`}
-                onClick={() => toggleZone(zone._id)}
-              >
-                {zone.name}
-              </button>
-            ))}
           </div>
           <button className="btn-accent press px-4 py-2.5 rounded-2xl text-sm font-bold w-full" type="submit">
             📨 Отправить анкету
