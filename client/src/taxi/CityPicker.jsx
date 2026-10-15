@@ -62,14 +62,14 @@ const CityPicker = ({ cities, cityId, onSelect }) => {
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-50 glass-strong rounded-2xl p-3 space-y-2 shadow-2xl">
+        <div className="absolute left-0 right-0 top-full mt-2 z-50 glass-strong rounded-2xl p-3 flex flex-col gap-2 shadow-2xl max-h-[60dvh]">
           <input
             className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-xl px-3 py-2 text-[1.4rem] focus:border-accent focus:outline-none"
             placeholder="🔍 Поиск города"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <div className="h-[44vh] overflow-y-auto overscroll-contain touch-pan-y pr-1 space-y-2">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y pr-1 space-y-2" style={{ maxHeight: "44dvh" }}>
             {groups.length === 0 && (
               <div className="text-center text-[1.4rem] text-secondary-text py-4">😕 Ничего не найдено</div>
             )}
