@@ -234,7 +234,7 @@ exports.createOrder = [
       const timeoutSeconds =
         directContext
           ? (city.settings?.directOrderTimeoutMin ?? 10) * 60
-          : (city.settings?.cascadeTimeouts?.expire ?? 300);
+          : (city.settings?.cascadeTimeouts?.expire ?? 600);
       // Для заказов «на время» срок публикации не ограничен коротким окном
       order.expiresAt =
         data.whenType === "scheduled"
@@ -835,7 +835,7 @@ exports.republishOrder = catchAsyncError(async (req, res) => {
   const { events } = await transition(order, "publish", actor);
 
   order.expiresAt = new Date(
-    Date.now() + (city.settings?.cascadeTimeouts?.expire ?? 300) * 1000
+    Date.now() + (city.settings?.cascadeTimeouts?.expire ?? 600) * 1000
   );
   await order.save();
   await botDispatcher.upsertOrderCard(order);

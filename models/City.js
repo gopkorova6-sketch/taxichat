@@ -10,7 +10,7 @@ const cascadeTimeoutsSchema = new mongoose.Schema(
     zone: { type: Number, default: 60 },
     neighbors: { type: Number, default: 120 },
     city: { type: Number, default: 300 },
-    expire: { type: Number, default: 300 },
+    expire: { type: Number, default: 600 }, // 10 minutes to find a driver
   },
   { _id: false }
 );

@@ -8,26 +8,6 @@ const socket = io();
 // user:online the phone silently stops receiving order:new / order:status.
 socket.on("connect", () => {
   socket.emit("user:online");
-  const transport = socket.io?.engine?.transport?.name ?? "?";
-  window.__bombilaSocket = { ...(window.__bombilaSocket || {}), online: (window.__bombilaSocket?.online || 0) + 1, id: socket.id, transport };
-  // Upgrade from polling to websocket happens after connect; record the final transport
-  socket.io.engine.on("upgrade", (t) => {
-    window.__bombilaSocket = { ...(window.__bombilaSocket || {}), transport: t.name };
-  });
-  // Ask the server which rooms this socket is in (diagnostic)
-  setTimeout(() => {
-    socket.emit("debug:rooms", (res) => {
-      const cityRoom = (res?.rooms || []).find((r) => r.startsWith("city:")) ?? "NONE";
-      window.__bombilaSocket = { ...(window.__bombilaSocket || {}), cityRoom, rooms: (res?.rooms || []).length };
-    });
-  }, 1500);
-});
-
-// Debug trace of every order event received by this device
-socket.onAny((event) => {
-  if (event.startsWith("order")) {
-    window.__bombilaSocket = { ...(window.__bombilaSocket || {}), lastOrderEvent: event, lastOrderAt: new Date().toLocaleTimeString("ru-RU") };
-  }
 });
 
 // After a successful login the cookie exists, but the socket may have connected

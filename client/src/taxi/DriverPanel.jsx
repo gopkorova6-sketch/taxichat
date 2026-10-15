@@ -225,9 +225,6 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
 
       <div className="text-center text-[1.4rem] text-secondary-text">
         {linked ? "🟢 Связь с сервером" : "🔴 Нет связи — переподключение…"} · последнее событие: {lastEvent}
-        <div>
-          dbg: online={window.__bombilaSocket?.online ?? 0}, transport={window.__bombilaSocket?.transport ?? "?"}, последний order={window.__bombilaSocket?.lastOrderEvent ?? "—"} {window.__bombilaSocket?.lastOrderAt ?? ""}, city-room={window.__bombilaSocket?.cityRoom ?? "?"}
-        </div>
       </div>
 
       <div>
