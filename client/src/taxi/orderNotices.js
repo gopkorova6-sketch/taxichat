@@ -19,9 +19,18 @@ export const newOrderNotice = () => ({
   speak: true,
 });
 
-export const newOfferNotice = () => ({
-  message: "Новый отклик водителя",
-  speakText: "Новый отклик водителя",
+export const newOfferNotice = (offer = {}) => ({
+  message: "🚕 Новый отклик водителя",
+  speakText: `Новый отклик водителя. Цена ${offer.priceText ?? ""}`,
   type: "info",
   speak: true,
+  // Offer card: price, arrival time, driver and car, with accept/decline buttons
+  offer: {
+    orderId: offer.orderId,
+    offerId: offer.offerId,
+    driverName: offer.driverName,
+    priceText: offer.priceText,
+    etaMin: offer.etaMin,
+    carCaption: offer.carCaption,
+  },
 });

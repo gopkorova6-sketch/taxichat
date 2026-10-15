@@ -554,23 +554,24 @@ exports.createOffer = [
 
     const profile = await DriverProfile.findOne({ userId: req.user._id });
 
+    // The passenger gets the offer on any page: in his personal room, and in
+    // the order room for an open order chat
+    const offerPayload = {
+      orderId: order._id,
+      offerId: offer._id,
+      driverId: req.user._id,
+      driverName: profile?.displayName,
+      priceText: offer.priceText,
+      etaMin: offer.etaMin,
+      carCaption: profile
+        ? [profile.car?.color, profile.car?.plate, profile.car?.brand]
+            .filter(Boolean)
+            .join(" ")
+        : undefined,
+    };
     emitOrderEvents([
-      {
-        room: `order:${order._id}`,
-        event: "order:offer",
-        payload: {
-          orderId: order._id,
-          offerId: offer._id,
-          driverId: req.user._id,
-          priceText: offer.priceText,
-          etaMin: offer.etaMin,
-          carCaption: profile
-            ? [profile.car?.color, profile.car?.plate, profile.car?.brand]
-                .filter(Boolean)
-                .join(" ")
-            : undefined,
-        },
-      },
+      { room: `user:${order.passengerId}`, event: "order:offer", payload: offerPayload },
+      { room: `order:${order._id}`, event: "order:offer", payload: offerPayload },
     ]);
 
     res.status(201).json({ status: "success", data: { offer } });

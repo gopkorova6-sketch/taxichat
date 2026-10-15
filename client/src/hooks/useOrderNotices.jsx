@@ -22,8 +22,8 @@ const useOrderNotices = ({ role, userId }) => {
     const onNew = () => {
       if (["driver", "dispatcher", "region_admin"].includes(roleRef.current)) show(newOrderNotice());
     };
-    const onOffer = () => {
-      if (roleRef.current === "passenger") show(newOfferNotice());
+    const onOffer = (payload) => {
+      if (roleRef.current === "passenger") show(newOfferNotice(payload));
     };
     const onStatus = (payload) => {
       const me = String(userRef.current ?? "");
