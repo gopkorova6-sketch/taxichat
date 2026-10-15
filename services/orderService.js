@@ -289,17 +289,17 @@ const transition = async (order, event, actor, { reason } = {}) => {
   // Penalty points for late cancels (concept 1.9)
   await applyPenalty(order, event, actor, previousStatus);
 
+  const statusPayload = {
+    orderId: order._id,
+    status: order.status,
+    previousStatus,
+    by: actor.userId,
+  };
+  // Participants in the order room and the city feed (drivers, dispatchers)
+  // both learn about the change live
   const events = [
-    {
-      room: `order:${order._id}`,
-      event: "order:status",
-      payload: {
-        orderId: order._id,
-        status: order.status,
-        previousStatus,
-        by: actor.userId,
-      },
-    },
+    { room: `order:${order._id}`, event: "order:status", payload: statusPayload },
+    { room: `city:${order.cityId}`, event: "order:status", payload: statusPayload },
   ];
 
   return { order, events, previousStatus };
@@ -331,17 +331,15 @@ const assignAtomically = async (orderId, driverId, actor, { priceAgreed } = {}) 
 
   await setDriverShift(driverId, "busy");
 
+  const assignedPayload = {
+    orderId: order._id,
+    status: "ASSIGNED",
+    previousStatus: "PUBLISHED",
+    by: actor.userId,
+  };
   const events = [
-    {
-      room: `order:${order._id}`,
-      event: "order:status",
-      payload: {
-        orderId: order._id,
-        status: "ASSIGNED",
-        previousStatus: "PUBLISHED",
-        by: actor.userId,
-      },
-    },
+    { room: `order:${order._id}`, event: "order:status", payload: assignedPayload },
+    { room: `city:${order.cityId}`, event: "order:status", payload: assignedPayload },
   ];
 
   return { order, events };
