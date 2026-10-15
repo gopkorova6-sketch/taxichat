@@ -13,7 +13,7 @@ import { statusBadge, formatWhen, defaultScheduledAt } from "./statusLabels";
 // screen like a messenger input; recent orders fill the scrollable area above.
 const ACTIVE_STATUSES = ["DRAFT", "PUBLISHED", "ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE", "DISPUTE"];
 
-const PassengerPanel = ({ me, cityId, cityName, refreshMe, startCall }) => {
+const PassengerPanel = ({ me, cityId, cityName, cityNames, refreshMe, startCall }) => {
   const dispatch = useDispatch();
   const { socketListen, socket } = useSocket();
   const [view, setView] = useState(null); // { type: "order" | "direct", id }
@@ -350,6 +350,7 @@ const PassengerPanel = ({ me, cityId, cityName, refreshMe, startCall }) => {
             onEnter={submit}
             placeholder="Куда едем? Например: от ЖД до Центра"
             cityName={cityName}
+            cities={cityNames}
             listId="route-suggestions"
           />
 

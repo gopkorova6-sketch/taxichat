@@ -178,6 +178,7 @@ const TaxiApp = () => {
               me={me}
               cityId={cityId}
               cityName={(cities.find((c) => String(c._id) === String(cityId)) ?? {}).name}
+              cityNames={cities.map((c) => c.name)}
               refreshMe={refreshMe}
               startCall={startCall}
             />
