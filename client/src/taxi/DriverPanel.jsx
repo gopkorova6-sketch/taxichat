@@ -26,9 +26,24 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
     }
   };
 
+  // Live link indicator: shows whether this device currently receives events
+  const [linked, setLinked] = useState(socket.connected);
+  const [lastEvent, setLastEvent] = useState("—");
+  useEffect(() => {
+    const up = () => setLinked(true);
+    const down = () => setLinked(false);
+    socket.on("connect", up);
+    socket.on("disconnect", down);
+    return () => {
+      socket.off("connect", up);
+      socket.off("disconnect", down);
+    };
+  }, []);
+
   useEffect(() => {
     load();
     const onNew = () => {
+      setLastEvent(`order:new ${new Date().toLocaleTimeString("ru-RU")}`);
       dispatch(
         notificationActions.addNotification({
           message: "Новый заказ в ленте",
@@ -207,6 +222,10 @@ const DriverPanel = ({ me, cityId, driverProfile, refreshMe, startCall }) => {
           😴 Выйдите на линию, чтобы получать заказы
         </div>
       )}
+
+      <div className="text-center text-[1.4rem] text-secondary-text">
+        {linked ? "🟢 Связь с сервером" : "🔴 Нет связи — переподключение…"} · последнее событие: {lastEvent}
+      </div>
 
       <div>
         <h3 className="font-display font-bold mb-2 text-center tracking-wide">📢 Лента заказов</h3>
