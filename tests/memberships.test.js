@@ -11,7 +11,7 @@ const AuditLog = require("../models/AuditLog");
 const { connectTestDb, disconnectTestDb, clearTestDb } = require("./db");
 const { registerUser } = require("./helpers");
 
-let kazan, samara, kazanZones, samaraZones;
+let kazan, samara, kazanZones, samaraZones, dormant;
 
 beforeAll(async () => {
   await connectTestDb();
@@ -25,10 +25,20 @@ afterAll(async () => {
 const setupWorld = async () => {
   await clearTestDb();
   await importGeoData(geoSeed);
-  kazan = await City.findOne({ name: "Казань" });
-  samara = await City.findOne({ name: "Самара" });
+  kazan = await City.findOne({ name: "Слюдянка" });
+  samara = await City.findOne({ name: "Култук" });
   kazanZones = await Zone.find({ cityId: kazan._id }).sort({ name: 1 });
   samaraZones = await Zone.find({ cityId: samara._id }).sort({ name: 1 });
+  // Отдельный "спящий" город для проверок порогов: все города сида
+  // всегда активны, поэтому статус DORMANT/PILOT проверяем на этом городе
+  dormant = await City.create({
+    name: "Тест-Дормант",
+    oktmo: "99999001",
+    regionId: kazan.regionId,
+    tz: "Asia/Irkutsk",
+    status: "DORMANT",
+    zones: undefined,
+  });
 
   const superadmin = await registerUser(app, { username: "root" });
   await User.findByIdAndUpdate(superadmin.user._id, { isSuperadmin: true });
@@ -75,13 +85,13 @@ describe("Memberships and RBAC", () => {
 
   it("passenger gets WAITLIST in a dormant city and the city moves to WAITLIST", async () => {
     const user = await registerUser(app);
-    const res = await passengerJoin(user.cookie, kazan._id);
+    const res = await passengerJoin(user.cookie, dormant._id);
 
     expect(res.status).toBe(201);
     expect(res.body.data.membership.status).toBe("WAITLIST");
     expect(res.body.message).toContain("ещё не запущен");
 
-    const city = await City.findById(kazan._id);
+    const city = await City.findById(dormant._id);
     expect(city.status).toBe("WAITLIST");
   });
 
@@ -122,13 +132,13 @@ describe("Memberships and RBAC", () => {
 
   it("dispatcher approves drivers; the city becomes PILOT at 3 drivers", async () => {
     const dispatcherUser = await registerUser(app);
-    await becomeDispatcher(superadmin.cookie, dispatcherUser.user._id, kazan._id);
+    await becomeDispatcher(superadmin.cookie, dispatcherUser.user._id, dormant._id);
 
     for (let i = 0; i < 3; i += 1) {
       const driver = await registerUser(app);
       const applied = await applyAsDriver(driver.cookie, {
-        cityId: kazan._id,
-        zones: [kazanZones[i]._id],
+        cityId: dormant._id,
+        zones: [],
         plate: `${100 + i}`,
         phone: `+7900000000${i}`,
       });
@@ -141,7 +151,7 @@ describe("Memberships and RBAC", () => {
       expect(approved.body.data.membership.status).toBe("ACTIVE");
     }
 
-    const city = await City.findById(kazan._id);
+    const city = await City.findById(dormant._id);
     expect(city.status).toBe("PILOT");
   });
 
@@ -289,16 +299,16 @@ describe("Memberships and RBAC", () => {
   it("waitlist passengers activate automatically when the city reaches PILOT", async () => {
     // Passenger joins while the city is DORMANT -> WAITLIST
     const earlyPassenger = await registerUser(app);
-    const joined = await passengerJoin(earlyPassenger.cookie, kazan._id);
+    const joined = await passengerJoin(earlyPassenger.cookie, dormant._id);
     expect(joined.body.data.membership.status).toBe("WAITLIST");
 
     const dispatcherUser = await registerUser(app);
-    await becomeDispatcher(superadmin.cookie, dispatcherUser.user._id, kazan._id);
+    await becomeDispatcher(superadmin.cookie, dispatcherUser.user._id, dormant._id);
     for (let i = 0; i < 3; i += 1) {
       const driver = await registerUser(app);
       const applied = await applyAsDriver(driver.cookie, {
-        cityId: kazan._id,
-        zones: [kazanZones[i]._id],
+        cityId: dormant._id,
+        zones: [],
         plate: `${300 + i}`,
         phone: `+7900000040${i}`,
       });
@@ -326,7 +336,7 @@ describe("Memberships and RBAC", () => {
     expect(res.status).toBe(200);
     expect(res.body.data.memberships).toHaveLength(1);
     expect(res.body.data.memberships[0].role).toBe("passenger");
-    expect(res.body.data.memberships[0].cityId.name).toBe("Казань");
+    expect(res.body.data.memberships[0].cityId.name).toBe("Слюдянка");
   });
 });
 

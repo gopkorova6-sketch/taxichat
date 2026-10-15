@@ -4,13 +4,19 @@ import useSocket, { reconnectSocket } from "../hooks/useSocket";
 
 const LAST_CITY_KEY = "bombila.lastCityId";
 
+// Main city of the project: used as the default before the first manual pick
+const DEFAULT_CITY_NAME = "Слюдянка";
+
 // Initial city: the home city chosen at registration (user.homeCityId),
-// then the last city picked manually, and only then the first city of the list.
+// then the last city picked manually, then the main city (Слюдянка), and only
+// then the first city of the list.
 const pickInitialCity = (cities, homeCityId) => {
   const has = (id) => id && cities.some((c) => String(c._id) === String(id));
   if (has(homeCityId)) return String(homeCityId);
   const last = localStorage.getItem(LAST_CITY_KEY);
   if (has(last)) return String(last);
+  const main = cities.find((c) => c.name === DEFAULT_CITY_NAME);
+  if (main) return String(main._id);
   return cities[0]?._id ? String(cities[0]._id) : null;
 };
 

@@ -41,41 +41,44 @@ const seedDemoData = async () => {
   });
   const regionadmin = await upsertUser({
     username: "regionadmin",
-    name: "Админ Самарской области",
+    name: "Админ Иркутской области",
   });
   const dispatcher = await upsertUser({
     username: "dispatcher",
-    name: "Диспетчер Казани",
+    name: "Диспетчер Слюдянки",
   });
   const dispatcher2 = await upsertUser({
     username: "dispatcher2",
-    name: "Диспетчер Самары",
+    name: "Диспетчер Култука",
   });
   const driver1 = await upsertUser({ username: "driver1", name: "Иван Водитель" });
   const driver2 = await upsertUser({ username: "driver2", name: "Пётр Шофёр" });
   const driver3 = await upsertUser({ username: "driver3", name: "Олег Таксист" });
   const passenger = await upsertUser({ username: "passenger", name: "Пассажир Анна" });
 
-  const kazan = await City.findOne({ name: "Казань" });
-  const samara = await City.findOne({ name: "Самара" });
-  const kazanZones = await Zone.find({ cityId: kazan._id }).sort({ name: 1 });
-  const samaraZones = await Zone.find({ cityId: samara._id }).sort({ name: 1 });
+  // Слюдянка — основной город: все демо-роли живут здесь, и при входе
+  // открывается Слюдянка, а не первый город по алфавиту
+  const sludyanka = await City.findOne({ name: "Слюдянка" });
+  const kulutk = await City.findOne({ name: "Култук" });
+  const sludyankaZones = await Zone.find({ cityId: sludyanka._id }).sort({ name: 1 });
+  const kulutkZones = await Zone.find({ cityId: kulutk._id }).sort({ name: 1 });
+  await User.updateMany({}, { homeCityId: sludyanka._id });
 
   await upsertMembership({
     userId: regionadmin._id,
-    cityId: samara._id,
+    cityId: sludyanka._id,
     role: "region_admin",
     status: "ACTIVE",
   });
   await upsertMembership({
     userId: dispatcher._id,
-    cityId: kazan._id,
+    cityId: sludyanka._id,
     role: "dispatcher",
     status: "ACTIVE",
   });
   await upsertMembership({
     userId: dispatcher2._id,
-    cityId: samara._id,
+    cityId: kulutk._id,
     role: "dispatcher",
     status: "ACTIVE",
   });
@@ -83,7 +86,7 @@ const seedDemoData = async () => {
   const driverSpecs = [
     {
       user: driver1,
-      membership: { cityId: kazan._id, zones: kazanZones.slice(0, 2).map((zone) => zone._id) },
+      membership: { cityId: sludyanka._id, zones: sludyankaZones.slice(0, 2).map((zone) => zone._id) },
       profile: {
         displayName: "Иван",
         phone: "+79001234567",
@@ -92,7 +95,7 @@ const seedDemoData = async () => {
     },
     {
       user: driver2,
-      membership: { cityId: kazan._id, zones: [kazanZones[0]._id] },
+      membership: { cityId: sludyanka._id, zones: [sludyankaZones[0]._id] },
       profile: {
         displayName: "Пётр",
         phone: "+79001234568",
@@ -101,7 +104,7 @@ const seedDemoData = async () => {
     },
     {
       user: driver3,
-      membership: { cityId: kazan._id, zones: kazanZones.slice(2, 4).map((zone) => zone._id) },
+      membership: { cityId: sludyanka._id, zones: sludyankaZones.slice(1, 3).map((zone) => zone._id) },
       profile: {
         displayName: "Олег",
         phone: "+79001234569",
@@ -123,12 +126,12 @@ const seedDemoData = async () => {
 
   await upsertMembership({
     userId: passenger._id,
-    cityId: kazan._id,
+    cityId: sludyanka._id,
     role: "passenger",
     status: "ACTIVE",
   });
 
-  for (const city of [kazan, samara]) {
+  for (const city of [sludyanka, kulutk]) {
     const change = await recalcCityStatus(city._id);
     console.log(`  ${city.name}: ${change.from} -> ${change.to}`);
   }

@@ -3,7 +3,7 @@ const { registerUser } = require("./helpers");
 
 // Builds a PILOT city with an approved dispatcher, approved drivers and an
 // ACTIVE passenger; everything goes through the real API
-const setupPilotCity = async (app, { cityName = "Казань", driversCount = 3 } = {}) => {
+const setupPilotCity = async (app, { cityName = "Слюдянка", driversCount = 3 } = {}) => {
   const { importGeoData } = require("../scripts/geoImport");
   const geoSeed = require("../data/geoSeed");
   const { clearTestDb } = require("./db");

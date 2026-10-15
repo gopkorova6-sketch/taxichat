@@ -358,7 +358,7 @@ describe("Orders and the state machine", () => {
     const outsiderDriver = await registerUser(app);
     const Zone = require("../models/Zone");
     const City = require("../models/City");
-    const samara = await City.findOne({ name: "Самара" });
+    const samara = await City.findOne({ name: "Култук" });
     const samaraZones = await Zone.find({ cityId: samara._id }).sort({ name: 1 });
     await request(app)
       .post("/api/memberships")

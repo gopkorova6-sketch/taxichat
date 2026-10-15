@@ -28,18 +28,18 @@ describe("Geo import", () => {
 
     const cities = await City.countDocuments();
     const zones = await Zone.countDocuments();
-    expect(cities).toBe(12);
-    expect(zones).toBe(21);
+    expect(cities).toBe(16);
+    expect(zones).toBe(6);
   });
 
   it("links zone neighbors within the same city", async () => {
-    const kazan = await City.findOne({ name: "Казань" });
-    const center = await Zone.findOne({ cityId: kazan._id, name: "Центр" }).populate(
+    const sludyanka = await City.findOne({ name: "Слюдянка" });
+    const center = await Zone.findOne({ cityId: sludyanka._id, name: "Центр" }).populate(
       "neighbors",
       "name"
     );
     const neighborNames = center.neighbors.map((zone) => zone.name).sort();
-    expect(neighborNames).toEqual(["Вахитовский", "Ново-Савиновский"]);
+    expect(neighborNames).toEqual(["Вокзал", "Слюдянка-2"]);
   });
 });
 
@@ -54,8 +54,8 @@ describe("Geo API", () => {
     const cities = await request(app).get("/api/geo/cities");
     expect(cities.status).toBe(200);
 
-    const kazan = await City.findOne({ name: "Казань" });
-    const zones = await request(app).get(`/api/geo/cities/${kazan._id}/zones`);
+    const sludyanka = await City.findOne({ name: "Слюдянка" });
+    const zones = await request(app).get(`/api/geo/cities/${sludyanka._id}/zones`);
     expect(zones.status).toBe(401);
   });
 
@@ -65,35 +65,33 @@ describe("Geo API", () => {
       .set("Cookie", authCookie);
     expect(res.status).toBe(200);
     const names = res.body.data.regions.map((region) => region.name);
-    expect(names).toContain("Республика Татарстан");
-    expect(names).toContain("Самарская область");
+    expect(names).toContain("Иркутская область");
   });
 
   it("searches cities by name and shows the region for disambiguation", async () => {
     const res = await request(app)
-      .get("/api/geo/cities?query=каз")
+      .get("/api/geo/cities?query=Слюд")
       .set("Cookie", authCookie);
     expect(res.status).toBe(200);
-    const kazan = res.body.data.cities.find((city) => city.name === "Казань");
-    expect(kazan).toBeDefined();
-    expect(kazan.region.name).toBe("Республика Татарстан");
-    expect(kazan.status).toBe("DORMANT");
-    expect(kazan.tz).toBe("Europe/Moscow");
+    const sludyanka = res.body.data.cities.find((city) => city.name === "Слюдянка");
+    expect(sludyanka).toBeDefined();
+    expect(sludyanka.region.name).toBe("Иркутская область");
+    expect(sludyanka.status).toBe("ACTIVE");
   });
 
   it("lists zones of a city", async () => {
-    const kazan = await City.findOne({ name: "Казань" });
+    const sludyanka = await City.findOne({ name: "Слюдянка" });
     const res = await request(app)
-      .get(`/api/geo/cities/${kazan._id}/zones`)
+      .get(`/api/geo/cities/${sludyanka._id}/zones`)
       .set("Cookie", authCookie);
     expect(res.status).toBe(200);
-    expect(res.body.data.zones).toHaveLength(4);
+    expect(res.body.data.zones).toHaveLength(3);
   });
 
   it("finds landmarks by alias text search", async () => {
-    const kazan = await City.findOne({ name: "Казань" });
+    const sludyanka = await City.findOne({ name: "Слюдянка" });
     const res = await request(app)
-      .get(`/api/geo/cities/${kazan._id}/landmarks?query=ЖД`)
+      .get(`/api/geo/cities/${sludyanka._id}/landmarks?query=ЖД`)
       .set("Cookie", authCookie);
     expect(res.status).toBe(200);
     const names = res.body.data.landmarks.map((landmark) => landmark.name);
