@@ -7,6 +7,7 @@ import OrderChat from "./OrderChat";
 import DirectChat from "./DirectChat";
 import ChatList from "./ChatList";
 import AddressInput from "./AddressInput";
+import TimePicker from "./TimePicker";
 import { statusBadge, formatWhen, defaultScheduledAt } from "./statusLabels";
 
 // Passenger panel, mobile-first: the order composer sits at the BOTTOM of the
@@ -30,6 +31,7 @@ const PassengerPanel = ({ me, cityId, cityName, cityNames, refreshMe, startCall 
   const [notes, setNotes] = useState("");
   const [whenType, setWhenType] = useState("now");
   const [whenAt, setWhenAt] = useState(defaultScheduledAt());
+  const [timeOpen, setTimeOpen] = useState(false);
   const [sending, setSending] = useState(false);
 
   const load = async () => {
@@ -333,15 +335,21 @@ const PassengerPanel = ({ me, cityId, cityName, cityNames, refreshMe, startCall 
             ))}
           </div>
 
-          {whenType === "scheduled" && (
-            <input
-              className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.4rem] text-primary-text"
-              type="datetime-local"
-              required
-              min={defaultScheduledAt()}
-              value={whenAt}
-              onChange={(event) => setWhenAt(event.target.value)}
-            />
+{whenType === "scheduled" && (
+            <button
+              type="button"
+              className="press w-full text-left glass rounded-2xl p-3 text-[1.4rem] flex items-center justify-between gap-2"
+              onClick={() => setTimeOpen(true)}
+            >
+              <span className="flex items-center gap-2">
+                <span aria-hidden>🕓</span>
+                <span>
+                  {(whenAt.split("T")[1] ?? "")} ·{" "}
+                  {new Date(whenAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}
+                </span>
+              </span>
+              <span className="text-cta-icon font-semibold">Изменить</span>
+            </button>
           )}
 
 <AddressInput
@@ -376,8 +384,16 @@ const PassengerPanel = ({ me, cityId, cityName, cityNames, refreshMe, startCall 
                   ? "Оформить заказ водителю"
                   : "Заказать такси"}
           </button>
-        </form>
+</form>
       )}
+
+      <TimePicker
+        open={timeOpen}
+        value={whenAt}
+        onChange={setWhenAt}
+        onClose={() => setTimeOpen(false)}
+        title="Когда подать машину"
+      />
     </div>
   );
 };
