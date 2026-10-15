@@ -42,6 +42,7 @@ function Login({ setUserWantsToLogin }) {
           {({ errors, values }) => (
             <Form className="flex flex-col gap-[1.4rem]" autoComplete="off">
               <FormField
+                center={true}
                 labelName="Логин"
                 labelClassName={`bg-transparent group-focus-within:hidden ${
                   values.username && "hidden"
@@ -53,6 +54,7 @@ function Login({ setUserWantsToLogin }) {
               />
 
               <FormField
+                center={true}
                 labelName="Пароль"
                 labelClassName={`bg-transparent group-focus-within:hidden ${
                   values.password && "hidden"

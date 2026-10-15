@@ -79,6 +79,7 @@ function Register({ setUserWantsToLogin }) {
         {({ errors, values, setFieldValue }) => (
           <Form className="flex flex-col gap-[1.5rem]" autoComplete="off">
             <FormField
+                center={true}
               labelName="Имя"
               labelClassName={`bg-transparent group-focus-within:hidden ${
                 values.name && "hidden"
@@ -90,6 +91,7 @@ function Register({ setUserWantsToLogin }) {
             />
 
             <FormField
+                center={true}
               labelName="Логин"
               labelClassName={`bg-transparent group-focus-within:hidden ${
                 values.username && "hidden"
@@ -101,6 +103,7 @@ function Register({ setUserWantsToLogin }) {
             />
 
             <FormField
+                center={true}
               labelName="Пароль"
               labelClassName={`bg-transparent group-focus-within:hidden ${
                 values.password && "hidden"
@@ -113,6 +116,7 @@ function Register({ setUserWantsToLogin }) {
             />
 
             <FormField
+                center={true}
               labelName="Повторите пароль"
               labelClassName={`bg-transparent group-focus-within:hidden ${
                 values.confirmPassword && "hidden"
@@ -161,6 +165,7 @@ function Register({ setUserWantsToLogin }) {
               </select>
             ) : (
               <FormField
+                center={true}
                 labelName="Ваш город"
                 labelClassName={`bg-transparent group-focus-within:hidden ${
                   values.newCityName && "hidden"
