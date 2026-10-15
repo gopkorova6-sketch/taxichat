@@ -49,9 +49,9 @@ function NotificationItem({ item, onDismiss }) {
     };
     return (
       <motion.div
-        initial={{ translateX: "100%", opacity: 0 }}
-        animate={{ translateX: 0, opacity: 1 }}
-        exit={{ translateX: "100%", opacity: 0 }}
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
         className="glass-strong w-full min-w-0 rounded-2xl p-3 space-y-2 border-l-[3px] border-l-cta-icon text-[1.4rem]"
       >
         <div className="font-display font-bold text-[1.5rem]">🚕 Отклик водителя</div>
@@ -76,9 +76,9 @@ function NotificationItem({ item, onDismiss }) {
 
   return (
     <motion.div
-      initial={{ translateX: "100%", opacity: 0 }}
-      animate={{ translateX: 0, opacity: 1 }}
-      exit={{ translateX: "100%", opacity: 0 }}
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
       className={`glass-strong w-full min-w-0 flex items-center gap-2 rounded-2xl px-3 py-2 text-[1.4rem] border-l-[3px] ${
         item.type === "error" ? "border-l-danger" : "border-l-cta-icon"
       }`}
