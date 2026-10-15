@@ -14,6 +14,13 @@ socket.on("connect", () => {
   socket.io.engine.on("upgrade", (t) => {
     window.__bombilaSocket = { ...(window.__bombilaSocket || {}), transport: t.name };
   });
+  // Ask the server which rooms this socket is in (diagnostic)
+  setTimeout(() => {
+    socket.emit("debug:rooms", (res) => {
+      const cityRoom = (res?.rooms || []).find((r) => r.startsWith("city:")) ?? "NONE";
+      window.__bombilaSocket = { ...(window.__bombilaSocket || {}), cityRoom, rooms: (res?.rooms || []).length };
+    });
+  }, 1500);
 });
 
 // Debug trace of every order event received by this device
