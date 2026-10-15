@@ -6,13 +6,14 @@ import useSocket from "../hooks/useSocket";
 import OrderChat from "./OrderChat";
 import DirectChat from "./DirectChat";
 import ChatList from "./ChatList";
+import AddressInput from "./AddressInput";
 import { statusBadge, formatWhen, defaultScheduledAt } from "./statusLabels";
 
 // Passenger panel, mobile-first: the order composer sits at the BOTTOM of the
 // screen like a messenger input; recent orders fill the scrollable area above.
 const ACTIVE_STATUSES = ["DRAFT", "PUBLISHED", "ASSIGNED", "ARRIVING", "WAITING", "IN_RIDE", "DISPUTE"];
 
-const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
+const PassengerPanel = ({ me, cityId, cityName, refreshMe, startCall }) => {
   const dispatch = useDispatch();
   const { socketListen, socket } = useSocket();
   const [view, setView] = useState(null); // { type: "order" | "direct", id }
@@ -343,15 +344,13 @@ const PassengerPanel = ({ me, cityId, refreshMe, startCall }) => {
             />
           )}
 
-          <input
-            className="w-full bg-[#0d0d0d] text-white placeholder:text-secondary-text border border-secondary-text/30 rounded-2xl p-3 focus:border-accent focus:outline-none transition-colors text-[1.4rem] text-primary-text"
-            required
-            placeholder="Куда едем? Например: от ЖД до Центра"
+<AddressInput
             value={route}
-            onChange={(event) => setRoute(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") submit(event);
-            }}
+            onChange={setRoute}
+            onEnter={submit}
+            placeholder="Куда едем? Например: от ЖД до Центра"
+            cityName={cityName}
+            listId="route-suggestions"
           />
 
           <input

@@ -177,6 +177,7 @@ const TaxiApp = () => {
             <PassengerPanel
               me={me}
               cityId={cityId}
+              cityName={(cities.find((c) => String(c._id) === String(cityId)) ?? {}).name}
               refreshMe={refreshMe}
               startCall={startCall}
             />
