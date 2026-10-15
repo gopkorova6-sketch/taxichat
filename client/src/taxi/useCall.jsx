@@ -120,7 +120,7 @@ const setSpeakerOutput = async (on) => {
         kind,
         peerId: from,
         peerName: fromName,
-        peerRoleLabel: fromRole === "driver" ? "водитель" : fromRole === "passenger" ? "пассажир" : "участник заказа",
+        peerRoleLabel: fromRole === "driver" ? "водитель" : "пассажир",
         peerEmoji: fromRole === "driver" ? "🧑‍✈️" : "🧍",
         whoLabel: fromRole === "driver" ? "driver" : "passenger",
         signalData,

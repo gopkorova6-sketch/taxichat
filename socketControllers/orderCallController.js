@@ -1,6 +1,7 @@
 const callService = require("../services/callService");
 const directCallService = require("../services/directCallService");
 const User = require("../models/User");
+const Order = require("../models/Order");
 const ApiError = require("../utilities/errors");
 
 // Signaling for voice calls (concept 1.6 / 1.7.1):
@@ -47,7 +48,7 @@ exports.registerOrderCallHandlers = (io, socket) => {
           kind: "direct",
           from: socket.userId,
           fromName: caller.name,
-          fromRole: payload?.fromRole,
+          fromRole: "passenger",
           signalData,
         });
 
@@ -65,6 +66,12 @@ exports.registerOrderCallHandlers = (io, socket) => {
 
       const calleeName = (await User.findById(target).select("name"))?.name;
 
+      // Caller role comes from the order, so the callee always hears the
+      // correct "водитель" or "пассажир"
+      const order = await Order.findById(orderId).select("passengerId driverId");
+      const fromRole =
+        order && String(order.driverId) === String(socket.userId) ? "driver" : "passenger";
+
       callService.trackCall(io, {
         callId,
         callerId: socket.userId,
@@ -79,6 +86,7 @@ exports.registerOrderCallHandlers = (io, socket) => {
         from: socket.userId,
         fromName: caller.name,
         toName: calleeName,
+        fromRole,
         signalData,
       });
 
