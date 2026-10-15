@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-// Простой выбор времени «на время»: без сеток цифр. День — «Сегодня/Завтра»,
-// время — крупное табло с шаговыми кнопками «−/+» для часа и минуты.
+// Выбор времени «на время»: слайдеры часов (0–23) и минут (0–59) и полоса дат
+// на две недели вперёд. Крупное табло, всё в стиле проекта.
 // Значение отдаётся в формате datetime-local (YYYY-MM-DDTHH:mm).
 const pad = (v) => String(v).padStart(2, "0");
 
@@ -27,6 +27,12 @@ const relativeLabel = (date) => {
 const isSameDay = (a, b) =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
+const dayLabel = (date, index) => {
+  if (index === 0) return "Сегодня";
+  if (index === 1) return "Завтра";
+  return date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+};
+
 const TimePicker = ({ value, onChange, open, onClose, title }) => {
   const [cursor, setCursor] = useState(() => parseValue(value));
 
@@ -36,17 +42,28 @@ const TimePicker = ({ value, onChange, open, onClose, title }) => {
 
   if (!open) return null;
 
-  const step = (part, delta) => {
+  const days = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+
+  const setDay = (day) => {
     const next = new Date(cursor);
-    if (part === "hour") next.setHours(next.getHours() + delta);
-    else next.setMinutes(next.getMinutes() + delta * 5);
+    next.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
     setCursor(next);
   };
 
-  const setDay = (offset) => {
+  const setHour = (hour) => {
     const next = new Date(cursor);
-    const today = new Date();
-    next.setFullYear(today.getFullYear(), today.getMonth(), today.getDate() + offset);
+    next.setHours(hour);
+    setCursor(next);
+  };
+
+  const setMinute = (minute) => {
+    const next = new Date(cursor);
+    next.setMinutes(minute);
     setCursor(next);
   };
 
@@ -55,16 +72,13 @@ const TimePicker = ({ value, onChange, open, onClose, title }) => {
     onClose();
   };
 
-  const today = new Date();
-  const tomorrow = new Date(Date.now() + 86400000);
-
   return (
     <div
       className="fixed inset-0 z-[12000] flex items-center justify-center bg-black/70 px-3 py-4 anim-fade"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[32rem] glass-strong rounded-3xl p-4 space-y-4 anim-sheet"
+        className="w-full max-w-[34rem] glass-strong rounded-3xl p-4 space-y-4 anim-sheet"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-2">
@@ -72,68 +86,65 @@ const TimePicker = ({ value, onChange, open, onClose, title }) => {
           <button className="btn-back" onClick={onClose} aria-label="Закрыть">✖️</button>
         </div>
 
-        <div className="flex rounded-2xl overflow-hidden">
-          {[
-            ["Сегодня", today],
-            ["Завтра", tomorrow],
-          ].map(([label, day]) => {
+        <div className="rounded-2xl bg-[#0d0d0d] border border-secondary-text/25 py-3 text-center">
+          <div className="font-display font-extrabold text-[4rem] leading-none tracking-wide">
+            {pad(cursor.getHours())}
+            <span className="text-secondary-text">:</span>
+            {pad(cursor.getMinutes())}
+          </div>
+          <div className="mt-1 text-[1.3rem] text-cta-icon font-semibold">
+            {cursor.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · {relativeLabel(cursor)}
+          </div>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+          {days.map((day, index) => {
             const selected = isSameDay(cursor, day);
             return (
               <button
-                key={label}
-                className={`press flex-1 py-2.5 text-[1.4rem] ${selected ? "btn-accent font-bold" : "glass text-secondary-text"}`}
-                onClick={() => setDay(label === "Завтра" ? 1 : 0)}
+                key={day.toISOString()}
+                className={`press shrink-0 px-3 py-2 rounded-2xl text-[1.3rem] ${
+                  selected ? "btn-accent font-bold" : "glass text-secondary-text"
+                }`}
+                onClick={() => setDay(day)}
               >
-                {label}
+                {dayLabel(day, index)}
               </button>
             );
           })}
         </div>
 
-        <div className="rounded-2xl bg-[#0d0d0d] border border-secondary-text/25 py-4 text-center">
-          <div className="font-display font-extrabold text-[4.5rem] leading-none tracking-wide">
-            {pad(cursor.getHours())}
-            <span className="text-secondary-text">:</span>
-            {pad(cursor.getMinutes())}
-          </div>
-          <div className="mt-2 text-[1.3rem] text-cta-icon font-semibold">{relativeLabel(cursor)}</div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl glass p-2 flex items-center justify-between">
-            <button
-              className="press w-[3.6rem] h-[3.6rem] rounded-full bg-white/10 text-[2rem] font-bold"
-              onClick={() => step("hour", -1)}
-              aria-label="Минус час"
-            >
-              −
-            </button>
-            <span className="text-[1.3rem] text-secondary-text">час</span>
-            <button
-              className="press w-[3.6rem] h-[3.6rem] rounded-full btn-accent text-[2rem] font-bold"
-              onClick={() => step("hour", 1)}
-              aria-label="Плюс час"
-            >
-              +
-            </button>
+        <div className="space-y-3">
+          <div>
+            <div className="flex items-center justify-between text-[1.3rem] text-secondary-text mb-1">
+              <span>🕐 Час</span>
+              <span className="text-cta-icon font-bold text-[1.5rem]">{pad(cursor.getHours())}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="23"
+              step="1"
+              value={cursor.getHours()}
+              onChange={(event) => setHour(Number(event.target.value))}
+              className="time-range w-full"
+            />
           </div>
 
-          <div className="rounded-2xl glass p-2 flex items-center justify-between">
-            <button
-              className="press w-[3.6rem] h-[3.6rem] rounded-full bg-white/10 text-[2rem] font-bold"
-              onClick={() => step("minute", -1)}
-              aria-label="Минус пять минут"
-            >
-              −
-            </button>
-            <span className="text-[1.3rem] text-secondary-text">5 мин</span>
-            <button
-              className="press w-[3.6rem] h-[3.6rem] rounded-full btn-accent text-[2rem] font-bold"
-              onClick={() => step("minute", 1)}
-              aria-label="Плюс пять минут"
-            >
-              +
-            </button>
+          <div>
+            <div className="flex items-center justify-between text-[1.3rem] text-secondary-text mb-1">
+              <span>⏱ Минуты</span>
+              <span className="text-cta-icon font-bold text-[1.5rem]">{pad(cursor.getMinutes())}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="59"
+              step="1"
+              value={cursor.getMinutes()}
+              onChange={(event) => setMinute(Number(event.target.value))}
+              className="time-range w-full"
+            />
           </div>
         </div>
 
