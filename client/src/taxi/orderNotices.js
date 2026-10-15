@@ -37,3 +37,20 @@ export const newOfferNotice = (offer = {}) => ({
     carCaption: offer.carCaption,
   },
 });
+
+// New message in an order the user takes part in. Shows the sender, a short
+// preview of the text, an "open order" button (orderId) and is spoken aloud.
+export const newMessageNotice = (msg = {}) => {
+  const who = msg.senderName ?? "Собеседник";
+  const preview =
+    msg.kind === "photo" ? "📷 фото"
+    : msg.kind === "voice" ? "🎤 голосовое"
+    : (msg.body ?? "").slice(0, 60);
+  return {
+    orderId: msg.orderId,
+    message: `💬 ${who}: ${preview}`,
+    speakText: `Новое сообщение от ${who}. ${msg.kind === "text" || !msg.kind ? msg.body ?? "" : preview}`,
+    type: "info",
+    speak: true,
+  };
+};

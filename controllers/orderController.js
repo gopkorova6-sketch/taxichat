@@ -1026,24 +1026,31 @@ exports.sendOrderMessage = [
             }),
     });
 
+    const messagePayload = {
+      chatId: String(order.chatId),
+      orderId: String(order._id),
+      messageId: message._id,
+      senderId: req.user._id,
+      senderName: req.user.name,
+      kind: message.kind,
+      body: message.body,
+      meta: message.meta,
+      createdAt: message.createdAt,
+    };
+    // Open chat gets it in the order room; each participant except the author
+    // also gets it in his personal room, so a notice appears on any page
+    const recipients = [order.passengerId, order.driverId]
+      .filter(Boolean)
+      .map(String)
+      .filter((id) => id !== String(req.user._id));
     emitOrderEvents([
-      {
-        room: `order:${order._id}`,
-        event: "chat:message",
-        payload: {
-          chatId: String(order.chatId),
-          orderId: String(order._id),
-          messageId: message._id,
-          senderId: req.user._id,
-          senderName: req.user.name,
-          kind: message.kind,
-          body: message.body,
-          meta: message.meta,
-          createdAt: message.createdAt,
-        },
-      },
+      { room: `order:${order._id}`, event: "chat:message", payload: messagePayload },
+      ...recipients.map((id) => ({
+        room: `user:${id}`,
+        event: "order:message",
+        payload: messagePayload,
+      })),
     ]);
-
     res.status(201).json({
       status: "success",
       data: {

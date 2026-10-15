@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { notificationActions } from "../store/notificationSlice";
 import useSocket from "./useSocket";
-import { orderStatusNotice, newOrderNotice, newOfferNotice } from "../taxi/orderNotices";
+import { orderStatusNotice, newOrderNotice, newOfferNotice, newMessageNotice } from "../taxi/orderNotices";
 
 // Live notices for the current role only:
 //  - driver/dispatcher: new orders in the city
@@ -36,11 +36,19 @@ const useOrderNotices = ({ role, userId }) => {
       if (isParticipant) show(orderStatusNotice(payload));
     };
 
+    const onMessage = (payload) => {
+      // Own messages never produce a notice
+      if (String(payload?.senderId) === String(userRef.current ?? "")) return;
+      show(newMessageNotice(payload));
+    };
+
     socketListen("order:new", onNew);
+    socketListen("order:message", onMessage);
     socketListen("order:offer", onOffer);
     socketListen("order:status", onStatus);
     return () => {
       socket.off("order:new", onNew);
+      socket.off("order:message", onMessage);
       socket.off("order:offer", onOffer);
       socket.off("order:status", onStatus);
     };
