@@ -1,11 +1,27 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import STREETS from "./streetsData";
 
 // Поле адреса с текстовыми подсказками: чисто по названию, без координат и
-// геокодинга. Список раскрывается ВВЕРХ и прокручивается, чтобы оставаться
-// видимым над клавиатурой. Кроме улиц подсказываются слова-связки маршрута:
-// от/с в начале, заезд на/с заездом на в середине, до/на в конце и туда-обратно.
-const normalize = (text) => String(text ?? "").toLowerCase().replace(/ё/g, "е").trim();
+// геокодинга. Панель раскрывается ВВЕРХ и прокручивается, поверх всех слоёв.
+// Кроме улиц подсказываются слова-связки маршрута: от/с в начале,
+// до/на для конца и «с заездом на» в любой точке маршрута, плюс туда-обратно.
+const normalize = (text) => String(text ?? "").toLowerCase().replace(/ё/g, "е").replace(/\./g, "").trim();
+
+// Сокращение типов улиц для отображения и вставки
+// \b не работает с кириллицей, поэтому тип слова ловим по границам строки/пробелов
+const SHORT = [
+  [/(^|\s)улица(\s|$)/gi, "$1ул.$2"],
+  [/(^|\s)переулок(\s|$)/gi, "$1пер.$2"],
+  [/(^|\s)проспект(\s|$)/gi, "$1просп.$2"],
+  [/(^|\s)площадь(\s|$)/gi, "$1пл.$2"],
+  [/(^|\s)бульвар(\s|$)/gi, "$1б-р$2"],
+  [/(^|\s)шоссе(\s|$)/gi, "$1ш.$2"],
+  [/(^|\s)тракт(\s|$)/gi, "$1тр.$2"],
+  [/(^|\s)микрорайон(\s|$)/gi, "$1мкр$2"],
+  [/(^|\s)проезд(\s|$)/gi, "$1пр-д$2"],
+];
+const shorten = (name) => SHORT.reduce((acc, [re, to]) => acc.replace(re, to), String(name ?? "")).trim();
 
 const matchStreets = (query, limit = 8) => {
   const q = normalize(query);
@@ -15,37 +31,31 @@ const matchStreets = (query, limit = 8) => {
   const starts = [];
   const contains = [];
   for (const street of STREETS) {
-    const name = normalize(street.n);
-    if (name.startsWith(tail)) starts.push(street);
-    else if (name.includes(tail)) contains.push(street);
+    const short = shorten(street.n);
+    const full = normalize(street.n);
+    const shortN = normalize(short);
+    if (shortN.startsWith(tail) || full.startsWith(tail)) starts.push({ ...street, short });
+    else if (shortN.includes(tail) || full.includes(tail)) contains.push({ ...street, short });
   }
   return [...starts, ...contains].slice(0, limit);
 };
 
-// Слова-связки по положению в строке маршрута
+// Слова-связки: заезд доступен в любой точке маршрута
 const routeChips = (text) => {
   const t = String(text ?? "");
   const hasOrigin = /^\s*(от|с)\s/i.test(t);
-  const hasDestination = /\s(до|на)\s/i.test(t);
   const chips = [];
-  if (!hasOrigin) {
-    // Начало маршрута: от/с
-    chips.push("от", "с");
-  } else if (!hasDestination) {
-    // Есть начало, нужен конец: до/на
-    chips.push("до", "на");
-  } else {
-    // Маршрут задан: можно добавить заезд по пути
-    chips.push("заезд на", "с заездом на");
-  }
+  if (!hasOrigin) chips.push("от", "с");
+  else chips.push("до", "на", "с заездом на");
   chips.push("туда-обратно");
   return chips;
 };
 
 const chipText = (chip) => {
   if (chip === "от" || chip === "с") return `${chip} `;
-  if (chip === "до" || chip === "на") return ` ${chip} `;
-  if (chip === "заезд на" || chip === "с заездом на") return `, ${chip} `;
+  if (chip === "до" || chip === "на") return `, ${chip} `;
+  if (chip === "заезд на") return `, заезд на `;
+  if (chip === "с заездом на") return `, с заездом на `;
   if (chip === "туда-обратно") return ", туда-обратно";
   return `${chip} `;
 };
@@ -55,6 +65,31 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName }) => {
   const [active, setActive] = useState(0);
   const inputRef = useRef(null);
   const wrapRef = useRef(null);
+  const panelRef = useRef(null);
+  const [rect, setRect] = useState(null);
+
+  // Позиция панели считается от поля: панель выносится в портал, поверх
+  // всех слоёв, поэтому не уходит под шапку и не обрезается родителем
+  const measure = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setRect({ left: r.left, width: r.width, bottom: r.bottom });
+  };
+
+  useLayoutEffect(() => {
+    if (!open) return undefined;
+    measure();
+    const onChange = () => measure();
+    window.addEventListener("resize", onChange);
+    window.visualViewport?.addEventListener("resize", onChange);
+    window.visualViewport?.addEventListener("scroll", onChange);
+    return () => {
+      window.removeEventListener("resize", onChange);
+      window.visualViewport?.removeEventListener("resize", onChange);
+      window.visualViewport?.removeEventListener("scroll", onChange);
+    };
+  }, [open]);
 
   const suggestions = useMemo(() => matchStreets(value), [value]);
   const chips = useMemo(() => routeChips(value), [value]);
@@ -67,7 +102,6 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName }) => {
     return () => document.removeEventListener("click", onOutside);
   }, []);
 
-  // Вставка текста в позицию курсора
   const insert = (text) => {
     const el = inputRef.current;
     const start = el?.selectionStart ?? String(value ?? "").length;
@@ -84,14 +118,14 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName }) => {
   };
 
   const applyStreet = (street) => {
-    // Заменяем недописанное последнее слово названием улицы
+    const name = street.short ?? shorten(street.n);
     const current = String(value ?? "");
     const trailing = current.match(/[^\s,]*$/);
     if (trailing && trailing[0]) {
       const head = current.slice(0, current.length - trailing[0].length);
-      onChange(`${head}${street.n}, `);
+      onChange(`${head}${name}, `);
     } else {
-      insert(`${street.n}, `);
+      insert(`${name}, `);
     }
     setOpen(false);
     setActive(0);
@@ -122,8 +156,6 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName }) => {
     if (event.key === "Enter") onEnter?.(event);
   };
 
-  const showPanel = open;
-
   return (
     <div ref={wrapRef} className="relative">
       <input
@@ -142,8 +174,18 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName }) => {
         autoComplete="off"
       />
 
-      {showPanel && (
-        <div className="absolute left-0 right-0 bottom-full mb-1 z-50 glass-strong rounded-2xl overflow-hidden flex flex-col max-h-[46dvh]">
+{open && rect && createPortal(
+        <div
+          ref={panelRef}
+          style={{
+            position: "fixed",
+            left: rect.left,
+            width: rect.width,
+            bottom: Math.max(window.innerHeight - rect.bottom + 4, 4),
+            maxHeight: "46dvh",
+          }}
+          className="z-[100000] glass-strong rounded-2xl overflow-hidden flex flex-col shadow-2xl"
+        >
           <div className="flex flex-wrap gap-1.5 p-2 border-b border-white/10 shrink-0">
             {chips.map((chip) => (
               <button
@@ -178,12 +220,13 @@ const AddressInput = ({ value, onChange, onEnter, placeholder, cityName }) => {
                   index === active ? "bg-white/15" : ""
                 }`}
               >
-                <span className="truncate">{street.n}</span>
+                <span className="truncate">{street.short}</span>
                 <span className="shrink-0 text-[1.1rem] text-secondary-text">{street.l}</span>
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
