@@ -4,14 +4,13 @@ import useSocket from "../hooks/useSocket";
 
 const LAST_CITY_KEY = "bombila.lastCityId";
 
-// Initial city: a city where the user has an active role, then the last
-// city the user picked, and only then the first city of the list.
-const pickInitialCity = (cities, memberships) => {
-  const active = (memberships ?? []).find((m) => m.status === "ACTIVE" && m.cityId?._id);
-  const withRole = active && cities.find((c) => String(c._id) === String(active.cityId._id));
-  if (withRole) return String(withRole._id);
+// Initial city: the home city chosen at registration (user.homeCityId),
+// then the last city picked manually, and only then the first city of the list.
+const pickInitialCity = (cities, homeCityId) => {
+  const has = (id) => id && cities.some((c) => String(c._id) === String(id));
+  if (has(homeCityId)) return String(homeCityId);
   const last = localStorage.getItem(LAST_CITY_KEY);
-  if (last && cities.some((c) => String(c._id) === last)) return last;
+  if (has(last)) return String(last);
   return cities[0]?._id ? String(cities[0]._id) : null;
 };
 
@@ -24,7 +23,6 @@ const useTaxi = () => {
   const [cityId, setCityIdState] = useState(null);
   const [role, setRole] = useState(null);
   const [error, setError] = useState(null);
-  const cachedMemberships = useRef(null);
 
   // Remember the city the user picked manually
   const setCityId = (id) => {
@@ -35,7 +33,6 @@ const useTaxi = () => {
   const refreshMe = async () => {
     const res = await apiGet("/api/user/me");
     setMe(res.data);
-    cachedMemberships.current = res.data.memberships ?? [];
     return res.data;
   };
 
@@ -49,10 +46,7 @@ const useTaxi = () => {
       .catch((err) => setError(err.message));
 
     apiGet("/api/geo/cities")
-      .then((res) => {
-        setCities(res.data.cities);
-        setCityId((prev) => prev ?? pickInitialCity(res.data.cities, cachedMemberships.current));
-      })
+      .then((res) => setCities(res.data.cities))
       .catch((err) => setError(err.message));
 
     // Roles change live: driver application review, waitlist activation
@@ -63,20 +57,14 @@ const useTaxi = () => {
     };
   }, []);
 
-  // Re-pick the initial city once both cities and memberships are known,
-  // unless the user already chose one in this session
+  // Initial city once both the city list and the user are loaded:
+  // home city (chosen at registration) -> last manual pick -> first city
   const memberships = me?.memberships ?? [];
   const autoPicked = useRef(false);
   useEffect(() => {
     if (autoPicked.current || !cities.length || !me) return;
-    const hasManualChoice = !!localStorage.getItem(LAST_CITY_KEY);
-    const withRole = memberships.some((m) => m.status === "ACTIVE" && m.cityId?._id);
-    if (!withRole && hasManualChoice) {
-      autoPicked.current = true;
-      return;
-    }
     autoPicked.current = true;
-    setCityIdState(pickInitialCity(cities, memberships));
+    setCityIdState(pickInitialCity(cities, me.user?.homeCityId));
   }, [cities, me]);
 
   // Auto-select the role for the chosen city
