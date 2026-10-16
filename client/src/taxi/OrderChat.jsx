@@ -304,28 +304,24 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
     <div className="flex flex-col h-full">
       <div className="glass-strong sticky top-0 z-20 p-2 border-b border-secondary-text/20 rounded-b-2xl">
           <div className="flex items-center gap-2 min-w-0">
-            <button
-              className="shrink-0 px-2 py-1 rounded-lg text-[1.2rem] bg-white/10 border border-white/10"
-              onClick={onBack}
-              aria-label="Назад"
-            >
-              ⬅️
-            </button>
+            <button className="btn-back shrink-0" onClick={onBack} aria-label="Назад">⬅️</button>
             <Marquee
               text={order.to?.text ? `${order.from?.text} → ${order.to?.text}` : order.from?.text}
-              className="flex-1 min-w-0 text-[1.3rem] font-semibold"
+              className="flex-1 min-w-0 text-[1.6rem] font-semibold"
             />
           </div>
-          <div className="mt-1 text-[1.2rem] text-secondary-text">
-            <div>{statusBadge(order.status)} · {formatWhen(order.when)}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[1.4rem] text-secondary-text">
+            <span>{statusBadge(order.status)}</span>
+            <span>🕒 {formatWhen(order.when)}</span>
+            {order.priceAgreed ? <span className="text-cta-icon font-semibold">💰 {order.priceAgreed}</span> : null}
             {myRole === "passenger" && order.driver && (
-              <div className="break-words text-primary-text">
+              <span className="break-words text-primary-text">
                 🧑‍✈️ {order.driver.displayName}
                 {order.driver.carCaption ? ` · 🚗 ${order.driver.carCaption}` : ""}
-              </div>
+              </span>
             )}
             {myRole === "driver" && order.passenger?.name && (
-              <div className="break-words text-primary-text">🧍 {order.passenger.name}</div>
+              <span className="break-words text-primary-text">🧍 {order.passenger.name}</span>
             )}
           </div>
         </div>
@@ -406,15 +402,8 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
             );
           }
           if (message.kind === "order_card") {
-            return (
-              <div key={message._id} className="border border-secondary-text/30 rounded-2xl p-3 text-[1.6rem]">
-                <div className="font-semibold text-center">📋 Заказ</div>
-                <div>🚦 Статус: {statusBadge(message.meta?.status)}</div>
-                <div className="break-words">📍 {message.meta?.to ? `${message.meta?.from} → ${message.meta?.to}` : message.meta?.from}</div>
-                <div>🕒 Когда: {formatWhen(message.meta?.when)}</div>
-                {message.meta?.priceAgreed ? <div>💰 Цена: {message.meta.priceAgreed}</div> : null}
-              </div>
-            );
+            // Данные заказа уже показаны в шапке — карточку в ленте не дублируем
+            return null;
           }
           if (message.kind === "action") {
             // Finished orders keep no actions, even if an old button message is left
