@@ -492,7 +492,25 @@ exports.cancelOrder = [
     const order = await Order.findById(req.params.id);
     if (!order) throw new ApiError(404, "Заказ не найден");
 
-    const role = String(order.passengerId) === String(req.user._id) ? "passenger" : "driver";
+    // Роль отменяющего: пассажир/водитель заказа, либо диспетчер города /
+    // админ региона — у них полный доступ к заказам своего города и региона
+    const viewerId = String(req.user._id);
+    const isDispatcher =
+      (req.memberships ?? []).some(
+        (item) =>
+          item.role === "dispatcher" &&
+          item.status === "ACTIVE" &&
+          String(item.cityId?._id ?? item.cityId) === String(order.cityId)
+      );
+    const isRegionAdmin = (await regionAdminCityIds(req))?.includes(String(order.cityId));
+    const role =
+      String(order.passengerId) === viewerId
+        ? "passenger"
+        : String(order.driverId) === viewerId
+          ? "driver"
+          : isDispatcher || isRegionAdmin
+            ? "dispatcher"
+            : "passenger";
     const actor = { userId: req.user._id, role };
     const { events } = await transition(order, "cancel", actor, { reason: req.body.reason });
     emitOrderEvents(events);
