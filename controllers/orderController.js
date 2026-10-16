@@ -439,8 +439,9 @@ exports.getOrder = catchAsyncError(async (req, res) => {
       item.status === "ACTIVE" &&
       String(item.cityId?._id ?? item.cityId) === String(order.cityId)
   );
+  const isRegionAdmin = (await regionAdminCityIds(req))?.includes(String(order.cityId));
 
-  if (!isParticipant && !isDispatcher && !isPotentialDriver)
+  if (!isParticipant && !isDispatcher && !isPotentialDriver && !isRegionAdmin)
     throw new ApiError(403, "Нет доступа к этому заказу");
 
   const orderView = await serializeOrderFor(order, req);
