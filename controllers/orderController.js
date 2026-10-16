@@ -12,6 +12,7 @@ const User = require("../models/User");
 const ApiError = require("../utilities/errors");
 const catchAsyncError = require("../utilities/catchAsyncError");
 const { validateBody } = require("../utilities/catchAsyncError");
+const { regionAdminCityIds } = require("../utilities/rbac");
 const { transition, assignAtomically } = require("../services/orderService");
 const {
   toPassengerView,
@@ -96,13 +97,16 @@ const driverProfileForOrder = async (order) => {
 // driver profiles and passenger users so list endpoints avoid N+1 queries
 const serializeOrderFor = async (order, req, cache = null) => {
   const viewerId = String(req.user._id);
+  // Полный «диспетчерский» вид получают диспетчер города и админ региона
   const isDispatcher =
     (req.memberships ?? []).some(
       (item) =>
         item.role === "dispatcher" &&
         item.status === "ACTIVE" &&
         String(item.cityId?._id ?? item.cityId) === String(order.cityId)
-    ) || req.user.isSuperadmin === true;
+    ) ||
+    req.user.isSuperadmin === true ||
+    (await regionAdminCityIds(req))?.includes(String(order.cityId)) === true;
 
   const driverProfile = cache
     ? (cache.profileByUser.get(String(order.driverId)) ?? null)
@@ -115,7 +119,7 @@ const serializeOrderFor = async (order, req, cache = null) => {
     return toPassengerView(order, { driverProfile });
   }
   if (isDispatcher) {
-    return toDispatcherView(order, { driverProfile });
+    return toDispatcherView(order, { driverProfile, passenger: passengerUser });
   }
   return toDriverView(order, { viewerId, passenger: passengerUser });
 };
@@ -308,6 +312,11 @@ exports.listOrders = catchAsyncError(async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(100);
   } else if (dispatcherMembership || req.user.isSuperadmin) {
+    orders = await Order.find({ cityId, ...statusFilter })
+      .sort({ createdAt: -1 })
+      .limit(200);
+  } else if ((await regionAdminCityIds(req))?.includes(String(cityId))) {
+    // Админ региона видит все заказы своего региона
     orders = await Order.find({ cityId, ...statusFilter })
       .sort({ createdAt: -1 })
       .limit(200);
@@ -921,8 +930,9 @@ exports.listMessages = catchAsyncError(async (req, res) => {
         item.status === "ACTIVE" &&
         String(item.cityId?._id ?? item.cityId) === String(order.cityId)
     ) || req.user.isSuperadmin === true;
+  const isRegionAdmin = (await regionAdminCityIds(req))?.includes(String(order.cityId));
 
-  if (!isParticipant && !isDispatcher)
+  if (!isParticipant && !isDispatcher && !isRegionAdmin)
     throw new ApiError(403, "Нет доступа к чату этого заказа");
 
   const before = req.query.before ? new Date(req.query.before) : null;
@@ -993,8 +1003,9 @@ exports.sendOrderMessage = [
           item.status === "ACTIVE" &&
           String(item.cityId?._id ?? item.cityId) === String(order.cityId)
       ) || req.user.isSuperadmin === true;
+    const isRegionAdmin = (await regionAdminCityIds(req))?.includes(String(order.cityId));
 
-    if (!isPassenger && !isAssignedDriver && !isDispatcher)
+    if (!isPassenger && !isAssignedDriver && !isDispatcher && !isRegionAdmin)
       throw new ApiError(403, "Нет доступа к чату этого заказа");
 
     // Optional city-level filter for phone numbers and links (concept 1.7)

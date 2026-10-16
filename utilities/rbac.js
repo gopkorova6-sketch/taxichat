@@ -85,6 +85,22 @@ const canReviewInCity = async (req, cityId) => {
   return false;
 };
 
+// Города региона, где пользователь — активный админ региона.
+// Возвращает массив id городов; суперадмин получает null (значит «все»).
+const regionAdminCityIds = async (req) => {
+  if (isSuperadmin(req)) return null;
+  const City = require("../models/City");
+  const adminCityIds = (req.memberships ?? [])
+    .filter((item) => item.role === "region_admin" && item.status === "ACTIVE")
+    .map((item) => membershipCityId(item));
+  if (adminCityIds.length === 0) return [];
+  const adminCities = await City.find({ _id: { $in: adminCityIds } }).select("regionId");
+  const regionIds = [...new Set(adminCities.map((c) => String(c.regionId)).filter(Boolean))];
+  if (regionIds.length === 0) return [];
+  const regionCities = await City.find({ regionId: { $in: regionIds } }).select("_id");
+  return regionCities.map((c) => String(c._id));
+};
+
 module.exports = {
   loadMemberships,
   requireMembership,
@@ -92,4 +108,5 @@ module.exports = {
   canReviewInCity,
   isSuperadmin,
   membershipCityId,
+  regionAdminCityIds,
 };

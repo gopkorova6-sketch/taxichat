@@ -91,9 +91,10 @@ const toDriverView = (order, { viewerId, passenger } = {}) => {
 };
 
 // Dispatcher sees everything within his city, including exact addresses
-const toDispatcherView = (order, { driverProfile } = {}) => ({
+const toDispatcherView = (order, { driverProfile, passenger } = {}) => ({
   ...baseView(order),
   passengerId: order.passengerId,
+  ...(passenger?.name && { passenger: { name: passenger.name } }),
   exactFrom: order.exactFrom,
   exactTo: order.exactTo,
   priceAgreed: order.priceAgreed,
