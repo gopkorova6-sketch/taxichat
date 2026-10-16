@@ -1,10 +1,12 @@
 const express = require("express");
 const adminController = require("../controllers/adminController");
 const { protect } = require("../utilities/auth");
+const { loadMemberships, requireRegionAdmin } = require("../utilities/rbac");
 
 const router = express.Router();
 
-router.use(protect);
+// loadMemberships обязателен: requireRegionAdmin читает req.memberships
+router.use(protect, loadMemberships);
 
 router.route("/applications").get(adminController.listApplications);
 router.route("/applications/:id").patch(adminController.reviewApplication);

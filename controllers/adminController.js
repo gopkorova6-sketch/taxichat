@@ -31,6 +31,16 @@ exports.reviewApplicationSchema = reviewApplicationSchema;
 exports.assignRoleSchema = assignRoleSchema;
 
 // City ids of the regions where the requester is an ACTIVE region admin
+// Проверка прав администратора региона: сам админ региона или суперадмин.
+// memberships уже загружены мидлваром loadMemberships.
+const requireRegionAdminOrThrow = (req) => {
+  if (isSuperadmin(req)) return;
+  const ok = (req.memberships ?? []).some(
+    (item) => item.role === "region_admin" && item.status === "ACTIVE"
+  );
+  if (!ok) throw new ApiError(403, "Требуются права администратора региона");
+};
+
 const getRegionAdminCityScope = async (req) => {
   const adminCities = (req.memberships ?? []).filter(
     (item) => item.role === "region_admin" && item.status === "ACTIVE"
@@ -173,6 +183,7 @@ exports.assignRole = [
   loadMemberships,
   validateBody(assignRoleSchema),
   catchAsyncError(async (req, res) => {
+    requireRegionAdminOrThrow(req);
     const { userId, cityId, role } = req.body;
 
     if (!mongoose.isValidObjectId(userId))
@@ -212,7 +223,10 @@ exports.assignRole = [
 ];
 
 // PATCH /api/admin/users/:id/ban — block or unblock an account
-exports.setUserBan = catchAsyncError(async (req, res) => {
+exports.setUserBan = [
+  loadMemberships,
+  catchAsyncError(async (req, res) => {
+  requireRegionAdminOrThrow(req);
   const { id } = req.params;
   if (!mongoose.isValidObjectId(id))
     throw new ApiError(400, "Некорректный пользователь");
@@ -237,7 +251,8 @@ exports.setUserBan = catchAsyncError(async (req, res) => {
   });
 
   res.json({ status: "success", data: { user: { _id: user._id, banned: user.banned } } });
-});
+  }),
+];
 
 // GET /api/admin/audit — role journal for the region or the whole platform
 exports.getAudit = [

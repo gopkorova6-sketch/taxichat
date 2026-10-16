@@ -13,7 +13,8 @@ router.route("/").post(reputationController.createComplaint);
 router.route("/:orderId/sos").post(reputationController.raiseSos);
 
 const admin = express.Router();
-admin.use(protect, requireRegionAdmin());
+// loadMemberships обязателен: requireRegionAdmin читает req.memberships
+admin.use(protect, loadMemberships, requireRegionAdmin());
 admin.route("/complaints").get(reputationController.listComplaints);
 admin.route("/complaints/:id").patch(reputationController.reviewComplaint);
 
