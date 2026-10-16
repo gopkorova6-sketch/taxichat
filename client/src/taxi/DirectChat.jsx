@@ -125,7 +125,7 @@ const DirectChat = ({ chatId, me, onBack }) => {
       return (
         <div
           key={message._id}
-          className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-sm ${message.mine ? "btn-accent ml-auto" : "glass"}`}
+          className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-[1.8rem] leading-snug ${message.mine ? "btn-accent ml-auto" : "glass"}`}
         >
           {message.senderName && <div className="text-xs text-secondary-text">{message.senderName}</div>}
           <img src={message.meta?.imageUrl} alt="Фото" className="rounded max-h-[16rem]" />
@@ -136,7 +136,7 @@ const DirectChat = ({ chatId, me, onBack }) => {
       return (
         <div
           key={message._id}
-          className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-sm ${message.mine ? "btn-accent ml-auto" : "glass"}`}
+          className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-[1.8rem] leading-snug ${message.mine ? "btn-accent ml-auto" : "glass"}`}
         >
           {message.senderName && <div className="text-xs text-secondary-text">{message.senderName}</div>}
           <div className="flex items-center gap-2">
@@ -149,7 +149,7 @@ const DirectChat = ({ chatId, me, onBack }) => {
     return (
       <div
         key={message._id}
-        className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-sm ${message.mine ? "btn-accent ml-auto" : "glass"}`}
+        className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-[1.8rem] leading-snug ${message.mine ? "btn-accent ml-auto" : "glass"}`}
       >
         {message.senderName && <div className="text-xs text-secondary-text">{message.senderName}</div>}
         {message.body}

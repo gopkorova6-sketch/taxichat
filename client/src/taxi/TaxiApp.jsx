@@ -98,30 +98,36 @@ const TaxiApp = () => {
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-2 text-sm min-w-0 text-center">
+        <div className="flex flex-wrap items-center justify-center gap-2 text-[1.4rem] min-w-0 text-center">
           <span className="truncate">{user?.name}</span>
-          <div className="flex items-center justify-center gap-3 shrink-0">
-            <button
-              className={`underline ${tab === "taxi" ? "font-bold" : ""}`}
-              onClick={() => { setOpenTrip(null); setTab("taxi"); }}
-            >
-              🚕 Заказы
-            </button>
-            <button
-              className={`underline ${tab === "trips" ? "font-bold" : ""}`}
-              onClick={() => { setOpenTrip(null); setTab(tab === "trips" ? "taxi" : "trips"); }}
-            >
-              🧾 Поездки
-            </button>
-            <button
-              className={`underline ${tab === "cabinet" ? "font-bold" : ""}`}
-              onClick={() => { setOpenTrip(null); setTab(tab === "cabinet" ? "taxi" : "cabinet"); }}
-            >
-              🪪 Кабинет
-            </button>
-            <button className="underline text-danger" onClick={logout}>🚪 Выйти</button>
-          </div>
         </div>
+        <nav className="flex flex-wrap items-center justify-center gap-1.5">
+          {[
+            ["taxi", "🚕 Заказы"],
+            ["trips", "🧾 Поездки"],
+            ["cabinet", "🪪 Кабинет"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              className={`press px-3 py-2 rounded-2xl text-[1.6rem] ${
+                (key === "trips" && tab === "trips") || (key === "cabinet" && tab === "cabinet") || (key === "taxi" && tab === "taxi")
+                  ? "btn-accent font-bold"
+                  : "glass text-secondary-text"
+              }`}
+              onClick={() => {
+                setOpenTrip(null);
+                if (key === "trips") setTab(tab === "trips" ? "taxi" : "trips");
+                else if (key === "cabinet") setTab(tab === "cabinet" ? "taxi" : "cabinet");
+                else setTab("taxi");
+              }}
+            >
+              {label}
+            </button>
+          ))}
+          <button className="press px-3 py-2 rounded-2xl text-[1.6rem] glass text-danger font-semibold" onClick={logout}>
+            🚪 Выйти
+          </button>
+        </nav>
       </header>
 
       {error && <div className="text-danger text-sm px-4 py-1">{error}</div>}

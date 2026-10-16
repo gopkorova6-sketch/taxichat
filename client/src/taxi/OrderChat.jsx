@@ -291,7 +291,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
     return (
       <div className="p-6 text-danger">
         {error}
-        <button className="underline ml-2" onClick={onBack}>Назад</button>
+        <button className="btn-back" onClick={onBack}>⬅️ Назад</button>
       </div>
     );
   }
@@ -302,7 +302,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-2 border-b border-secondary-text/20">
+      <div className="glass-strong sticky top-0 z-20 p-2 border-b border-secondary-text/20 rounded-b-2xl">
           <div className="flex items-center gap-2 min-w-0">
             <button
               className="shrink-0 px-2 py-1 rounded-lg text-[1.2rem] bg-white/10 border border-white/10"
@@ -372,7 +372,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           {offers.map((offer) => (
             <div
               key={offer._id}
-              className="flex items-center gap-3 bg-secondary rounded p-2 text-sm"
+              className="flex items-center gap-3 bg-secondary rounded-2xl p-3 text-[1.6rem]"
             >
               <div>
                 <div className="font-semibold text-center">{offer.driverName}</div>
@@ -407,7 +407,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           }
           if (message.kind === "order_card") {
             return (
-              <div key={message._id} className="border border-secondary-text/30 rounded p-3 text-sm">
+              <div key={message._id} className="border border-secondary-text/30 rounded-2xl p-3 text-[1.6rem]">
                 <div className="font-semibold text-center">📋 Заказ</div>
                 <div>🚦 Статус: {statusBadge(message.meta?.status)}</div>
                 <div className="break-words">📍 {message.meta?.to ? `${message.meta?.from} → ${message.meta?.to}` : message.meta?.from}</div>
@@ -439,7 +439,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
             return (
               <div
                 key={message._id}
-                className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-sm ${message.mine ? "btn-accent ml-auto text-[#111]" : "glass"}`}
+                className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-[1.8rem] leading-snug ${message.mine ? "btn-accent ml-auto text-[#111]" : "glass"}`}
               >
                 {message.senderName && <div className="text-xs text-secondary-text">{message.senderName}</div>}
                 <img
@@ -454,7 +454,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
             return (
               <div
                 key={message._id}
-                className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-sm ${message.mine ? "btn-accent ml-auto text-[#111]" : "glass"}`}
+                className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-[1.8rem] leading-snug ${message.mine ? "btn-accent ml-auto text-[#111]" : "glass"}`}
               >
                 {message.senderName && <div className="text-xs text-secondary-text">{message.senderName}</div>}
                 <div className="flex items-center gap-2">
@@ -472,7 +472,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           return (
             <div
               key={message._id}
-              className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-sm ${message.mine ? "btn-accent ml-auto text-[#111]" : "glass"}`}
+              className={`anim-rise max-w-[78%] rounded-2xl p-2.5 text-[1.8rem] leading-snug ${message.mine ? "btn-accent ml-auto text-[#111]" : "glass"}`}
             >
               {message.senderName && <div className="text-xs text-secondary-text">{message.senderName}</div>}
               {message.body}
@@ -529,7 +529,7 @@ const OrderChat = ({ orderId, me, onBack, startCall }) => {
           {recording ? `⏺ ${recordSeconds}с` : "🎤"}
         </button>
         <input
-          className="flex-1 min-w-0 bg-transparent text-white placeholder:text-secondary-text px-2 py-1.5 text-[1.4rem] focus:outline-none"
+          className="flex-1 min-w-0 bg-transparent text-white placeholder:text-secondary-text px-2 py-1.5 text-[1.8rem] focus:outline-none"
           value={text}
           // Keyboard opens only after an explicit tap on the field
           readOnly={!armed}
